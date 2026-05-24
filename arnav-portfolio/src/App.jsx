@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useMotionTemplate, useScroll, useMotionValueEvent } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent } from 'framer-motion';
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -9,7 +9,7 @@ const GLOBAL_STYLES = `
   @font-face {
     font-family: 'Supertalls';
     /* Loading directly from remote URL */
-    src: url('https://files.catbox.moe/p0is34.ttf') format('truetype');
+    src: url('/assets/Supertalls.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -115,6 +115,91 @@ const GLOBAL_STYLES = `
 const CursorContext = React.createContext({ cursorX: null, cursorY: null });
 
 // --- PHYSICS ENGINES ---
+const MagneticRepulsion = ({ children, repulsionForce = 40, radius = 200, className = "" }) => {
+  const { cursorX, cursorY } = useContext(CursorContext);
+  const triggerRef = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.2 });
+  const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.2 });
+
+  useEffect(() => {
+    let animationFrameId;
+    const checkDistance = () => {
+      if (!triggerRef.current || !cursorX || !cursorY) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const distanceX = cursorX.get() - centerX;
+      const distanceY = cursorY.get() - centerY;
+      const distance = Math.sqrt(distanceX ** 2 + distanceY ** 2);
+
+      if (distance < radius) {
+        const force = (radius - distance) / radius; 
+        x.set(-(distanceX / distance) * force * repulsionForce);
+        y.set(-(distanceY / distance) * force * repulsionForce);
+      } else {
+        x.set(0); y.set(0);
+      }
+      animationFrameId = requestAnimationFrame(checkDistance);
+    };
+    animationFrameId = requestAnimationFrame(checkDistance);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [cursorX, cursorY, radius, repulsionForce, x, y]);
+
+  return (
+    <div ref={triggerRef} className={`inline-block relative ${className}`}>
+      <motion.div style={{ x: springX, y: springY }} className="inline-block w-full h-full pointer-events-auto origin-center">
+        {children}
+      </motion.div>
+    </div>
+  );
+};
+
+const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "" }) => {
+  const { cursorX, cursorY } = useContext(CursorContext);
+  const triggerRef = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.2 });
+  const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.2 });
+
+  useEffect(() => {
+    let animationFrameId;
+    const checkDistance = () => {
+      if (!triggerRef.current || !cursorX || !cursorY) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const distanceX = cursorX.get() - centerX;
+      const distanceY = cursorY.get() - centerY;
+      const distance = Math.sqrt(distanceX ** 2 + distanceY ** 2);
+
+      if (distance < radius) {
+        const pull = (radius - distance) / radius; 
+        x.set(distanceX * pull * force);
+        y.set(distanceY * pull * force);
+      } else {
+        x.set(0); y.set(0);
+      }
+      animationFrameId = requestAnimationFrame(checkDistance);
+    };
+    animationFrameId = requestAnimationFrame(checkDistance);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [cursorX, cursorY, radius, force, x, y]);
+
+  return (
+    <div ref={triggerRef} className={`inline-block relative ${className}`}>
+      <motion.div style={{ x: springX, y: springY }} className="inline-block w-full h-full origin-center">
+        {children}
+      </motion.div>
+    </div>
+  );
+};
 
 const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   <motion.div
@@ -168,7 +253,7 @@ const ScrambleText = ({ children, delay = 0 }) => {
 
 // --- RUNNING TIMECODE ---
 const Timecode = () => {
-  const [time, setTime] = useState("");
+  const spanRef = useRef(null);
   useEffect(() => {
     let frame = 0;
     const interval = setInterval(() => {
@@ -178,11 +263,11 @@ const Timecode = () => {
       const mm = String(d.getMinutes()).padStart(2, '0');
       const ss = String(d.getSeconds()).padStart(2, '0');
       const ff = String(frame).padStart(2, '0');
-      setTime(`${hh}:${mm}:${ss}:${ff}`);
+      if (spanRef.current) spanRef.current.textContent = `${hh}:${mm}:${ss}:${ff}`;
     }, 1000 / 10);
     return () => clearInterval(interval);
   }, []);
-  return <span className="text-[var(--red)]">{time}</span>;
+  return <span ref={spanRef} className="text-[var(--red)]" />;
 };
 
 // --- DYNAMIC HUD COORDINATES ---
@@ -191,13 +276,17 @@ const TrackedCoordinates = () => {
   const [coords, setCoords] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    let intervalId;
-    intervalId = setInterval(() => {
-      if (cursorX && cursorY) {
+    let animationFrameId;
+    let frameCount = 0;
+    const updatePos = () => {
+      frameCount++;
+      if (frameCount % 3 === 0 && cursorX && cursorY) {
         setCoords({ x: Math.floor(cursorX.get()), y: Math.floor(cursorY.get()) });
       }
-    }, 100);
-    return () => clearInterval(intervalId);
+      animationFrameId = requestAnimationFrame(updatePos);
+    };
+    animationFrameId = requestAnimationFrame(updatePos);
+    return () => cancelAnimationFrame(animationFrameId);
   }, [cursorX, cursorY]);
 
   const springX = useSpring(cursorX, { damping: 40, stiffness: 300, mass: 0.5 });
@@ -214,41 +303,6 @@ const TrackedCoordinates = () => {
   );
 };
 
-const UnicornBackground = ({ active }) => {
-  useEffect(() => {
-    if (!window.UnicornStudio) {
-      window.UnicornStudio = { isInitialized: false };
-      const script = document.createElement("script");
-      script.type = "text/javascript";
-      script.src = "https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.1.9/dist/unicornStudio.umd.js";
-      script.onload = () => { if (window.UnicornStudio.init) window.UnicornStudio.init(); };
-      document.head.appendChild(script);
-    } else if (window.UnicornStudio.init) {
-      window.UnicornStudio.init();
-    }
-
-    const interval = setInterval(() => {
-      document.querySelectorAll('a[href*="unicorn.studio"]').forEach(node => {
-        node.style.display = 'none';
-        if(node.parentElement) {
-          node.parentElement.style.display = 'none';
-          node.parentElement.style.opacity = '0';
-        }
-      });
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <motion.div
-      className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
-      initial={{ opacity: 0 }} animate={{ opacity: active ? 0.6 : 0 }}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
-    >
-      <div className="w-full h-full" data-us-project="3dLwfaI5FrrmnY0LS0oc"></div>
-    </motion.div>
-  );
-};
 
 const WorksBackground = ({ active }) => {
   return (
@@ -276,26 +330,70 @@ const GalaxyIcon = ({ label, children }) => {
 };
 
 const OrbitalRing = ({ radius, duration, reverse, items }) => {
-  const spin = reverse ? "spin-backward" : "spin-forward";
+  const containerRef = useRef(null);
+  const itemRefs = useRef([]);
+  const angleRef = useRef(0);
+  const lastTimeRef = useRef(null);
+  const visibleRef = useRef(true);
+
+  useEffect(() => {
+    let frameId;
+    const speed = (reverse ? -1 : 1) * (360 / duration);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) {
+          lastTimeRef.current = null;
+          frameId = requestAnimationFrame(tick);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    function tick(timestamp) {
+      if (!visibleRef.current) return;
+      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
+      const delta = (timestamp - lastTimeRef.current) / 1000;
+      lastTimeRef.current = timestamp;
+      angleRef.current = (angleRef.current + speed * delta) % 360;
+
+      items.forEach((_, i) => {
+        const el = itemRefs.current[i];
+        if (!el) return;
+        const itemAngle = angleRef.current + (i * 360) / items.length;
+        const rad = (itemAngle * Math.PI) / 180;
+        const x = Math.cos(rad) * radius;
+        const y = Math.sin(rad) * radius;
+        el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+      });
+
+      frameId = requestAnimationFrame(tick);
+    }
+
+    frameId = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+    };
+  }, [radius, duration, reverse, items.length]);
+
   return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
+    <div ref={containerRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
       <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-40 pointer-events-none" />
-      <div className="absolute inset-0" style={{ animation: `${spin} ${duration}s linear infinite`, willChange: 'transform' }}>
-        {items.map((item, i) => {
-          const angle = (i * 360) / items.length;
-          const x = Math.cos(angle * Math.PI / 180) * radius;
-          const y = Math.sin(angle * Math.PI / 180) * radius;
-          return (
-            <div key={i} className="absolute flex justify-center items-center pointer-events-auto" style={{ top: `calc(50% + ${y}px)`, left: `calc(50% + ${x}px)`, transform: 'translate(-50%, -50%)' }}>
-              <div style={{ animation: `${reverse ? 'spin-forward' : 'spin-backward'} ${duration}s linear infinite`, willChange: 'transform' }}>
-                <GalaxyIcon label={item.label}>
-                  {item.icon}
-                </GalaxyIcon>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {items.map((item, i) => (
+        <div
+          key={i}
+          ref={(el) => { itemRefs.current[i] = el; }}
+          className="absolute top-1/2 left-1/2 flex justify-center items-center pointer-events-auto"
+        >
+          <GalaxyIcon label={item.label}>
+            {item.icon}
+          </GalaxyIcon>
+        </div>
+      ))}
     </div>
   );
 };
@@ -319,25 +417,127 @@ const SpotlightCard = ({ children, className = "" }) => {
   );
 };
 
+const MagneticVideoCard = () => {
+  const { cursorX, cursorY } = useContext(CursorContext);
+  const cardRef = useRef(null);
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
+  const rawScale = useMotionValue(1);
+  const rawRotateX = useMotionValue(0);
+  const rawRotateY = useMotionValue(0);
+  const springConfig = { stiffness: 300, damping: 25, mass: 1 };
+  const x = useSpring(rawX, springConfig);
+  const y = useSpring(rawY, springConfig);
+  const scale = useSpring(rawScale, springConfig);
+  const rotateX = useSpring(rawRotateX, springConfig);
+  const rotateY = useSpring(rawRotateY, springConfig);
+  const [spotlightPos, setSpotlightPos] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    let animationFrameId;
+    const updatePhysics = () => {
+      if (!cardRef.current || !cursorX || !cursorY) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const cX = cursorX.get();
+      const cY = cursorY.get();
+      const distX = cX - centerX;
+      const distY = cY - centerY;
+      const distance = Math.sqrt(distX * distX + distY * distY);
+      const isInside = Math.abs(distX) < rect.width / 2 && Math.abs(distY) < rect.height / 2;
+
+      if (isInside) {
+        setIsHovered(true);
+        setSpotlightPos({ x: cX - rect.left, y: cY - rect.top });
+        rawScale.set(1.08); 
+        rawX.set(0); rawY.set(0);
+        rawRotateX.set((distY / (rect.height/2)) * 15);
+        rawRotateY.set(-(distX / (rect.width/2)) * 15);
+        cardRef.current.style.zIndex = 30;
+      } else {
+        setIsHovered(false);
+        const pushRadius = rect.width * 1.6; 
+        if (distance < pushRadius) {
+          const force = (pushRadius - distance) / pushRadius;
+          const easeForce = Math.pow(force, 1.5);
+          rawScale.set(1);
+          rawX.set(-(distX / distance) * easeForce * 35); 
+          rawY.set(-(distY / distance) * easeForce * 35); 
+          rawRotateX.set(0); rawRotateY.set(0);
+          cardRef.current.style.zIndex = 10;
+        } else {
+          rawScale.set(1); rawX.set(0); rawY.set(0); rawRotateX.set(0); rawRotateY.set(0);
+          cardRef.current.style.zIndex = 1;
+        }
+      }
+      animationFrameId = requestAnimationFrame(updatePhysics);
+    };
+    animationFrameId = requestAnimationFrame(updatePhysics);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [cursorX, cursorY, rawX, rawY, rawScale, rawRotateX, rawRotateY]);
+
+  return (
+    <div style={{ perspective: 1200 }} className="w-full aspect-[9/16] relative z-1">
+      <motion.div ref={cardRef} style={{ x, y, scale, rotateX, rotateY, WebkitMaskImage: '-webkit-radial-gradient(white, black)', maskImage: 'radial-gradient(white, black)' }} className={`w-full h-full rounded-3xl md:rounded-[2rem] bg-[var(--border)] relative group overflow-hidden shadow-xl cursor-none flex items-center justify-center origin-center`}>
+        <div className="absolute inset-0 transition-opacity duration-300 pointer-events-none z-0 rounded-[inherit]" style={{ opacity: isHovered ? 1 : 0, background: `radial-gradient(400px circle at ${spotlightPos.x}px ${spotlightPos.y}px, rgba(255,0,0,0.8), transparent 40%)` }} />
+        <div className="absolute inset-[1px] rounded-[inherit] bg-[var(--bg)]/95 backdrop-blur-md pointer-events-none z-0" />
+        <div className="absolute inset-0 transition-opacity duration-300 pointer-events-none z-10 rounded-[inherit]" style={{ opacity: isHovered ? 1 : 0, background: `radial-gradient(600px circle at ${spotlightPos.x}px ${spotlightPos.y}px, rgba(255,255,255,0.08), transparent 40%)` }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none z-10 rounded-[inherit]" />
+        <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[var(--red)] flex items-center justify-center pl-1 scale-90 group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(255,0,0,0.6)] transition-all duration-300 z-20 cursor-none">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--bg)"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 
 // ================= HERO SCREEN ISOLATED COMPONENTS =================
 
-const HeroBackground = ({ isBase, hasLoaded }) => {
-  const textClass = isBase ? "base-cinematic-text" : "cinematic-text";
+const HeroBackground = ({ hasLoaded }) => {
+  const textContainerRef = useRef(null);
+
+  useEffect(() => {
+    const container = textContainerRef.current;
+    if (!container) return;
+    const onMove = (e) => {
+      const rect = container.getBoundingClientRect();
+      container.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+      container.style.setProperty('--my', `${e.clientY - rect.top}px`);
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2 flex flex-col items-start" style={{ fontSize: 'clamp(60px, 12vw, 160px)' }}>
+      <div
+        ref={textContainerRef}
+        className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2 flex flex-col items-start"
+        style={{ fontSize: 'clamp(60px, 12vw, 160px)', '--mx': '0px', '--my': '0px' }}
+      >
+        {/* Base dim text */}
         <ParticleFlyer delay={hasLoaded ? 0.1 : 0} className="flex justify-start relative z-10">
-          {/* Added tracking to space the letters horizontally */}
-          <h1 className={`${textClass} font-supertalls leading-none text-left tracking-[0.05em]`}>ARNAV</h1>
+          <h1 className="base-cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">ARNAV</h1>
         </ParticleFlyer>
-        
-        {/* Removed the ml-8 md:ml-24 horizontal indent to snap it back to the left */}
         <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className="flex justify-start relative z-20 mt-2 md:mt-4">
-          <h1 className={`${textClass} font-supertalls leading-none text-left tracking-[0.05em]`}>RAI</h1>
+          <h1 className="base-cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">RAI</h1>
         </ParticleFlyer>
+
+        {/* Lit layer — only the text, masked by cursor position via CSS vars */}
+        <div
+          className="absolute inset-0 flex flex-col items-start pointer-events-none"
+          style={{ maskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)', WebkitMaskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)' }}
+        >
+          <ParticleFlyer delay={hasLoaded ? 0.1 : 0} className="flex justify-start relative z-10">
+            <h1 className="cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">ARNAV</h1>
+          </ParticleFlyer>
+          <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className="flex justify-start relative z-20 mt-2 md:mt-4">
+            <h1 className="cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">RAI</h1>
+          </ParticleFlyer>
+        </div>
       </div>
     </div>
   );
@@ -357,7 +557,7 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute top-12 left-0 right-0 w-full flex flex-col items-center justify-center gap-3 transition-opacity duration-300 ${hudClass}`}>
-        <motion.div id={isBase ? "top-secret-marker" : undefined} animate={!isBase ? { scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] } : {}} transition={{ repeat: Infinity, duration: 3 }} className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]" />
+        <motion.div id="top-secret-marker" animate={{ scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] }} transition={{ repeat: Infinity, duration: 3 }} className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]" />
         <div className="border border-[var(--red)]/50 text-[var(--red)] text-[9px] md:text-[10px] px-4 py-1.5 tracking-[0.2em] bg-[var(--bg)]/50 backdrop-blur-sm font-clash">
           TOP SECRET // CASE #2026
         </div>
@@ -379,11 +579,15 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
 
       {/* Magnetic Floating Elements */}
       <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute top-[15%] right-[10%] md:right-[12%] z-[100] transition-opacity duration-300 ${hudClass}`}>
-        <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 rotate-[6deg] inline-block border border-[var(--border)] shadow-xl">SERIOUSLY</span>
+        <MagneticAttraction radius={300} force={0.3}>
+          <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 rotate-[6deg] inline-block border border-[var(--border)] shadow-xl">SERIOUSLY</span>
+        </MagneticAttraction>
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute top-[23%] right-[8%] md:right-[10%] z-[100] transition-opacity duration-300 ${hudClass}`}>
-        <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 -rotate-[8deg] inline-block border border-[var(--border)] shadow-xl">GOOD</span>
+        <MagneticAttraction radius={300} force={0.4}>
+          <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 -rotate-[8deg] inline-block border border-[var(--border)] shadow-xl">GOOD</span>
+        </MagneticAttraction>
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-24 right-6 md:bottom-16 md:right-12 border border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-sm p-4 flex items-center gap-4 transition-opacity duration-300 ${hudClass}`}>
@@ -731,7 +935,6 @@ export default function App() {
     setNavVisible(latest > 100);
   });
 
-  const maskImage = useMotionTemplate`radial-gradient(900px circle at ${cursorX}px ${cursorY}px, black 0%, rgba(0,0,0,0.3) 40%, transparent 70%)`;
 
   useEffect(() => {
     if (!hasLoaded) return;
@@ -768,20 +971,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (loadingProgress === 100) return;
     let animationFrameId;
     const lerp = () => {
       setLoadingProgress((prev) => {
         const diff = targetProgress - prev;
-        if (diff > 0.1) return prev + diff * 0.08;
-        else if (targetProgress === 100 && prev >= 99.5) return 100;
+        if (diff > 0.1) return prev + diff * 0.08; 
+        else if (targetProgress === 100 && prev >= 99.5) return 100; 
         return prev;
       });
       animationFrameId = requestAnimationFrame(lerp);
     };
     animationFrameId = requestAnimationFrame(lerp);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [targetProgress, loadingProgress]);
+  }, [targetProgress]);
 
   useEffect(() => {
     if (loadingProgress === 100) {
@@ -808,10 +1010,6 @@ export default function App() {
       <div className="relative w-full min-h-screen bg-[var(--bg)] font-clash text-[var(--black)] selection:bg-[var(--red)] selection:text-[var(--bg)] overflow-x-hidden">
         <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
 
-        {/* DYNAMIC BACKGROUNDS */}
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <UnicornBackground active={true} />
-        </div>
 
         {/* THE DYNAMIC CURVED RED THREAD */}
         <CurvedThread hasLoaded={hasLoaded} />
@@ -821,12 +1019,9 @@ export default function App() {
           {/* Dynamic Target Coordinates attached to cursor */}
           {hasLoaded && <TrackedCoordinates />}
 
-          {/* BACKGROUND LAYER (z-10): Galaxy & Main Typography */}
+          {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
-            <HeroBackground isBase={true} hasLoaded={hasLoaded} />
-            <motion.div className="absolute inset-0 pointer-events-none" style={{ maskImage, WebkitMaskImage: maskImage }}>
-              <HeroBackground isBase={false} hasLoaded={hasLoaded} />
-            </motion.div>
+            <HeroBackground hasLoaded={hasLoaded} />
           </div>
 
           {/* GALAXY LAYER (z-15) - rendered once for performance */}
@@ -880,16 +1075,25 @@ export default function App() {
 
           {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
           <div className="absolute inset-0 z-[100] pointer-events-none">
-            <HeroForeground isBase={true} hasLoaded={hasLoaded} titleIndex={titleIndex} titles={titles} />
-            <motion.div className="absolute inset-0 pointer-events-none" style={{ maskImage, WebkitMaskImage: maskImage }}>
-              <HeroForeground isBase={false} hasLoaded={hasLoaded} titleIndex={titleIndex} titles={titles} />
-            </motion.div>
+            <HeroForeground isBase={false} hasLoaded={hasLoaded} titleIndex={titleIndex} titles={titles} />
           </div>
         </section>
 
 
         {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
         <div className="relative w-full pb-32 z-10">
+
+          {/* SHOWREEL VIDEO */}
+          <section className="relative w-full z-10">
+            <video
+              src="/assets/output-compressed.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-auto object-cover"
+            />
+          </section>
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32">
