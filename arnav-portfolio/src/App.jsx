@@ -857,6 +857,16 @@ const EVIDENCE_DATA = [
   { id: "08", sector: "BRAND_IDENTITIES", title: "Nexus Logomark", img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=800&auto=format&fit=crop" },
 ];
 
+const POSTS_DATA = [
+  { id: "P01", title: "Neon Drift", subtitle: "Motion Poster", img: "https://images.unsplash.com/photo-1614854262318-831574f15f1f?q=80&w=800&auto=format&fit=crop" },
+  { id: "P02", title: "Kyoto Nights", subtitle: "Social Campaign", img: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?q=80&w=800&auto=format&fit=crop" },
+  { id: "P03", title: "Voltage", subtitle: "Brand Identity", img: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=800&auto=format&fit=crop" },
+  { id: "P04", title: "Fractured", subtitle: "Album Artwork", img: "https://images.unsplash.com/photo-1633986210655-88e6ac1c1147?q=80&w=800&auto=format&fit=crop" },
+  { id: "P05", title: "Meridian", subtitle: "Event Visual", img: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?q=80&w=800&auto=format&fit=crop" },
+  { id: "P06", title: "Obsidian", subtitle: "Thumbnail Pack", img: "https://images.unsplash.com/photo-1604076913837-52ab5f6f5ce0?q=80&w=800&auto=format&fit=crop" },
+  { id: "P07", title: "Catalyst", subtitle: "Reel Cover", img: "https://images.unsplash.com/photo-1614850523011-8f49ffc73908?q=80&w=800&auto=format&fit=crop" },
+];
+
 export default function App() {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -873,6 +883,10 @@ export default function App() {
   const [activeSector, setActiveSector] = useState("KINETIC_CUTS");
   const filteredEvidence = useMemo(() => EVIDENCE_DATA.filter(item => item.sector === activeSector), [activeSector]);
   const carouselRef = useRef(null);
+
+  // Posts Cover Flow State
+  const [activePostIndex, setActivePostIndex] = useState(Math.floor(POSTS_DATA.length / 2));
+  const postDragX = useMotionValue(0);
 
   // Scroll Hijacking for the Carousel
   useEffect(() => {
@@ -1482,6 +1496,134 @@ export default function App() {
                    ))}
                  </AnimatePresence>
                </div>
+            </div>
+          </section>
+
+          {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
+          <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
+            <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
+                <ParticleFlyer delay={0.1}>
+                  <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
+                    POSTS SHOWCASE
+                  </motion.h2>
+                </ParticleFlyer>
+                <ParticleFlyer delay={0.2}>
+                  <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
+                    <span>FILE: {POSTS_DATA[activePostIndex]?.id}</span>
+                    <span>MODE: <span className="text-[var(--red)]">COVER FLOW</span></span>
+                  </div>
+                </ParticleFlyer>
+              </div>
+            </div>
+
+            {/* 3D Cover Flow Container */}
+            <div className="relative w-full flex items-center justify-center" style={{ perspective: '1200px', height: '500px' }}>
+              <motion.div
+                className="relative w-full h-full flex items-center justify-center cursor-none"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.1}
+                style={{ x: postDragX }}
+                onDragEnd={(_, info) => {
+                  const threshold = 50;
+                  if (info.offset.x < -threshold && activePostIndex < POSTS_DATA.length - 1) {
+                    setActivePostIndex(prev => prev + 1);
+                  } else if (info.offset.x > threshold && activePostIndex > 0) {
+                    setActivePostIndex(prev => prev - 1);
+                  }
+                }}
+              >
+                {POSTS_DATA.map((post, i) => {
+                  const offset = i - activePostIndex;
+                  const absOffset = Math.abs(offset);
+                  const isActive = offset === 0;
+                  const rotateY = offset * -45;
+                  const translateX = offset * 220;
+                  const translateZ = isActive ? 100 : -(absOffset * 120);
+                  const scale = isActive ? 1.05 : Math.max(0.7, 1 - absOffset * 0.15);
+                  const zIndex = POSTS_DATA.length - absOffset;
+                  const opacity = absOffset > 3 ? 0 : 1;
+
+                  return (
+                    <motion.div
+                      key={post.id}
+                      className="absolute cursor-none"
+                      animate={{
+                        rotateY,
+                        x: translateX,
+                        z: translateZ,
+                        scale,
+                        opacity,
+                      }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
+                      style={{ zIndex, transformStyle: 'preserve-3d' }}
+                      onClick={() => setActivePostIndex(i)}
+                    >
+                      <div className={`relative w-[260px] md:w-[300px] aspect-[3/4] border bg-[#050505] overflow-hidden group transition-all duration-300 ${isActive ? 'border-[var(--red)]/60 shadow-[0_0_40px_rgba(255,0,0,0.3)]' : 'border-[var(--border)]'}`}>
+                        {/* Top red line on active */}
+                        <div className={`absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] z-20 transition-transform duration-500 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'}`} />
+
+                        {/* Crosshairs */}
+                        <div className="absolute top-2 left-2 w-2 h-2 border-t border-l border-[var(--red)] z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-2 right-2 w-2 h-2 border-t border-r border-[var(--red)] z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-2 left-2 w-2 h-2 border-b border-l border-[var(--red)] z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-2 right-2 w-2 h-2 border-b border-r border-[var(--red)] z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Image */}
+                        <img
+                          src={post.img}
+                          alt={post.title}
+                          className={`w-full h-full object-cover transition-all duration-700 scale-105 group-hover:scale-100 ${isActive ? 'opacity-90 grayscale-0' : 'opacity-40 grayscale'}`}
+                        />
+
+                        {/* Vignette */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/30 to-transparent opacity-80 pointer-events-none" />
+
+                        {/* Reflection/Glow on active */}
+                        {isActive && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-[var(--red)]/10 to-transparent pointer-events-none" />
+                        )}
+
+                        {/* Details */}
+                        <div className="absolute bottom-4 left-4 right-4 flex flex-col z-20 pointer-events-none">
+                          <span className="font-clash text-[8px] text-[var(--red)] tracking-widest uppercase mb-1">{post.subtitle}</span>
+                          <span className="font-supertalls text-2xl md:text-3xl text-[var(--black)] leading-none">{post.title}</span>
+                        </div>
+
+                        {/* ID badge */}
+                        <div className="absolute top-3 right-3 font-clash text-[7px] text-[var(--muted)] tracking-widest z-20">
+                          {post.id}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </div>
+
+            {/* Navigation Dots */}
+            <div className="flex items-center justify-center gap-2 mt-8">
+              {POSTS_DATA.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActivePostIndex(i)}
+                  className={`w-2 h-2 transition-all duration-300 cursor-none ${
+                    i === activePostIndex
+                      ? 'bg-[var(--red)] scale-125 shadow-[0_0_8px_rgba(255,0,0,0.8)]'
+                      : 'bg-[var(--border)] hover:bg-[var(--muted)]'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Active Post Info */}
+            <div className="flex justify-center mt-6">
+              <div className="font-clash text-[9px] tracking-widest text-[var(--muted)] flex items-center gap-4">
+                <span>DRAG TO NAVIGATE</span>
+                <span className="text-[var(--red)]">|</span>
+                <span>{activePostIndex + 1} / {POSTS_DATA.length}</span>
+              </div>
             </div>
           </section>
 
