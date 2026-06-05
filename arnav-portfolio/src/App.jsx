@@ -294,7 +294,7 @@ const TrackedCoordinates = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 pointer-events-none z-[110] flex items-center gap-1.5 font-clash text-[8px] md:text-[9px] text-[var(--red)] tracking-widest mix-blend-difference"
+      className="fixed top-0 left-0 pointer-events-none z-[99999] flex items-center gap-1.5 font-clash text-[8px] md:text-[9px] text-[var(--red)] tracking-widest mix-blend-difference"
       style={{ x: springX, y: springY, translateX: '24px', translateY: '24px' }}
     >
       <div className="w-1.5 h-1.5 bg-[var(--red)]" />
@@ -319,10 +319,10 @@ const WorksBackground = ({ active }) => {
 
 const GalaxyIcon = ({ label, children }) => {
   return (
-    <div className="relative group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-[var(--red)] border-2 border-[#FF5555] text-white transition-all duration-300 cursor-none shadow-[0_0_20px_rgba(255,0,0,0.5)] hover:shadow-[0_0_40px_rgba(255,0,0,0.9)] hover:scale-110">
+    <div className="relative group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-[#1A1A1A] border-2 border-[var(--border)] text-[var(--red)] transition-all duration-300 cursor-none hover:border-[var(--red)]/50 hover:scale-110">
       {children}
       {/* Sleek Tooltip that slides up on hover */}
-      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 font-clash text-[10px] md:text-[11px] font-bold tracking-widest text-[var(--black)] bg-[#111] border border-[var(--red)] px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-2xl translate-y-2 group-hover:translate-y-0">
+      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 font-clash text-[10px] md:text-[11px] font-bold tracking-widest text-[var(--black)] bg-[#111] border border-[var(--border)] px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-2xl translate-y-2 group-hover:translate-y-0">
         {label}
       </div>
     </div>
@@ -526,7 +526,7 @@ const HeroBackground = ({ hasLoaded }) => {
           <h1 className="base-cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">RAI</h1>
         </ParticleFlyer>
 
-        {/* Lit layer — only the text, masked by cursor position via CSS vars */}
+        {/* Lit layer — same delays so both layers animate in sync */}
         <div
           className="absolute inset-0 flex flex-col items-start pointer-events-none"
           style={{ maskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)', WebkitMaskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)' }}
@@ -754,7 +754,7 @@ const CurvedThread = ({ hasLoaded }) => {
 
 // --- BOLD ICONS ---
 const AdobeIcon = ({ text }) => (
-  <span className="font-clash font-bold text-2xl md:text-3xl tracking-tighter drop-shadow-md text-white">
+  <span className="font-clash font-bold text-2xl md:text-3xl tracking-tighter drop-shadow-md text-[var(--red)]">
     {text}
   </span>
 );
@@ -886,7 +886,6 @@ export default function App() {
 
   // Posts Cover Flow State
   const [activePostIndex, setActivePostIndex] = useState(Math.floor(POSTS_DATA.length / 2));
-  const postDragX = useMotionValue(0);
 
   // Scroll Hijacking for the Carousel
   useEffect(() => {
@@ -1030,8 +1029,6 @@ export default function App() {
 
         {/* ================= HERO SECTION ================= */}
         <section id="section-hero" className="relative w-full h-screen flex items-center justify-center z-10">
-          {/* Dynamic Target Coordinates attached to cursor */}
-          {hasLoaded && <TrackedCoordinates />}
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
@@ -1145,12 +1142,9 @@ export default function App() {
                       <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[var(--red)] z-10" />
                       <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[var(--red)] z-10" />
                       
-                      {/* Scanline */}
-                      <div className="absolute left-0 w-full h-[2px] bg-[var(--red)] shadow-[0_0_12px_rgba(255,0,0,1)] z-20 opacity-0 group-hover:opacity-100 group-hover:animate-[scan_2.5s_linear_infinite]" />
                       
                       <img src="https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png" alt="Arnav Profile" className="w-full h-full object-cover object-top opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" />
                       
-                      <div className="absolute bottom-1 left-2 font-clash text-[6px] text-[var(--red)] tracking-widest">ID: PRF_001_AR</div>
                     </div>
 
                     {/* Stats Grid */}
@@ -1331,8 +1325,6 @@ export default function App() {
                         {/* Image */}
                         <img src={brand.logo} alt={brand.name} className="w-full h-full object-cover opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
                         
-                        {/* Scanline */}
-                        <div className="absolute left-0 w-full h-[2px] bg-[var(--red)] shadow-[0_0_12px_rgba(255,0,0,1)] z-20 opacity-0 group-hover:opacity-100 group-hover:animate-[scan_2.5s_linear_infinite]" />
 
                         {/* Vignette */}
                         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-transparent opacity-90 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none" />
@@ -1518,13 +1510,13 @@ export default function App() {
             </div>
 
             {/* 3D Cover Flow Container */}
-            <div className="relative w-full flex items-center justify-center" style={{ perspective: '1200px', height: '500px' }}>
+            <div className="relative w-full flex items-center justify-center overflow-hidden" style={{ perspective: '1200px', height: '500px' }}>
               <motion.div
                 className="relative w-full h-full flex items-center justify-center cursor-none"
+                style={{ transformStyle: 'preserve-3d' }}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.1}
-                style={{ x: postDragX }}
                 onDragEnd={(_, info) => {
                   const threshold = 50;
                   if (info.offset.x < -threshold && activePostIndex < POSTS_DATA.length - 1) {
@@ -1539,10 +1531,9 @@ export default function App() {
                   const absOffset = Math.abs(offset);
                   const isActive = offset === 0;
                   const rotateY = offset * -45;
-                  const translateX = offset * 220;
-                  const translateZ = isActive ? 100 : -(absOffset * 120);
-                  const scale = isActive ? 1.05 : Math.max(0.7, 1 - absOffset * 0.15);
-                  const zIndex = POSTS_DATA.length - absOffset;
+                  const translateX = offset * 200;
+                  const translateZ = isActive ? 80 : -(absOffset * 100);
+                  const scale = isActive ? 1.05 : Math.max(0.75, 1 - absOffset * 0.12);
                   const opacity = absOffset > 3 ? 0 : 1;
 
                   return (
@@ -1557,7 +1548,7 @@ export default function App() {
                         opacity,
                       }}
                       transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-                      style={{ zIndex, transformStyle: 'preserve-3d' }}
+                      style={{ transformStyle: 'preserve-3d' }}
                       onClick={() => setActivePostIndex(i)}
                     >
                       <div className={`relative w-[260px] md:w-[300px] aspect-[3/4] border bg-[#050505] overflow-hidden group transition-all duration-300 ${isActive ? 'border-[var(--red)]/60 shadow-[0_0_40px_rgba(255,0,0,0.3)]' : 'border-[var(--border)]'}`}>
@@ -1639,10 +1630,10 @@ export default function App() {
                
                {/* Typography inspired by reference */}
                <div className="relative mb-16 text-center flex flex-col items-center">
-                 <span className="font-dancing text-[var(--red)] text-[clamp(40px,8vw,70px)] absolute -top-6 -left-6 md:-top-10 md:-left-12 -rotate-[15deg] z-20 drop-shadow-lg">
+                 <span className="font-dancing text-[var(--red)] text-[clamp(30px,6vw,60px)] mb-2 drop-shadow-lg">
                    Get in
                  </span>
-                 <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] relative z-10 m-0">
+                 <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] m-0">
                    TOUCH
                  </h2>
                </div>
@@ -1793,6 +1784,9 @@ export default function App() {
             </motion.div>
           </div>
         </motion.div>
+
+        {/* Dynamic Target Coordinates attached to cursor */}
+        {hasLoaded && <TrackedCoordinates />}
 
         {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
         <motion.div
