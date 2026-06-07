@@ -398,6 +398,66 @@ const OrbitalRing = ({ radius, duration, reverse, items }) => {
   );
 };
 
+const KeyframeTransition = () => {
+  const [litIndex, setLitIndex] = useState(-1);
+  const containerRef = useRef(null);
+  const hasPlayed = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasPlayed.current) {
+          hasPlayed.current = true;
+          let i = 0;
+          const interval = setInterval(() => {
+            setLitIndex(i);
+            i++;
+            if (i >= 5) {
+              clearInterval(interval);
+              setTimeout(() => {
+                setLitIndex(-1);
+                hasPlayed.current = false;
+              }, 600);
+            }
+          }, 200);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const shapes = [
+    <svg key="diamond" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2 L22 12 L12 22 L2 12 Z"/><path d="M12 6 L18 12 L12 18 L6 12 Z" fill="currentColor" opacity="0.4"/></svg>,
+    <svg key="arrow-r" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4 L14 12 L4 20 Z M10 4 L20 12 L10 20 Z"/><path d="M10 7 L17 12 L10 17 Z" fill="currentColor" opacity="0.4"/></svg>,
+    <svg key="hourglass" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 2 L18 2 L12 12 L18 22 L6 22 L12 12 Z"/><path d="M9 5 L15 5 L12 12 L15 19 L9 19 L12 12 Z" fill="currentColor" opacity="0.3"/></svg>,
+    <svg key="arrow-l" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 4 L10 12 L20 20 Z M14 4 L4 12 L14 20 Z"/><path d="M14 7 L7 12 L14 17 Z" fill="currentColor" opacity="0.4"/></svg>,
+    <svg key="half" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 2 A10 10 0 0 1 12 22 Z" fill="currentColor" opacity="0.4"/></svg>,
+  ];
+
+  return (
+    <div ref={containerRef} className="w-full flex items-center justify-center gap-6 md:gap-10 py-12 overflow-hidden">
+      {shapes.map((shape, i) => (
+        <motion.div
+          key={i}
+          className="transition-all duration-300"
+          initial={{ opacity: 0, scale: 0, rotate: -180 }}
+          whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ delay: i * 0.1, duration: 0.6, type: "spring", stiffness: 200, damping: 15 }}
+          style={{
+            color: litIndex >= i ? 'var(--red)' : 'var(--border)',
+            filter: litIndex === i ? 'drop-shadow(0 0 12px rgba(255,0,0,0.9))' : 'none',
+          }}
+        >
+          {shape}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 const SpotlightCard = ({ children, className = "" }) => {
   const divRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -513,31 +573,36 @@ const HeroBackground = ({ hasLoaded }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <div
-        ref={textContainerRef}
-        className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2 flex flex-col items-start"
-        style={{ fontSize: 'clamp(60px, 12vw, 160px)', '--mx': '0px', '--my': '0px' }}
-      >
-        {/* Base dim text */}
-        <ParticleFlyer delay={hasLoaded ? 0.1 : 0} className="flex justify-start relative z-10">
-          <h1 className="base-cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">ARNAV</h1>
-        </ParticleFlyer>
-        <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className="flex justify-start relative z-20 mt-2 md:mt-4">
-          <h1 className="base-cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">RAI</h1>
-        </ParticleFlyer>
-
-        {/* Lit layer — same delays so both layers animate in sync */}
-        <div
-          className="absolute inset-0 flex flex-col items-start pointer-events-none"
-          style={{ maskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)', WebkitMaskImage: 'radial-gradient(400px circle at var(--mx) var(--my), black 0%, transparent 70%)' }}
+      <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
+        <motion.div
+          ref={textContainerRef}
+          className="flex flex-col items-start font-supertalls leading-none text-left"
+          initial={{ opacity: 0, filter: "blur(10px)" }}
+          animate={hasLoaded ? { opacity: 1, filter: "blur(0px)" } : {}}
+          transition={{ delay: 0.1, duration: 0.8, ease: "easeOut" }}
+          style={{
+            fontSize: 'clamp(60px, 12vw, 160px)',
+            '--mx': '0px',
+            '--my': '0px',
+            color: 'transparent',
+            backgroundImage: 'radial-gradient(400px circle at var(--mx) var(--my), #FFFFFF 0%, rgba(255,255,255,0.15) 70%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            letterSpacing: '0.02em',
+          }}
         >
-          <ParticleFlyer delay={hasLoaded ? 0.1 : 0} className="flex justify-start relative z-10">
-            <h1 className="cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">ARNAV</h1>
-          </ParticleFlyer>
-          <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className="flex justify-start relative z-20 mt-2 md:mt-4">
-            <h1 className="cinematic-text font-supertalls leading-none text-left tracking-[0.05em]">RAI</h1>
-          </ParticleFlyer>
-        </div>
+          <span className="tracking-[0.05em] block">ARNAV</span>
+          <span className="tracking-[0.05em] block mt-2 md:mt-4">RAI</span>
+        </motion.div>
+        <motion.p
+          className="font-clash text-[var(--muted)] tracking-[0.3em] uppercase mt-4 md:mt-6"
+          style={{ fontSize: 'clamp(10px, 1.5vw, 16px)' }}
+          initial={{ opacity: 0 }}
+          animate={hasLoaded ? { opacity: 1 } : {}}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        >
+          Creative. Technical. Limitless.
+        </motion.p>
       </div>
     </div>
   );
@@ -577,18 +642,6 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
         <span className="text-white font-bold">Portfolio</span>
       </ParticleFlyer>
 
-      {/* Magnetic Floating Elements */}
-      <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute top-[15%] right-[10%] md:right-[12%] z-[100] transition-opacity duration-300 ${hudClass}`}>
-        <MagneticAttraction radius={300} force={0.3}>
-          <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 rotate-[6deg] inline-block border border-[var(--border)] shadow-xl">SERIOUSLY</span>
-        </MagneticAttraction>
-      </ParticleFlyer>
-
-      <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute top-[23%] right-[8%] md:right-[10%] z-[100] transition-opacity duration-300 ${hudClass}`}>
-        <MagneticAttraction radius={300} force={0.4}>
-          <span className="font-clash text-[10px] md:text-[11px] text-[var(--black)] bg-[#1A1A1A]/90 px-3 py-1.5 -rotate-[8deg] inline-block border border-[var(--border)] shadow-xl">GOOD</span>
-        </MagneticAttraction>
-      </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-24 right-6 md:bottom-16 md:right-12 border border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-sm p-4 flex items-center gap-4 transition-opacity duration-300 ${hudClass}`}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -621,7 +674,7 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
         <span className="text-[var(--red)] font-bold">STABLE</span>
       </ParticleFlyer>
 
-      {/* Removed the dynamic hudClass so this block stays permanently visible at full opacity */}
+      {/* Subtitle text */}
       <div className="absolute top-[64%] md:top-[66%] left-4 md:left-8 text-left text-[10px] md:text-[12px] font-clash tracking-[0.15em] flex flex-col items-start opacity-100">
         <ParticleFlyer delay={hasLoaded ? 0.6 : 0}>
           <div className="text-[var(--muted)] mb-1.5 flex items-center gap-[6px]">
@@ -1286,6 +1339,8 @@ export default function App() {
             </div>
           </section>
 
+          <KeyframeTransition />
+
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
@@ -1396,6 +1451,8 @@ export default function App() {
             </div>
           </section>
 
+          <KeyframeTransition />
+
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
             {/* Header Container */}
@@ -1490,6 +1547,8 @@ export default function App() {
                </div>
             </div>
           </section>
+
+          <KeyframeTransition />
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -1628,13 +1687,10 @@ export default function App() {
                  CHANNEL OPEN
                </div>
                
-               {/* Typography inspired by reference */}
+               {/* Typography */}
                <div className="relative mb-16 text-center flex flex-col items-center">
-                 <span className="font-dancing text-[var(--red)] text-[clamp(30px,6vw,60px)] mb-2 drop-shadow-lg">
-                   Get in
-                 </span>
                  <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] m-0">
-                   TOUCH
+                   GET IN TOUCH
                  </h2>
                </div>
 
