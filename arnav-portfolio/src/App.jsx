@@ -5,23 +5,7 @@ const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
   @import url('https://api.fontshare.com/v2/css?f[]=clash-grotesk@200,300,400,500,600,700&display=swap');
 
-  /* --- CUSTOM SUPERTALLS FONT FIXED DEFINITIONS --- */
-  @font-face {
-    font-family: 'Supertalls';
-    /* Loading directly from remote URL */
-    src: url('/assets/Supertalls.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-  }
-  
-  @font-face {
-    font-family: 'Supertalls';
-    src: url('/Supertalls Italic.otf') format('opentype');
-    font-weight: normal;
-    font-style: italic;
-    font-display: swap;
-  }
+  /* Supertalls font is defined in index.html to avoid re-parse on re-renders */
 
   :root {
     --bg: #0A0A0A;          
@@ -84,18 +68,18 @@ const GLOBAL_STYLES = `
   .font-clash { font-family: 'Clash Grotesk', sans-serif; }
   
   /* New Supertalls Utility Class */
-  .font-supertalls { font-family: 'Supertalls', serif; }
+  .font-supertalls { font-family: 'Supertalls'; }
 
   /* Pure White Text */
   .cinematic-text {
-    font-family: 'Supertalls', serif;
+    font-family: 'Supertalls';
     color: #FFFFFF;
     letter-spacing: 0.02em;
   }
   
   /* Unlit Dark Base Text */
   .base-cinematic-text {
-    font-family: 'Supertalls', serif;
+    font-family: 'Supertalls';
     color: rgba(255, 255, 255, 0.15); 
     letter-spacing: 0.02em;
   }
@@ -319,7 +303,7 @@ const WorksBackground = ({ active }) => {
 
 const GalaxyIcon = ({ label, children }) => {
   return (
-    <div className="relative group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-[#1A1A1A] border-2 border-[var(--border)] text-[var(--red)] transition-all duration-300 cursor-none hover:border-[var(--red)]/50 hover:scale-110">
+    <div className="relative group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-none bg-[#1A1A1A] border-2 border-[var(--border)] text-[var(--red)] transition-all duration-300 cursor-none hover:border-[var(--red)]/50 hover:scale-110">
       {children}
       {/* Sleek Tooltip that slides up on hover */}
       <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 font-clash text-[10px] md:text-[11px] font-bold tracking-widest text-[var(--black)] bg-[#111] border border-[var(--border)] px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-2xl translate-y-2 group-hover:translate-y-0">
@@ -554,7 +538,473 @@ const MagneticVideoCard = () => {
 };
 
 
+// ================= DINO RUNNER GAME =================
+
+const DinoRunner = () => {
+  const canvasRef = useRef(null);
+  const gameRef = useRef({
+    running: false,
+    started: false,
+    ducking: false,
+    playerY: 0,
+    velocityY: 0,
+    gravity: 0.8,
+    jumpForce: -14,
+    obstacles: [],
+    groundBits: [],
+    score: 0,
+    highScore: 0,
+    speed: 7,
+    groundY: 0,
+    frameId: null,
+    frame: 0,
+    spawnTimer: 0,
+    nightMode: false,
+  });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Load sprites
+    const sprites = {};
+    const spriteNames = ['idle', 'walk', 'run', 'jump', 'crouch', 'slide', 'dead', 'obstacle1', 'uncommon-obstacle', 'rarer-obstacle', 'legendary-obstacle'];
+    let spritesLoaded = 0;
+    spriteNames.forEach(name => {
+      const img = new Image();
+      img.src = `/assets/sprites/${name}.png`;
+      img.onload = () => { spritesLoaded++; };
+      sprites[name] = img;
+    });
+
+    const PLAYER_H = 70;
+
+    const resize = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w;
+      canvas.height = h;
+      ctx.imageSmoothingEnabled = false;
+      gameRef.current.groundY = h - 40;
+    };
+    resize();
+
+    const g = gameRef.current;
+    g.playerY = g.groundY;
+
+    // Generate ground texture bits
+    const initGround = () => {
+      g.groundBits = [];
+      const w = canvas.offsetWidth;
+      for (let i = 0; i < 40; i++) {
+        g.groundBits.push({ x: Math.random() * w, w: 1 + Math.random() * 8, y: g.groundY + 5 + Math.random() * 15 });
+      }
+    };
+    initGround();
+
+    const reset = () => {
+      g.playerY = g.groundY;
+      g.velocityY = 0;
+      g.obstacles = [];
+      g.score = 0;
+      g.speed = 7;
+      g.spawnTimer = 0;
+      g.frame = 0;
+      g.ducking = false;
+      g.running = true;
+      g.nightMode = false;
+      initGround();
+    };
+
+    const jump = () => {
+      if (!g.started) {
+        g.started = true;
+        reset();
+        loop();
+        return;
+      }
+      if (!g.running) {
+        reset();
+        loop();
+        return;
+      }
+      if (g.playerY >= g.groundY - 1) {
+        g.velocityY = g.jumpForce;
+      }
+    };
+
+    const drawPlayer = (x, y) => {
+      const ducking = g.ducking && g.playerY >= g.groundY - 1;
+      const inAir = g.playerY < g.groundY - 1;
+      const runFrame = Math.floor(g.frame / 6) % 2;
+
+      let sprite;
+      let h = PLAYER_H;
+
+      if (!g.running && g.started) {
+        sprite = sprites.dead;
+      } else if (ducking) {
+        sprite = sprites.slide;
+      } else if (inAir) {
+        sprite = sprites.jump;
+      } else if (g.started && g.running) {
+        sprite = runFrame === 0 ? sprites.run : sprites.walk;
+      } else {
+        sprite = sprites.idle;
+      }
+
+      if (!sprite || !sprite.complete) return;
+
+      const aspect = sprite.naturalWidth / sprite.naturalHeight;
+      let drawH = h;
+      let drawW = h * aspect;
+
+      if (sprite === sprites.dead) {
+        drawH = h * 0.45;
+        drawW = drawH * aspect;
+        ctx.drawImage(sprite, x, y - drawH, drawW, drawH);
+      } else if (sprite === sprites.slide) {
+        drawH = h * 0.7;
+        drawW = drawH * aspect;
+        ctx.drawImage(sprite, x, y - drawH, drawW, drawH);
+      } else {
+        ctx.drawImage(sprite, x, y - drawH, drawW, drawH);
+      }
+    };
+
+    const drawObstacle = (obs) => {
+      const sprite = sprites[obs.sprite];
+      if (!sprite || !sprite.complete) return;
+      const aspect = sprite.naturalWidth / sprite.naturalHeight;
+      const drawH = obs.height;
+      const drawW = drawH * aspect;
+      if (obs.type === 'bird') {
+        ctx.drawImage(sprite, obs.x, obs.y, drawW, drawH);
+      } else {
+        ctx.drawImage(sprite, obs.x, g.groundY - drawH, drawW, drawH);
+      }
+    };
+
+    const loop = () => {
+      if (!g.running) return;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      g.frame++;
+
+      // Night mode toggle every 100 points
+      g.nightMode = Math.floor(g.score / 100) % 2 === 1;
+
+      // Physics
+      if (g.ducking && g.velocityY < 0) {
+        g.velocityY += g.gravity * 3; // Fast fall when ducking mid-air
+      } else {
+        g.velocityY += g.gravity;
+      }
+      g.playerY += g.velocityY;
+      if (g.playerY >= g.groundY) {
+        g.playerY = g.groundY;
+        g.velocityY = 0;
+      }
+
+      // Spawn obstacles
+      g.spawnTimer++;
+      const minGap = Math.max(50, 90 - g.speed * 2);
+      if (g.spawnTimer > minGap) {
+        const lastObs = g.obstacles[g.obstacles.length - 1];
+        const minDist = 150 + Math.random() * 100;
+        if (!lastObs || w - lastObs.x > minDist) {
+          const isBird = g.score > 5 && Math.random() > 0.7;
+          if (isBird) {
+            const birdY = g.groundY - (50 + Math.random() * 30);
+            g.obstacles.push({ x: w, width: 44, height: 45, type: 'bird', y: birdY, sprite: 'obstacle1' });
+          } else {
+            const roll = Math.random();
+            let sprite, obsH;
+            if (roll < 0.03) {
+              sprite = 'legendary-obstacle'; obsH = 75 + Math.random() * 15;
+            } else if (roll < 0.12) {
+              sprite = 'rarer-obstacle'; obsH = 55 + Math.random() * 10;
+            } else if (roll < 0.3) {
+              sprite = 'uncommon-obstacle'; obsH = 50 + Math.random() * 10;
+            } else {
+              sprite = 'obstacle1'; obsH = 40 + Math.random() * 15;
+            }
+            const spr = sprites[sprite];
+            const aspect = spr && spr.complete ? spr.naturalWidth / spr.naturalHeight : 1;
+            const obsW = obsH * aspect;
+            g.obstacles.push({ x: w, width: obsW, height: obsH, type: 'ground', sprite });
+          }
+          g.spawnTimer = 0;
+        }
+      }
+
+      // Move obstacles
+      for (let i = g.obstacles.length - 1; i >= 0; i--) {
+        g.obstacles[i].x -= g.speed;
+        if (g.obstacles[i].x + g.obstacles[i].width < 0) {
+          g.obstacles.splice(i, 1);
+        }
+      }
+
+      // Score (every 6 frames)
+      if (g.frame % 6 === 0) g.score++;
+
+      // Collision
+      const ducking = g.ducking && g.playerY >= g.groundY - 1;
+      const px = 48, pw = ducking ? 40 : 28;
+      const py = ducking ? g.playerY - PLAYER_H * 0.5 : g.playerY - PLAYER_H * 0.85;
+      const ph = ducking ? PLAYER_H * 0.5 : PLAYER_H * 0.85;
+
+      for (const obs of g.obstacles) {
+        let ox, oy, ow, oh;
+        if (obs.type === 'bird') {
+          ox = obs.x; oy = obs.y; ow = obs.width; oh = obs.height;
+        } else {
+          ox = obs.x; oy = g.groundY - obs.height; ow = obs.width; oh = obs.height;
+        }
+        if (px + pw > ox + 6 && px < ox + ow - 6 && py + ph > oy + 6 && py < oy + oh - 6) {
+          g.running = false;
+          if (g.score > g.highScore) g.highScore = g.score;
+        }
+      }
+
+      // Speed increase
+      g.speed = 7 + Math.floor(g.score / 10) * 0.5;
+
+      // Move ground bits
+      for (const bit of g.groundBits) {
+        bit.x -= g.speed;
+        if (bit.x < -10) bit.x = w + Math.random() * 20;
+      }
+
+      // === DRAW ===
+      ctx.clearRect(0, 0, w, h);
+
+      // Ground line
+      ctx.strokeStyle = g.nightMode ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, g.groundY);
+      ctx.lineTo(w, g.groundY);
+      ctx.stroke();
+
+      // Ground texture
+      ctx.fillStyle = g.nightMode ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
+      for (const bit of g.groundBits) {
+        ctx.fillRect(bit.x, bit.y, bit.w, 1);
+      }
+
+      // Player
+      drawPlayer(40, g.playerY);
+
+      // Obstacles
+      for (const obs of g.obstacles) {
+        drawObstacle(obs);
+      }
+
+      // Score display
+      ctx.fillStyle = g.nightMode ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)';
+      ctx.font = '11px "Clash Grotesk", sans-serif';
+      ctx.textAlign = 'right';
+      const scoreStr = String(g.score).padStart(5, '0');
+      const hiStr = String(g.highScore).padStart(5, '0');
+      ctx.fillText(`HI ${hiStr}  ${scoreStr}`, w - 16, 24);
+
+      // Game over
+      if (!g.running) {
+        ctx.fillStyle = '#FF0000';
+        ctx.font = 'bold 14px "Clash Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('SIGNAL LOST', w / 2, h / 2 - 12);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '10px "Clash Grotesk", sans-serif';
+        ctx.fillText('PRESS SPACE OR CLICK TO RECONNECT', w / 2, h / 2 + 8);
+        return;
+      }
+
+      g.frameId = requestAnimationFrame(loop);
+    };
+
+    // Idle state
+    const drawIdle = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, g.groundY);
+      ctx.lineTo(w, g.groundY);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      for (const bit of g.groundBits) {
+        ctx.fillRect(bit.x, bit.y, bit.w, 1);
+      }
+
+      drawPlayer(40, g.groundY);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '11px "Clash Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PRESS SPACE OR CLICK TO INITIATE', w / 2, h / 2);
+    };
+    drawIdle();
+
+    const handleKey = (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        jump();
+      }
+      if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        g.ducking = true;
+      }
+    };
+    const handleKeyUp = (e) => {
+      if (e.code === 'ArrowDown') g.ducking = false;
+    };
+    const handleClick = () => jump();
+
+    canvas.addEventListener('click', handleClick);
+    window.addEventListener('keydown', handleKey);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('resize', resize);
+
+    return () => {
+      if (g.frameId) cancelAnimationFrame(g.frameId);
+      canvas.removeEventListener('click', handleClick);
+      window.removeEventListener('keydown', handleKey);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <div className="w-full max-w-[90rem] mx-auto px-4 md:px-12 py-16 z-10 relative">
+      <div className="font-clash text-[9px] tracking-widest text-[var(--red)] uppercase mb-4 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
+        // BREAK_PROTOCOL [MINI GAME]
+      </div>
+      <div className="border border-[var(--border)] bg-[#050505] overflow-hidden cursor-none">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-[220px] md:h-[280px]"
+        />
+      </div>
+      <div className="font-clash text-[8px] tracking-widest text-[var(--muted)] mt-3 text-center">
+        SPACE / CLICK TO JUMP — DOWN ARROW TO DUCK — AVOID OBSTACLES
+      </div>
+    </div>
+  );
+};
+
 // ================= HERO SCREEN ISOLATED COMPONENTS =================
+
+const QuoteReveal = () => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { damping: 50, stiffness: 300, mass: 0.5 });
+
+  const prevProgress = useRef(0);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    return smoothProgress.on('change', (v) => {
+      const velocity = (v - prevProgress.current) * 1000;
+      prevProgress.current = v;
+      const skew = Math.max(-15, Math.min(15, velocity * -8));
+      const scaleX = 1 + Math.min(Math.abs(velocity) * 2, 0.15);
+      el.style.transform = `translate3d(${80 - v * 200}%, 0, 0) skewX(${skew}deg) scaleX(${scaleX})`;
+    });
+  }, [smoothProgress]);
+
+  return (
+    <div ref={containerRef} className="relative z-10">
+      <div className="w-full flex items-center justify-center overflow-hidden">
+        <div className="w-full bg-[var(--red)] overflow-hidden py-24 md:py-32">
+          <p
+            ref={textRef}
+            className="font-supertalls text-[clamp(50px,12vw,180px)] leading-none whitespace-nowrap text-[var(--bg)] will-change-transform"
+            style={{ transform: 'translate3d(100%, 0, 0)' }}
+          >
+            MY TOOLS ARE DIGITAL MY LIMITS ARE NOT
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const InteractiveDotGrid = () => {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    const gap = 32;
+    const radius = 150;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const onMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    window.addEventListener('mousemove', onMove);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+
+      for (let x = gap; x < canvas.width; x += gap) {
+        for (let y = gap; y < canvas.height; y += gap) {
+          const dx = x - mx;
+          const dy = y - my;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const proximity = Math.max(0, 1 - dist / radius);
+
+          const size = 1 + proximity * 2;
+          const alpha = 0.12 + proximity * 0.7;
+
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = proximity > 0.3
+            ? `rgba(255, 0, 0, ${alpha})`
+            : `rgba(255, 255, 255, ${alpha})`;
+          ctx.fill();
+        }
+      }
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', onMove);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+};
 
 const HeroBackground = ({ hasLoaded }) => {
   const textContainerRef = useRef(null);
@@ -573,6 +1023,7 @@ const HeroBackground = ({ hasLoaded }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
+      <InteractiveDotGrid />
       <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
         <motion.div
           ref={textContainerRef}
@@ -1012,7 +1463,7 @@ export default function App() {
     setIsMounted(true);
 
     let resourcesLoaded = 0;
-    const totalResources = 2; 
+    const totalResources = 2;
 
     const checkResourceLoad = () => {
       resourcesLoaded++;
@@ -1027,6 +1478,7 @@ export default function App() {
     img.src = "https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png";
     img.onload = checkResourceLoad;
     img.onerror = checkResourceLoad;
+
 
     const fallbackTimer = setTimeout(() => { setTargetProgress(100); }, 5000);
 
@@ -1134,7 +1586,10 @@ export default function App() {
             className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
             style={{ minHeight: '60vh' }}
           >
-            <img src="https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png" alt="Arnav Rai" className="w-full h-auto min-h-[60vh] object-bottom drop-shadow-[0_-10px_50px_rgba(0,0,0,0.8)]" style={{ objectFit: 'cover' }} />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[50%] h-[60%] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)' }} />
+            </div>
+            <img src="https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png" alt="Arnav Rai" className="relative w-full h-auto min-h-[60vh] object-bottom drop-shadow-[0_-10px_50px_rgba(0,0,0,0.8)]" style={{ objectFit: 'cover' }} />
           </motion.div>
 
           {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
@@ -1143,6 +1598,9 @@ export default function App() {
           </div>
         </section>
 
+
+        {/* ================= SCROLL QUOTE SECTION ================= */}
+        <QuoteReveal />
 
         {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
         <div className="relative w-full pb-32 z-10">
@@ -1386,7 +1844,7 @@ export default function App() {
 
                         {/* Social Link Overlay */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 scale-50 group-hover:scale-100">
-                          <a href={brand.link} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-[var(--red)] flex items-center justify-center text-[var(--black)] hover:bg-white hover:text-[var(--red)] transition-colors cursor-none shadow-[0_0_20px_rgba(255,0,0,0.5)]">
+                          <a href={brand.link} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-[var(--border)] flex items-center justify-center text-[var(--black)] hover:bg-[var(--red)] hover:border-[var(--red)] hover:text-[var(--bg)] transition-all cursor-none">
                              {brand.type === 'ig' ? <IgIcon/> : <YtIcon/>}
                           </a>
                         </div>
@@ -1426,12 +1884,12 @@ export default function App() {
                         {/* Social Links Overlay */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex gap-3 scale-50 group-hover:scale-100">
                           {creator.ig && (
-                            <a href={creator.ig} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[var(--red)] flex items-center justify-center text-[var(--black)] hover:bg-white hover:text-[var(--red)] transition-colors cursor-none shadow-[0_0_15px_rgba(255,0,0,0.4)]">
+                            <a href={creator.ig} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#1A1A1A] border border-[var(--border)] flex items-center justify-center text-[var(--black)] hover:bg-[var(--red)] hover:border-[var(--red)] hover:text-[var(--bg)] transition-all cursor-none">
                                <IgIcon/>
                             </a>
                           )}
                           {creator.yt && (
-                            <a href={creator.yt} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[var(--red)] flex items-center justify-center text-[var(--black)] hover:bg-white hover:text-[var(--red)] transition-colors cursor-none shadow-[0_0_15px_rgba(255,0,0,0.4)]">
+                            <a href={creator.yt} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#1A1A1A] border border-[var(--border)] flex items-center justify-center text-[var(--black)] hover:bg-[var(--red)] hover:border-[var(--red)] hover:text-[var(--bg)] transition-all cursor-none">
                                <YtIcon/>
                             </a>
                           )}
@@ -1589,25 +2047,20 @@ export default function App() {
                   const offset = i - activePostIndex;
                   const absOffset = Math.abs(offset);
                   const isActive = offset === 0;
-                  const rotateY = offset * -45;
-                  const translateX = offset * 200;
-                  const translateZ = isActive ? 80 : -(absOffset * 100);
-                  const scale = isActive ? 1.05 : Math.max(0.75, 1 - absOffset * 0.12);
-                  const opacity = absOffset > 3 ? 0 : 1;
+                  const translateX = offset * 320;
+                  const scale = isActive ? 1 : Math.max(0.6, 0.75 - absOffset * 0.05);
+                  const opacity = isActive ? 1 : Math.max(0.3, 1 - absOffset * 0.3);
 
                   return (
                     <motion.div
                       key={post.id}
                       className="absolute cursor-none"
                       animate={{
-                        rotateY,
                         x: translateX,
-                        z: translateZ,
                         scale,
                         opacity,
                       }}
                       transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-                      style={{ transformStyle: 'preserve-3d' }}
                       onClick={() => setActivePostIndex(i)}
                     >
                       <div className={`relative w-[260px] md:w-[300px] aspect-[3/4] border bg-[#050505] overflow-hidden group transition-all duration-300 ${isActive ? 'border-[var(--red)]/60 shadow-[0_0_40px_rgba(255,0,0,0.3)]' : 'border-[var(--border)]'}`}>
@@ -1676,6 +2129,9 @@ export default function App() {
               </div>
             </div>
           </section>
+
+          {/* ================= RUNNER GAME ================= */}
+          <DinoRunner />
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 z-10 pb-12">
