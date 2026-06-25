@@ -539,6 +539,399 @@ const MagneticVideoCard = () => {
 };
 
 
+// ================= CAREER TIMELINE SECTION =================
+
+const careerData = [
+  { year: '2024 — PRESENT', role: 'Senior Video Editor', company: 'Freelance', desc: 'Leading creative direction for independent clients. Motion graphics, color grading, and full post-production pipelines.', details: ['End-to-end post-production for 20+ clients', 'Specialized in cinematic color grading & sound design', 'Delivered 50+ projects across YouTube, Instagram, and broadcast', 'Tools: Premiere Pro, After Effects, DaVinci Resolve'] },
+  { year: '2023 — 2024', role: 'Video Editor & Motion Designer', company: 'Creative Agency XYZ', desc: 'Produced high-end commercial content for Fortune 500 brands. Managed team of 3 junior editors.', details: ['Led post-production for Nike, Adidas, and Samsung campaigns', 'Managed and mentored team of 3 junior editors', 'Reduced average turnaround time by 40%', 'Created reusable motion graphics template library'] },
+  { year: '2022 — 2023', role: 'Junior Editor', company: 'Studio Neon', desc: 'Cut promotional reels, social media content, and branded documentaries. First professional role in the industry.', details: ['Edited 100+ social media clips per month', 'Collaborated with directors on branded documentary series', 'Learned advanced color workflows under senior colorist', 'First exposure to broadcast delivery standards'] },
+  { year: '2021 — 2022', role: 'Freelance Motion Designer', company: 'Self-Employed', desc: 'Built client base from scratch. Specialized in YouTube intros, lyric videos, and event recap edits.', details: ['Grew from 0 to 15 recurring clients in 8 months', 'Created 200+ YouTube intros and channel packages', 'Developed signature style combining glitch and typography', 'Revenue: ₹3L+ in first year'] },
+  { year: '2020 — 2021', role: 'Intern — Post Production', company: 'Media House Alpha', desc: 'Assisted senior editors with footage organization, rough cuts, and asset management for broadcast content.', details: ['Organized 10TB+ of raw footage across 30 projects', 'Created rough cuts and assembly edits for review', 'Learned professional file management and naming conventions', 'Assisted in live broadcast switching'] },
+  { year: '2019 — 2020', role: 'Self-Taught Era', company: 'Origin Point', desc: 'Discovered passion for editing. Learned Premiere Pro, After Effects, DaVinci Resolve through personal projects and YouTube tutorials.', details: ['Completed 500+ hours of tutorial content', 'Created first showreel from personal passion projects', 'Experimented with VFX, motion tracking, and compositing', 'Built editing PC from scratch on a budget'] },
+];
+
+const CareerCard = ({ item, side }) => {
+  const nodeRef = useRef(null);
+  const [isActive, setIsActive] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsActive(entry.isIntersecting),
+      { rootMargin: '-45% 0px -45% 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <motion.div
+      className={`relative flex items-start mb-20 md:mb-28 ${side === 'right' ? 'md:flex-row-reverse' : ''}`}
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      {/* Timeline node (sits on the line) */}
+      <div ref={nodeRef} className="absolute left-[20px] md:left-1/2 md:-translate-x-1/2 top-4 z-10">
+        <div className={`w-3.5 h-3.5 rotate-45 border transition-all duration-500 ${isActive ? 'bg-white border-white shadow-[0_0_16px_rgba(255,255,255,0.8)] scale-150' : 'bg-[var(--red)] border-[var(--red)] shadow-[0_0_10px_rgba(255,0,0,0.5)]'}`} />
+      </div>
+
+      {/* Content card */}
+      <div className={`ml-12 md:ml-0 md:w-[43%] ${side === 'left' ? 'md:pr-16' : 'md:pl-16'} ${side === 'right' ? 'md:ml-auto' : ''}`}>
+        <div
+          className={`p-6 md:p-8 relative overflow-hidden transition-all duration-500 ease-out cursor-none ${isActive ? 'bg-[var(--red)] border border-[var(--red)] shadow-[0_0_40px_rgba(255,0,0,0.25)]' : 'bg-[#050505]/80 border border-[var(--border)] hover:border-[var(--red)]/40 backdrop-blur-sm'}`}
+          onMouseEnter={() => setIsExpanded(true)}
+          onMouseLeave={() => setIsExpanded(false)}
+        >
+          <div className={`absolute top-0 left-0 w-full h-[2px] transition-all duration-500 ${isActive ? 'bg-white scale-x-100' : 'bg-[var(--red)] scale-x-0'} transform origin-left`} />
+
+          <div className={`font-clash text-[8px] tracking-widest uppercase mb-3 flex items-center gap-2 transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--red)]'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse transition-colors duration-500 ${isActive ? 'bg-white' : 'bg-[var(--red)]'}`} />
+            {item.year}
+          </div>
+          <h3 className={`font-clash font-bold text-lg md:text-xl mb-1 transition-colors duration-500 ${isActive ? 'text-white' : 'text-[var(--black)]'}`}>{item.role}</h3>
+          <div className={`font-clash text-[10px] tracking-widest uppercase mb-4 transition-colors duration-500 ${isActive ? 'text-white/70' : 'text-[var(--muted)]'}`}>{item.company}</div>
+          <p className={`font-clash text-xs md:text-sm leading-relaxed transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--muted)]'}`}>{item.desc}</p>
+
+          {/* Expandable details section */}
+          <div className={`grid transition-all duration-500 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-5' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
+            <div className="overflow-hidden">
+              <div className={`border-t pt-4 ${isActive ? 'border-white/20' : 'border-[var(--border)]'}`}>
+                <div className={`font-clash text-[8px] tracking-widest uppercase mb-3 ${isActive ? 'text-white/60' : 'text-[var(--muted)]'}`}>// JOB_OVERVIEW</div>
+                <ul className="flex flex-col gap-2">
+                  {item.details.map((detail, di) => (
+                    <li key={di} className={`font-clash text-[11px] md:text-xs leading-relaxed flex items-start gap-2 transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--muted)]'}`}>
+                      <span className={`w-1 h-1 rounded-full mt-1.5 flex-shrink-0 ${isActive ? 'bg-white/60' : 'bg-[var(--red)]'}`} />
+                      {detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Corner accents */}
+          <div className={`absolute top-2 right-2 w-2.5 h-2.5 border-t border-r transition-colors duration-500 ${isActive ? 'border-white/50' : 'border-[var(--border)]'}`} />
+          <div className={`absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l transition-colors duration-500 ${isActive ? 'border-white/50' : 'border-[var(--border)]'}`} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const CareerTimeline = () => {
+  return (
+    <section className="relative w-full px-4 md:px-8 z-10 py-32">
+      <div className="w-full max-w-[90rem] mx-auto relative z-10">
+
+        {/* Header */}
+        <ParticleFlyer delay={0.1} className="mb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
+            <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
+              CAREER
+            </motion.h2>
+            <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
+              <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
+              <span>ENTRIES_LOGGED: <span className="text-[var(--red)]">06</span></span>
+            </div>
+          </div>
+        </ParticleFlyer>
+
+        {/* Timeline */}
+        <div className="relative">
+          {/* Static vertical line */}
+          <div className="absolute left-[20px] md:left-1/2 md:-translate-x-[1px] top-0 bottom-0 w-[2px] bg-[var(--border)]" />
+
+          {/* Career entries */}
+          {careerData.map((item, i) => (
+            <CareerCard key={i} item={item} side={i % 2 === 0 ? 'left' : 'right'} index={i} />
+          ))}
+
+          {/* Terminal end node */}
+          <div className="absolute left-[20px] md:left-1/2 md:-translate-x-1/2 bottom-0">
+            <div className="w-2.5 h-2.5 bg-[var(--muted)] rounded-full" />
+          </div>
+        </div>
+
+        {/* Bottom metadata */}
+        <div className="mt-16 flex justify-center">
+          <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 06 — STATUS: ONGOING</span>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+
+// ================= TOOLKIT SECTION =================
+
+const toolkitData = [
+  { name: 'Premiere Pro', icon: 'Pr', color: '#9999FF', category: 'EDIT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Adobe_Premiere_Pro_CC_2026_icon.svg/1280px-Adobe_Premiere_Pro_CC_2026_icon.svg.png', video: '/assets/videos/videoplayback.mp4' },
+  { name: 'After Effects', icon: 'Ae', color: '#9999FF', category: 'MOTION', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Adobe_After_Effects_CC_2026_icon.svg/1280px-Adobe_After_Effects_CC_2026_icon.svg.png', video: '/assets/videos/ae.mp4' },
+  { name: 'Photoshop', icon: 'Ps', color: '#31A8FF', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Adobe_Photoshop_CC_2026_icon.svg/1280px-Adobe_Photoshop_CC_2026_icon.svg.png', video: '/assets/videos/phsp.mp4' },
+  { name: 'Illustrator', icon: 'Ai', color: '#FF9A00', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Adobe_Illustrator_CC_icon.svg/960px-Adobe_Illustrator_CC_icon.svg.png', video: '/assets/videos/ai.mp4' },
+  { name: 'Blender', icon: 'Bl', color: '#F5792A', category: '3D', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png', video: '/assets/videos/blendee.mp4' },
+  { name: 'Lightroom', icon: 'Lr', color: '#31A8FF', category: 'PHOTO' },
+  { name: 'Kling', icon: 'Kl', color: '#00D4AA', category: 'AI', logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe7zS6NYkeU_gYIDGhgvvsKs4iLzmTBz_ur-vz-yoA6PNqjozmASBiaQbr&s=10', video: '/assets/videos/kling.mp4' },
+  { name: 'Higgsfield', icon: 'Hf', color: '#FF3366', category: 'AI', logo: 'https://images.seeklogo.com/logo-png/66/1/higgsfield-logo-png_seeklogo-660244.png' },
+];
+
+const ToolkitSection = () => {
+  const [activeIndex, setActiveIndex] = useState(null);
+  const sectionRef = useRef(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const smoothX = useSpring(mouseX, { stiffness: 150, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 150, damping: 20 });
+
+  const handleMouseMove = (e) => {
+    const rect = sectionRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set(e.clientX - rect.left);
+    mouseY.set(e.clientY - rect.top);
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
+      <div className="w-full max-w-[90rem] mx-auto relative z-10">
+
+        {/* Header */}
+        <ParticleFlyer delay={0.1} className="mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
+            <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
+              TOOLKIT
+            </motion.h2>
+            <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
+              <span>ARSENAL: <span className="text-[var(--red)]">LOADED</span></span>
+              <span>SOFTWARE_COUNT: <span className="text-[var(--red)]">{toolkitData.length}</span></span>
+            </div>
+          </div>
+        </ParticleFlyer>
+
+        {/* Tool list */}
+        <div className="flex flex-col items-center">
+          {toolkitData.map((tool, i) => (
+            <motion.div
+              key={tool.name}
+              className="relative cursor-none w-full flex justify-center"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.3, delay: i * 0.03 }}
+              onMouseEnter={() => setActiveIndex(i)}
+              onMouseLeave={() => setActiveIndex(null)}
+            >
+              <div className="relative py-3 md:py-5 w-full flex items-center justify-center">
+                <span className={`font-clash font-bold text-[clamp(28px,5.5vw,60px)] leading-none text-center transition-all duration-300 ${activeIndex === i ? 'opacity-100 scale-105' : activeIndex !== null ? 'opacity-20' : 'opacity-60'}`} style={{ color: 'var(--black)' }}>
+                  {tool.name}
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Floating video preview that follows cursor */}
+        <AnimatePresence>
+          {activeIndex !== null && toolkitData[activeIndex]?.video && (
+            <motion.div
+              className="pointer-events-none fixed z-50 w-[320px] h-[200px] md:w-[400px] md:h-[250px] rounded-lg overflow-hidden shadow-2xl"
+              style={{
+                left: smoothX,
+                top: smoothY,
+                x: '-50%',
+                y: '-110%',
+                position: 'absolute',
+              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.25, ease: [0.76, 0, 0.24, 1] }}
+            >
+              <video
+                key={toolkitData[activeIndex].video}
+                src={toolkitData[activeIndex].video}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent flex items-center gap-3">
+                {toolkitData[activeIndex].logo && (
+                  <img src={toolkitData[activeIndex].logo} alt="" className="w-6 h-6 object-contain" />
+                )}
+                <span className="font-clash font-bold text-sm text-white">{toolkitData[activeIndex].name}</span>
+                <span className="font-clash text-[8px] tracking-widest text-white/60 uppercase ml-auto">{toolkitData[activeIndex].category}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating logo for tools without video */}
+        <AnimatePresence>
+          {activeIndex !== null && !toolkitData[activeIndex]?.video && (
+            <motion.div
+              className="pointer-events-none z-50 w-[120px] h-[120px] md:w-[150px] md:h-[150px] rounded-xl overflow-hidden flex items-center justify-center bg-[var(--red)]"
+              style={{
+                left: smoothX,
+                top: smoothY,
+                x: '-50%',
+                y: '-110%',
+                position: 'absolute',
+              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.25, ease: [0.76, 0, 0.24, 1] }}
+            >
+              {toolkitData[activeIndex].logo ? (
+                <img src={toolkitData[activeIndex].logo} alt="" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
+              ) : (
+                <span className="font-clash font-bold text-4xl text-white">{toolkitData[activeIndex].icon}</span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Bottom metadata */}
+        <div className="mt-16 flex justify-center">
+          <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// SYSTEM_ARSENAL — ALL TOOLS OPERATIONAL</span>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+
+// ================= PREMIERE PRO TIMELINE (BACKGROUND) =================
+
+const PremiereTimeline = () => {
+  const tracks = [
+    { label: 'V4', color: '#9b59b6', clips: [{ start: 5, width: 15, name: 'GLITCH.mogrt' }, { start: 48, width: 20, name: 'TRANS_03' }, { start: 75, width: 18, name: 'TITLE.mogrt' }] },
+    { label: 'V3', color: '#e74c3c', clips: [{ start: 0, width: 30, name: 'HERO_COMP.mp4' }, { start: 35, width: 25, name: 'REEL_CUT_02' }, { start: 65, width: 30, name: 'OUTRO.mogrt' }] },
+    { label: 'V2', color: '#FF0000', clips: [{ start: 2, width: 42, name: 'SHOWREEL_v3.mp4' }, { start: 50, width: 45, name: 'CONTACT_ANIM.aep' }] },
+    { label: 'V1', color: '#2ecc71', clips: [{ start: 0, width: 95, name: 'BASE_EDIT_FINAL.mp4' }] },
+    { label: 'A1', color: '#3498db', clips: [{ start: 0, width: 55, name: 'VO_MASTER.wav' }, { start: 60, width: 35, name: 'VO_OUTRO.wav' }] },
+    { label: 'A2', color: '#e67e22', clips: [{ start: 2, width: 92, name: 'SCORE_ATMOSPHERIC.mp3' }] },
+    { label: 'A3', color: '#1abc9c', clips: [{ start: 10, width: 20, name: 'SFX_WHOOSH.wav' }, { start: 40, width: 12, name: 'SFX_HIT.wav' }, { start: 62, width: 15, name: 'SFX_RISE.wav' }, { start: 82, width: 10, name: 'SFX_END.wav' }] },
+  ];
+
+  const timeMarkers = ['00:00', '00:05', '00:10', '00:15', '00:20', '00:25', '00:30', '00:35', '00:40', '00:45', '00:50', '00:55', '01:00'];
+
+  return (
+    <div
+      className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden opacity-[0.12]"
+      style={{ transform: 'rotate(-8deg) scale(1.4)', transformOrigin: 'center center' }}
+    >
+      <div className="w-full h-full flex flex-col justify-center px-4">
+        {/* Timeline ruler */}
+        <div className="flex items-end mb-1 ml-[40px]">
+          {timeMarkers.map((t, i) => (
+            <div key={i} className="flex-1 flex flex-col items-start">
+              <span className="font-clash text-[8px] text-white mb-1">{t}</span>
+              <div className="w-[1px] h-2 bg-white/40" />
+            </div>
+          ))}
+        </div>
+        <div className="h-[1px] bg-white/30 ml-[40px] mb-2" />
+
+        {/* Playhead */}
+        <div className="relative ml-[40px] mb-1">
+          <motion.div
+            className="absolute top-0 z-20"
+            animate={{ left: ['0%', '95%'] }}
+            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+          >
+            <div className="flex flex-col items-center">
+              <div className="w-2.5 h-2.5 bg-[var(--red)] rotate-45 -mb-0.5" />
+              <div className="w-[2px] h-[260px] bg-[var(--red)]" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Tracks */}
+        <div className="flex flex-col gap-[2px]">
+          {tracks.map((track, ti) => (
+            <div key={ti} className="flex items-stretch">
+              <div className="w-[40px] flex-shrink-0 flex items-center justify-center border-r border-white/20">
+                <span className="font-clash text-[9px] tracking-wider text-white/70">{track.label}</span>
+              </div>
+              <div className="flex-1 relative h-8 border-b border-white/5">
+                {track.clips.map((clip, ci) => (
+                  <motion.div
+                    key={ci}
+                    className="absolute top-[2px] bottom-[2px] rounded-[2px] flex items-center overflow-hidden"
+                    style={{
+                      left: `${clip.start}%`,
+                      width: `${clip.width}%`,
+                      backgroundColor: `${track.color}33`,
+                      borderLeft: `2px solid ${track.color}`,
+                      borderRight: `1px solid ${track.color}66`,
+                      borderTop: `1px solid ${track.color}44`,
+                      borderBottom: `1px solid ${track.color}44`,
+                    }}
+                    initial={{ scaleX: 0, opacity: 0 }}
+                    whileInView={{ scaleX: 1, opacity: 1 }}
+                    viewport={{ once: true, margin: '-100px' }}
+                    transition={{ duration: 0.6, delay: ti * 0.08 + ci * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
+                    <span className="font-clash text-[7px] text-white/80 px-2 truncate whitespace-nowrap">{clip.name}</span>
+                    {ci === 0 && (
+                      <>
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[15%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[45%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
+                      </>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Second pass of tracks (to fill the diagonal space) */}
+        <div className="mt-6 flex flex-col gap-[2px]">
+          {tracks.slice(0, 4).map((track, ti) => (
+            <div key={ti} className="flex items-stretch">
+              <div className="w-[40px] flex-shrink-0 flex items-center justify-center border-r border-white/20">
+                <span className="font-clash text-[9px] tracking-wider text-white/70">{track.label}</span>
+              </div>
+              <div className="flex-1 relative h-8 border-b border-white/5">
+                {track.clips.map((clip, ci) => (
+                  <div
+                    key={ci}
+                    className="absolute top-[2px] bottom-[2px] rounded-[2px] flex items-center overflow-hidden"
+                    style={{
+                      left: `${clip.start + 10}%`,
+                      width: `${clip.width * 0.8}%`,
+                      backgroundColor: `${track.color}33`,
+                      borderLeft: `2px solid ${track.color}`,
+                      borderRight: `1px solid ${track.color}66`,
+                      borderTop: `1px solid ${track.color}44`,
+                      borderBottom: `1px solid ${track.color}44`,
+                    }}
+                  >
+                    <span className="font-clash text-[7px] text-white/80 px-2 truncate whitespace-nowrap">{clip.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 // ================= DINO RUNNER GAME =================
 
 const DinoRunner = () => {
@@ -1242,10 +1635,15 @@ export default function App() {
             className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
             style={{ minHeight: '60vh' }}
           >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[50%] h-[60%] rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%)' }} />
-            </div>
-            <img src="https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png" alt="Arnav Rai" className="relative w-full h-auto min-h-[60vh] object-bottom drop-shadow-[0_-10px_50px_rgba(0,0,0,0.8)]" style={{ objectFit: 'cover' }} />
+            <motion.img
+              src="/assets/photos/DSC00747 - 01.png"
+              alt="Arnav Rai"
+              className="relative w-full h-auto min-h-[60vh] object-bottom"
+              style={{ objectFit: 'cover' }}
+              initial={{ filter: 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
+              animate={{ filter: hasLoaded ? 'drop-shadow(0 0 40px rgba(255,0,0,0.25)) drop-shadow(0 0 80px rgba(255,0,0,0.1))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
+              transition={{ delay: hasLoaded ? 2 : 0, duration: 1.5, ease: "easeOut" }}
+            />
           </motion.div>
 
           {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
@@ -1310,7 +1708,7 @@ export default function App() {
                       <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[var(--red)] z-10" />
                       
                       
-                      <img src="https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png" alt="Arnav Profile" className="w-full h-full object-cover object-top opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" />
+                      <img src="/assets/photos/DSC00747 - 01.png" alt="Arnav Profile" className="w-full h-full object-cover object-top opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" />
                       
                     </div>
 
@@ -1426,7 +1824,7 @@ export default function App() {
                     <div className="mb-8">
                       <div className="font-clash text-[9px] text-[var(--red)] tracking-widest uppercase mb-4">HARD SKILLS</div>
                       <div className="grid grid-cols-2 gap-2">
-                        {["After Effects", "Premiere Pro", "Photoshop", "DaVinci", "Figma", "Illustrator"].map((skill, index) => (
+                        {["After Effects", "Premiere Pro", "Photoshop", "Blender", "Lightroom", "Illustrator"].map((skill, index) => (
                           <div key={index} className="border border-[var(--border)] px-2 py-2 flex items-center justify-center text-center font-clash text-[9px] md:text-[10px] text-[var(--muted)] hover:text-[var(--red)] hover:border-[var(--red)] hover:bg-[var(--red)]/5 transition-all duration-300 cursor-none">
                             {skill}
                           </div>
@@ -1452,6 +1850,9 @@ export default function App() {
               </div>
             </div>
           </section>
+
+          {/* ================= CAREER TIMELINE SECTION ================= */}
+          <CareerTimeline />
 
           <KeyframeTransition />
 
@@ -1786,11 +2187,17 @@ export default function App() {
             </div>
           </section>
 
+          {/* ================= TOOLKIT SECTION ================= */}
+          <ToolkitSection />
+
           {/* ================= RUNNER GAME ================= */}
           <DinoRunner />
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 z-10 pb-12">
+          <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 z-10 pb-12 overflow-hidden">
+            {/* Premiere Pro Timeline Background */}
+            <PremiereTimeline />
+
             <ParticleFlyer delay={0.1} className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
                
                {/* Marker for Red Thread to latch onto */}
@@ -1865,12 +2272,13 @@ export default function App() {
                 <span className="text-[#FF9933]">dia</span>
               </span>
             </div>
-            
+
             <div className="absolute bottom-6 right-6 md:bottom-12 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
               SYS: <span className="text-[var(--red)] font-bold animate-pulse">OFFLINE</span><br/>
               END_OF_FILE
             </div>
           </section>
+
 
         </div>{/* End continuous scroll container wrapper */}
 

@@ -2013,7 +2013,7 @@ const DinoGame = () => {
         position: 'relative',
         overflow: 'hidden',
         width: '100%',
-        height: '300px',
+        height: '400px',
         boxSizing: 'border-box',
         margin: 0,
         padding: 0,
