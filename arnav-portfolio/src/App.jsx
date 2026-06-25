@@ -32,11 +32,9 @@ const GLOBAL_STYLES = `
 
   body {
     background-color: var(--bg);
-    background-image: radial-gradient(var(--border) 1px, transparent 1px);
-    background-size: 32px 32px;
     color: var(--black);
     font-family: 'Clash Grotesk', sans-serif;
-    overflow-x: hidden; 
+    overflow-x: hidden;
     overflow-y: auto;
     margin: 0;
     padding: 0;
@@ -1002,8 +1000,9 @@ const InteractiveDotGrid = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animId;
-    const gap = 32;
-    const radius = 150;
+    const gap = 18;
+    const dotSize = 0.6;
+    const influenceRadius = 100;
 
     const resize = () => {
       canvas.width = canvas.offsetWidth;
@@ -1028,16 +1027,19 @@ const InteractiveDotGrid = () => {
           const dx = x - mx;
           const dy = y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const proximity = Math.max(0, 1 - dist / radius);
 
-          const size = 1 + proximity * 2;
-          const alpha = 0.12 + proximity * 0.7;
+          let px = x;
+          let py = y;
+
+          if (dist < influenceRadius && dist > 0) {
+            const force = (1 - dist / influenceRadius) * 6;
+            px += (dx / dist) * force;
+            py += (dy / dist) * force;
+          }
 
           ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
-          ctx.fillStyle = proximity > 0.3
-            ? `rgba(255, 0, 0, ${alpha})`
-            : `rgba(255, 255, 255, ${alpha})`;
+          ctx.arc(px, py, dotSize, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
           ctx.fill();
         }
       }
