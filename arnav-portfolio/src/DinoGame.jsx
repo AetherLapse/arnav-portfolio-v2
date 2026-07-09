@@ -519,7 +519,7 @@ const DinoGame = () => {
     this.outerContainerEl.addEventListener(Runner.events.MOUSEDOWN, this);
     this.outerContainerEl.addEventListener(Runner.events.MOUSEUP, this);
     }
-    this.outerContainerEl.focus();
+    this.outerContainerEl.focus({ preventScroll: true });
     },
     /**
     * Remove all listeners.

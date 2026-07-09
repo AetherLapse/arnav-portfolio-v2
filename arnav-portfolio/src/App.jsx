@@ -548,82 +548,158 @@ const careerData = [
   { year: '2019 — 2020', role: 'Self-Taught Era', company: 'Origin Point', desc: 'Discovered passion for editing. Learned Premiere Pro, After Effects, DaVinci Resolve through personal projects and YouTube tutorials.', details: ['Completed 500+ hours of tutorial content', 'Created first showreel from personal passion projects', 'Experimented with VFX, motion tracking, and compositing', 'Built editing PC from scratch on a budget'] },
 ];
 
-const CareerCard = ({ item, side }) => {
-  const nodeRef = useRef(null);
-  const [isActive, setIsActive] = useState(false);
+const CareerCard = ({ item, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  useEffect(() => {
-    const node = nodeRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsActive(entry.isIntersecting),
-      { rootMargin: '-45% 0px -45% 0px' }
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <motion.div
-      className={`relative flex items-start mb-20 md:mb-28 ${side === 'right' ? 'md:flex-row-reverse' : ''}`}
-      initial={{ opacity: 0, y: 50 }}
+      className="flex-shrink-0 w-[300px] md:w-[360px] flex flex-col items-center"
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-100px' }}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      {/* Timeline node (sits on the line) */}
-      <div ref={nodeRef} className="absolute left-[20px] md:left-1/2 md:-translate-x-1/2 top-4 z-10">
-        <div className={`w-3.5 h-3.5 rotate-45 border transition-all duration-500 ${isActive ? 'bg-white border-white shadow-[0_0_16px_rgba(255,255,255,0.8)] scale-150' : 'bg-[var(--red)] border-[var(--red)] shadow-[0_0_10px_rgba(255,0,0,0.5)]'}`} />
+      {/* Node on the line */}
+      <div className="relative z-10 mb-6">
+        <div className="w-3.5 h-3.5 rotate-45 border border-[var(--red)] bg-[var(--red)] shadow-[0_0_10px_rgba(255,0,0,0.5)] group-hover:bg-white group-hover:border-white transition-all duration-300" />
       </div>
 
-      {/* Content card */}
-      <div className={`ml-12 md:ml-0 md:w-[43%] ${side === 'left' ? 'md:pr-16' : 'md:pl-16'} ${side === 'right' ? 'md:ml-auto' : ''}`}>
-        <div
-          className={`p-6 md:p-8 relative overflow-hidden transition-all duration-500 ease-out cursor-none ${isActive ? 'bg-[var(--red)] border border-[var(--red)] shadow-[0_0_40px_rgba(255,0,0,0.25)]' : 'bg-[#050505]/80 border border-[var(--border)] hover:border-[var(--red)]/40 backdrop-blur-sm'}`}
-          onMouseEnter={() => setIsExpanded(true)}
-          onMouseLeave={() => setIsExpanded(false)}
-        >
-          <div className={`absolute top-0 left-0 w-full h-[2px] transition-all duration-500 ${isActive ? 'bg-white scale-x-100' : 'bg-[var(--red)] scale-x-0'} transform origin-left`} />
+      {/* Card */}
+      <div
+        className="w-full p-6 relative overflow-hidden bg-[#050505]/80 border border-[var(--border)] hover:border-[var(--red)]/40 backdrop-blur-sm transition-all duration-500 cursor-none group"
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
 
-          <div className={`font-clash text-[8px] tracking-widest uppercase mb-3 flex items-center gap-2 transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--red)]'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse transition-colors duration-500 ${isActive ? 'bg-white' : 'bg-[var(--red)]'}`} />
-            {item.year}
-          </div>
-          <h3 className={`font-clash font-bold text-lg md:text-xl mb-1 transition-colors duration-500 ${isActive ? 'text-white' : 'text-[var(--black)]'}`}>{item.role}</h3>
-          <div className={`font-clash text-[10px] tracking-widest uppercase mb-4 transition-colors duration-500 ${isActive ? 'text-white/70' : 'text-[var(--muted)]'}`}>{item.company}</div>
-          <p className={`font-clash text-xs md:text-sm leading-relaxed transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--muted)]'}`}>{item.desc}</p>
+        <div className="font-clash text-[8px] tracking-widest uppercase mb-3 flex items-center gap-2 text-[var(--red)]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)] animate-pulse" />
+          {item.year}
+        </div>
+        <h3 className="font-clash font-bold text-base md:text-lg mb-1 text-[var(--black)] group-hover:text-[var(--red)] transition-colors duration-300">{item.role}</h3>
+        <div className="font-clash text-[10px] tracking-widest uppercase mb-3 text-[var(--muted)]">{item.company}</div>
+        <p className="font-clash text-xs leading-relaxed text-[var(--muted)]">{item.desc}</p>
 
-          {/* Expandable details section */}
-          <div className={`grid transition-all duration-500 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-5' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
-            <div className="overflow-hidden">
-              <div className={`border-t pt-4 ${isActive ? 'border-white/20' : 'border-[var(--border)]'}`}>
-                <div className={`font-clash text-[8px] tracking-widest uppercase mb-3 ${isActive ? 'text-white/60' : 'text-[var(--muted)]'}`}>// JOB_OVERVIEW</div>
-                <ul className="flex flex-col gap-2">
-                  {item.details.map((detail, di) => (
-                    <li key={di} className={`font-clash text-[11px] md:text-xs leading-relaxed flex items-start gap-2 transition-colors duration-500 ${isActive ? 'text-white/80' : 'text-[var(--muted)]'}`}>
-                      <span className={`w-1 h-1 rounded-full mt-1.5 flex-shrink-0 ${isActive ? 'bg-white/60' : 'bg-[var(--red)]'}`} />
-                      {detail}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* Expandable details */}
+        <div className={`grid transition-all duration-500 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
+          <div className="overflow-hidden">
+            <div className="border-t border-[var(--border)] pt-3">
+              <div className="font-clash text-[8px] tracking-widest uppercase mb-2 text-[var(--muted)]">// JOB_OVERVIEW</div>
+              <ul className="flex flex-col gap-1.5">
+                {item.details.map((detail, di) => (
+                  <li key={di} className="font-clash text-[10px] md:text-[11px] leading-relaxed flex items-start gap-2 text-[var(--muted)]">
+                    <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0 bg-[var(--red)]" />
+                    {detail}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-
-          {/* Corner accents */}
-          <div className={`absolute top-2 right-2 w-2.5 h-2.5 border-t border-r transition-colors duration-500 ${isActive ? 'border-white/50' : 'border-[var(--border)]'}`} />
-          <div className={`absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l transition-colors duration-500 ${isActive ? 'border-white/50' : 'border-[var(--border)]'}`} />
         </div>
+
+        {/* Corner accents */}
+        <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-[var(--border)] group-hover:border-[var(--red)]/50 transition-colors duration-300" />
+        <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-[var(--border)] group-hover:border-[var(--red)]/50 transition-colors duration-300" />
       </div>
     </motion.div>
   );
 };
 
-const CareerTimeline = () => {
+const CountUp = ({ target, suffix = '', duration = 2, delay = 0 }) => {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started) setStarted(true);
+    }, { threshold: 0.5 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
+    const start = performance.now();
+    const delayMs = delay * 1000;
+    let animId;
+    const animate = (now) => {
+      const elapsed = now - start - delayMs;
+      if (elapsed < 0) { animId = requestAnimationFrame(animate); return; }
+      const progress = Math.min(elapsed / (duration * 1000), 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * target));
+      if (progress < 1) animId = requestAnimationFrame(animate);
+    };
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, [started, target, duration, delay]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+};
+
+const ExperienceStrip = () => {
+  const stats = [
+    { number: 3, suffix: '+', label: 'YEARS EXPERIENCE' },
+    { number: 20, suffix: '+', label: 'CLIENTS SERVED' },
+    { number: 50, suffix: '+', label: 'PROJECTS SHIPPED' },
+  ];
+
   return (
-    <section className="relative w-full px-4 md:px-8 z-10 py-32">
-      <div className="w-full max-w-[90rem] mx-auto relative z-10">
+    <section className="relative w-full z-10 overflow-hidden py-2">
+      <div className="grid grid-cols-3 w-full">
+        {stats.map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            className="relative flex flex-col items-center justify-center py-12 md:py-16 bg-[var(--red)] overflow-hidden"
+            initial={{ rotateX: -90, opacity: 0, transformOrigin: i === 0 ? 'top' : i === 2 ? 'bottom' : 'center' }}
+            whileInView={{ rotateX: 0, opacity: 1 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+            style={{ perspective: '800px' }}
+          >
+            <span className="font-clash font-bold text-[clamp(36px,6vw,72px)] leading-none text-[var(--bg)]">
+              <CountUp target={stat.number} suffix={stat.suffix} duration={2} delay={i * 0.15 + 0.4} />
+            </span>
+            <span className="font-clash text-[8px] md:text-[10px] tracking-[0.2em] text-[var(--bg)] opacity-70 mt-3">
+              {stat.label}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const CareerTimeline = () => {
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const atStart = container.scrollLeft <= 0 && e.deltaY < 0;
+      const atEnd = container.scrollLeft >= maxScroll - 1 && e.deltaY > 0;
+
+      if (atStart || atEnd) return;
+
+      e.preventDefault();
+      container.scrollLeft += e.deltaY;
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  return (
+    <section className="relative w-full z-10 py-32 overflow-hidden">
+      <div className="w-full max-w-[90rem] mx-auto relative z-10 px-4 md:px-8">
 
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-16">
@@ -637,27 +713,28 @@ const CareerTimeline = () => {
             </div>
           </div>
         </ParticleFlyer>
+      </div>
 
-        {/* Timeline */}
-        <div className="relative">
-          {/* Static vertical line */}
-          <div className="absolute left-[20px] md:left-1/2 md:-translate-x-[1px] top-0 bottom-0 w-[2px] bg-[var(--border)]" />
+      {/* Horizontal scrolling timeline */}
+      <div className="relative w-full">
+        {/* Horizontal line */}
+        <div className="absolute top-[7px] left-0 right-0 h-[2px] bg-[var(--border)]" />
 
-          {/* Career entries */}
+        {/* Scrollable cards — vertical scroll converts to horizontal */}
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-6 md:gap-8 overflow-x-auto px-4 md:px-8 pb-8 pt-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {careerData.map((item, i) => (
-            <CareerCard key={i} item={item} side={i % 2 === 0 ? 'left' : 'right'} index={i} />
+            <CareerCard key={i} item={item} index={i} />
           ))}
-
-          {/* Terminal end node */}
-          <div className="absolute left-[20px] md:left-1/2 md:-translate-x-1/2 bottom-0">
-            <div className="w-2.5 h-2.5 bg-[var(--muted)] rounded-full" />
-          </div>
         </div>
+      </div>
 
-        {/* Bottom metadata */}
-        <div className="mt-16 flex justify-center">
-          <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 06 — STATUS: ONGOING</span>
-        </div>
+      {/* Bottom metadata */}
+      <div className="mt-12 flex justify-center px-4">
+        <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 06 — STATUS: ONGOING</span>
       </div>
     </section>
   );
@@ -678,33 +755,15 @@ const toolkitData = [
 ];
 
 const ToolkitSection = () => {
-  const [activeIndex, setActiveIndex] = useState(null);
-  const sectionRef = useRef(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const smoothX = useSpring(mouseX, { stiffness: 150, damping: 20 });
-  const smoothY = useSpring(mouseY, { stiffness: 150, damping: 20 });
-
-  const handleMouseMove = (e) => {
-    const rect = sectionRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    mouseX.set(e.clientX - rect.left);
-    mouseY.set(e.clientY - rect.top);
-  };
-
   return (
-    <section
-      ref={sectionRef}
-      className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden"
-      onMouseMove={handleMouseMove}
-    >
+    <section className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden">
       <div className="w-full max-w-[90rem] mx-auto relative z-10">
 
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
             <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
-              TOOLKIT
+              MY TOOLKIT
             </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>ARSENAL: <span className="text-[var(--red)]">LOADED</span></span>
@@ -713,90 +772,36 @@ const ToolkitSection = () => {
           </div>
         </ParticleFlyer>
 
-        {/* Tool list */}
-        <div className="flex flex-col items-center">
+        {/* Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 w-full">
           {toolkitData.map((tool, i) => (
             <motion.div
               key={tool.name}
-              className="relative cursor-none w-full flex justify-center"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              className="relative flex flex-col items-center justify-center py-10 md:py-14 border border-dashed border-[var(--border)] cursor-none group hover:bg-white/[0.02] transition-colors duration-300"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.3, delay: i * 0.03 }}
-              onMouseEnter={() => setActiveIndex(i)}
-              onMouseLeave={() => setActiveIndex(null)}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
             >
-              <div className="relative py-3 md:py-5 w-full flex items-center justify-center">
-                <span className={`font-clash font-bold text-[clamp(28px,5.5vw,60px)] leading-none text-center transition-all duration-300 ${activeIndex === i ? 'opacity-100 scale-105' : activeIndex !== null ? 'opacity-20' : 'opacity-60'}`} style={{ color: 'var(--black)' }}>
-                  {tool.name}
-                </span>
+              {/* Logo / Icon */}
+              <div className="mb-4 h-10 flex items-center justify-center">
+                {tool.logo ? (
+                  <img src={tool.logo} alt={tool.name} className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300" />
+                ) : (
+                  <span className="font-clash font-bold text-2xl" style={{ color: tool.color }}>{tool.icon}</span>
+                )}
               </div>
+              {/* Name */}
+              <span className="font-clash font-bold text-sm md:text-base text-[var(--black)] group-hover:text-[var(--red)] transition-colors duration-300">
+                {tool.name}
+              </span>
+              {/* Category */}
+              <span className="font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] mt-1">
+                {tool.category}
+              </span>
             </motion.div>
           ))}
         </div>
-
-        {/* Floating video preview that follows cursor */}
-        <AnimatePresence>
-          {activeIndex !== null && toolkitData[activeIndex]?.video && (
-            <motion.div
-              className="pointer-events-none fixed z-50 w-[320px] h-[200px] md:w-[400px] md:h-[250px] rounded-lg overflow-hidden shadow-2xl"
-              style={{
-                left: smoothX,
-                top: smoothY,
-                x: '-50%',
-                y: '-110%',
-                position: 'absolute',
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.25, ease: [0.76, 0, 0.24, 1] }}
-            >
-              <video
-                key={toolkitData[activeIndex].video}
-                src={toolkitData[activeIndex].video}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/80 to-transparent flex items-center gap-3">
-                {toolkitData[activeIndex].logo && (
-                  <img src={toolkitData[activeIndex].logo} alt="" className="w-6 h-6 object-contain" />
-                )}
-                <span className="font-clash font-bold text-sm text-white">{toolkitData[activeIndex].name}</span>
-                <span className="font-clash text-[8px] tracking-widest text-white/60 uppercase ml-auto">{toolkitData[activeIndex].category}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Floating logo for tools without video */}
-        <AnimatePresence>
-          {activeIndex !== null && !toolkitData[activeIndex]?.video && (
-            <motion.div
-              className="pointer-events-none z-50 w-[120px] h-[120px] md:w-[150px] md:h-[150px] rounded-xl overflow-hidden flex items-center justify-center bg-[var(--red)]"
-              style={{
-                left: smoothX,
-                top: smoothY,
-                x: '-50%',
-                y: '-110%',
-                position: 'absolute',
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.25, ease: [0.76, 0, 0.24, 1] }}
-            >
-              {toolkitData[activeIndex].logo ? (
-                <img src={toolkitData[activeIndex].logo} alt="" className="w-16 h-16 md:w-20 md:h-20 object-contain" />
-              ) : (
-                <span className="font-clash font-bold text-4xl text-white">{toolkitData[activeIndex].icon}</span>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Bottom metadata */}
         <div className="mt-16 flex justify-center">
@@ -1131,9 +1136,7 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-12 right-6 md:top-8 md:right-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-end gap-1 transition-opacity duration-300 ${hudClass}`}>
-        <Timecode />
-        <span>ISO 800</span>
-        <div className="flex flex-col border border-[var(--border)] mt-2 bg-[var(--bg)]/50 backdrop-blur-sm">
+        <div className="flex flex-col border border-[var(--border)] bg-[var(--bg)]/50 backdrop-blur-sm">
           <span className="px-2 py-1 border-b border-[var(--border)] text-[var(--muted)] transition-colors">IN</span>
           <span className="px-2 py-1 text-[var(--red)] font-bold">EN</span>
         </div>
@@ -1593,36 +1596,27 @@ export default function App() {
 
           {/* GALAXY LAYER (z-15) - rendered once for performance */}
           <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[15]">
-            <OrbitalRing 
-              radius={320} 
-              duration={35} 
-              reverse={false} 
+            <OrbitalRing
+              radius={320}
+              duration={35}
+              reverse={false}
               items={[
                 { label: "Adobe Photoshop", icon: <AdobeIcon text="Ps"/> },
                 { label: "Adobe After Effects", icon: <AdobeIcon text="Ae"/> },
                 { label: "Adobe Premiere Pro", icon: <AdobeIcon text="Pr"/> },
-                { label: "Adobe Illustrator", icon: <AdobeIcon text="Ai"/> }
-              ]} 
+                { label: "Adobe Illustrator", icon: <AdobeIcon text="Ai"/> },
+                { label: "Lightroom", icon: <AdobeIcon text="Lr"/> }
+              ]}
             />
-            <OrbitalRing 
-              radius={230} 
-              duration={25} 
-              reverse={true} 
+            <OrbitalRing
+              radius={210}
+              duration={25}
+              reverse={true}
               items={[
-                { label: "Sound Design", icon: <IconSound/> },
-                { label: "Storytelling", icon: <IconStory/> },
-                { label: "Color Grading", icon: <IconColor/> },
-                { label: "Direction", icon: <IconDirection/> }
-              ]} 
-            />
-            <OrbitalRing 
-              radius={140} 
-              duration={15} 
-              reverse={false} 
-              items={[
-                { label: "Noida, India", icon: <IconLocation/> },
-                { label: "3+ Years", icon: <IconClock/> }
-              ]} 
+                { label: "Blender", icon: <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png" alt="Blender" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+                { label: "Kling", icon: <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe7zS6NYkeU_gYIDGhgvvsKs4iLzmTBz_ur-vz-yoA6PNqjozmASBiaQbr&s=10" alt="Kling" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+                { label: "Higgsfield", icon: <img src="https://images.seeklogo.com/logo-png/66/1/higgsfield-logo-png_seeklogo-660244.png" alt="Higgsfield" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> }
+              ]}
             />
             <motion.div initial={{ scale: 0 }} animate={{ scale: hasLoaded ? 1 : 0 }} transition={{ delay: 0.7, type: "spring", stiffness: 150, damping: 20 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--bg)] px-6 py-2.5 rounded-full border border-[var(--border)] text-[var(--red)] font-bold tracking-widest shadow-xl">
               #stAycReative
@@ -1655,9 +1649,6 @@ export default function App() {
         </section>
 
 
-        {/* ================= SCROLL QUOTE SECTION ================= */}
-        <QuoteReveal />
-
         {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
         <div className="relative w-full pb-32 z-10">
 
@@ -1672,6 +1663,9 @@ export default function App() {
               className="w-full h-auto object-cover"
             />
           </section>
+
+          {/* ================= SCROLL QUOTE SECTION ================= */}
+          <QuoteReveal />
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32">
@@ -1853,10 +1847,12 @@ export default function App() {
             </div>
           </section>
 
+          {/* ================= EXPERIENCE STATS STRIP ================= */}
+          <ExperienceStrip />
+
           {/* ================= CAREER TIMELINE SECTION ================= */}
           <CareerTimeline />
 
-          <KeyframeTransition />
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -1968,7 +1964,6 @@ export default function App() {
             </div>
           </section>
 
-          <KeyframeTransition />
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -2065,7 +2060,6 @@ export default function App() {
             </div>
           </section>
 
-          <KeyframeTransition />
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -2095,20 +2089,26 @@ export default function App() {
                 dragElastic={0.1}
                 onDragEnd={(_, info) => {
                   const threshold = 50;
-                  if (info.offset.x < -threshold && activePostIndex < POSTS_DATA.length - 1) {
-                    setActivePostIndex(prev => prev + 1);
-                  } else if (info.offset.x > threshold && activePostIndex > 0) {
-                    setActivePostIndex(prev => prev - 1);
+                  if (info.offset.x < -threshold) {
+                    setActivePostIndex(prev => (prev + 1) % POSTS_DATA.length);
+                  } else if (info.offset.x > threshold) {
+                    setActivePostIndex(prev => (prev - 1 + POSTS_DATA.length) % POSTS_DATA.length);
                   }
                 }}
               >
                 {POSTS_DATA.map((post, i) => {
-                  const offset = i - activePostIndex;
+                  let offset = i - activePostIndex;
+                  const half = Math.floor(POSTS_DATA.length / 2);
+                  if (offset > half) offset -= POSTS_DATA.length;
+                  if (offset < -half) offset += POSTS_DATA.length;
                   const absOffset = Math.abs(offset);
                   const isActive = offset === 0;
-                  const translateX = offset * 320;
-                  const scale = isActive ? 1 : Math.max(0.6, 0.75 - absOffset * 0.05);
-                  const opacity = isActive ? 1 : Math.max(0.3, 1 - absOffset * 0.3);
+                  const translateX = offset * 280;
+                  const rotateY = offset * -35;
+                  const translateZ = isActive ? 0 : -150 * absOffset;
+                  const scale = isActive ? 1 : Math.max(0.7, 0.85 - absOffset * 0.05);
+                  const opacity = isActive ? 1 : Math.max(0.4, 1 - absOffset * 0.25);
+                  const blur = isActive ? 0 : Math.min(absOffset * 2, 6);
 
                   return (
                     <motion.div
@@ -2118,8 +2118,12 @@ export default function App() {
                         x: translateX,
                         scale,
                         opacity,
+                        rotateY,
+                        z: translateZ,
+                        filter: `blur(${blur}px)`,
                       }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 26, mass: 1 }}
+                      style={{ zIndex: 100 - absOffset }}
                       onClick={() => setActivePostIndex(i)}
                     >
                       <div className={`relative w-[260px] md:w-[300px] aspect-[3/4] border bg-[#050505] overflow-hidden group transition-all duration-300 ${isActive ? 'border-[var(--red)]/60 shadow-[0_0_40px_rgba(255,0,0,0.3)]' : 'border-[var(--border)]'}`}>
@@ -2278,6 +2282,10 @@ export default function App() {
             <div className="absolute bottom-6 right-6 md:bottom-12 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
               SYS: <span className="text-[var(--red)] font-bold animate-pulse">OFFLINE</span><br/>
               END_OF_FILE
+            </div>
+
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-40">
+              #stAycReative
             </div>
           </section>
 
