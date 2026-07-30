@@ -504,6 +504,129 @@ const SpotlightCard = ({ children, className = "" }) => {
   );
 };
 
+const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') onNext();
+      if (e.key === 'ArrowLeft') onPrev();
+    };
+    window.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose, onNext, onPrev]);
+
+  if (!item) return null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[300] flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Nav arrows */}
+      <button onClick={onPrev} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button onClick={onNext} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      {/* Content */}
+      <motion.div
+        className="relative z-40 w-[92vw] max-w-[1200px] h-[85vh] flex flex-col md:flex-row gap-0 overflow-hidden"
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        {/* Left panel — Metadata */}
+        <div className="w-full md:w-[320px] flex-shrink-0 bg-[#0A0A0A] border border-[var(--border)] p-8 flex flex-col overflow-y-auto">
+          <div className="font-clash text-[var(--red)] text-xs tracking-widest uppercase mb-8">METADATA</div>
+
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex justify-between items-center font-clash text-sm">
+              <span className="text-[var(--muted)] tracking-wider">YEAR</span>
+              <span className="text-[var(--black)] font-bold">{item.year}</span>
+            </div>
+            <div className="w-full h-px bg-[var(--border)]" />
+            <div className="flex justify-between items-center font-clash text-sm">
+              <span className="text-[var(--muted)] tracking-wider">CONTEXT</span>
+              <span className="text-[var(--black)] font-bold">{item.context}</span>
+            </div>
+            <div className="w-full h-px bg-[var(--border)]" />
+            <div className="flex justify-between items-center font-clash text-sm">
+              <span className="text-[var(--muted)] tracking-wider">CLIENT</span>
+              <span className="text-[var(--black)] font-bold">{item.client}</span>
+            </div>
+            <div className="w-full h-px bg-[var(--border)]" />
+            <div className="flex justify-between items-center font-clash text-sm">
+              <span className="text-[var(--muted)] tracking-wider">TIME</span>
+              <span className="text-[var(--black)] font-bold">{item.time}</span>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="mb-6">
+            <span className="font-clash text-[var(--muted)] text-xs tracking-wider">TAGS:</span>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {item.tags.map((tag, i) => (
+                <span key={i} className="font-clash text-[11px] px-4 py-2 border border-[var(--border)] text-[var(--black)] hover:border-[var(--red)] transition-colors">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Stacks */}
+          <div className="mb-8">
+            <span className="font-clash text-[var(--muted)] text-xs tracking-wider">STACKS:</span>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {item.stacks.map((stack, i) => (
+                <span key={i} className="font-clash text-[11px] px-4 py-2 border border-[var(--border)] text-[var(--black)] hover:border-[var(--red)] transition-colors">{stack}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Access button */}
+          <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto font-clash text-xs tracking-widest text-center py-3 border border-[var(--border)] hover:border-[var(--red)] hover:text-[var(--red)] transition-all cursor-none uppercase">
+            ACCESS PROJECT
+          </a>
+        </div>
+
+        {/* Right panel — Visuals & Description */}
+        <div className="flex-1 bg-[#0D0D0D] border border-[var(--border)] border-l-0 p-8 overflow-y-auto flex flex-col gap-8">
+          {/* Main screenshot with red corner brackets */}
+          <div className="relative w-full aspect-video">
+            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[var(--red)]" />
+            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[var(--red)]" />
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[var(--red)]" />
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[var(--red)]" />
+            <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+          </div>
+
+          {/* Technical analysis */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[var(--red)] font-bold">&gt;&gt;</span>
+              <span className="font-clash text-[var(--red)] text-sm tracking-widest uppercase">TECHNICAL_ANALYSIS</span>
+            </div>
+            <p className="font-clash text-sm md:text-base leading-relaxed text-[var(--black)]">
+              {item.desc}
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const MagneticVideoCard = () => {
   const { cursorX, cursorY } = useContext(CursorContext);
   const cardRef = useRef(null);
@@ -1454,17 +1577,17 @@ const EVIDENCE_SECTORS = [
 
 const EVIDENCE_DATA = [
   // Video Editing
-  { id: "01", sector: "KINETIC_CUTS", title: "Ophelia", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop" },
-  { id: "02", sector: "KINETIC_CUTS", title: "J. Pancras", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop" },
-  { id: "03", sector: "KINETIC_CUTS", title: "2026 Greet", img: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop" },
-  { id: "04", sector: "KINETIC_CUTS", title: "Ciao", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop" },
+  { id: "01", sector: "KINETIC_CUTS", title: "Ophelia", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop", year: "March 2025", context: "Commercial", client: "Ophelia Studios", time: "5 days", tags: ["Color Grading", "Motion Graphics"], stacks: ["Premiere Pro", "After Effects"], desc: "A high-contrast cinematic commercial edit blending surreal visuals with precise color grading. The client wanted an ethereal mood that pulled viewers into a dreamlike narrative.", link: "#" },
+  { id: "02", sector: "KINETIC_CUTS", title: "J. Pancras", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
+  { id: "03", sector: "KINETIC_CUTS", title: "2026 Greet", img: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop", year: "December 2025", context: "Personal", client: "Self-Initiated", time: "2 days", tags: ["Motion Graphics", "Typography"], stacks: ["After Effects", "Illustrator"], desc: "A personal new year greeting animation exploring glitch aesthetics and bold type treatments. Shared across social media to celebrate the creative community.", link: "#" },
+  { id: "04", sector: "KINETIC_CUTS", title: "Ciao", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop", year: "November 2024", context: "Freelance", client: "Indie Artist", time: "4 days", tags: ["Music Video", "VFX"], stacks: ["Premiere Pro", "After Effects", "Blender"], desc: "Lyric video for an indie artist combining 3D environments with hand-drawn frame-by-frame animation overlays. Delivered across 3 aspect ratios for multi-platform release.", link: "#" },
   // Social Grids
-  { id: "05", sector: "GRID_ARCHIVES", title: "H.A.N.D.S. Grid", img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=800&auto=format&fit=crop" },
-  { id: "06", sector: "GRID_ARCHIVES", title: "Apogée Sequence", img: "https://images.unsplash.com/photo-1600132806370-bf17e65e942f?q=80&w=800&auto=format&fit=crop" },
+  { id: "05", sector: "GRID_ARCHIVES", title: "H.A.N.D.S. Grid", img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=800&auto=format&fit=crop", year: "February 2025", context: "Professional", client: "Promotion4u", time: "2 days", tags: ["Grid Design", "Brand Identity"], stacks: ["Photoshop", "Illustrator"], desc: "A cohesive 9-post Instagram grid design for a wellness brand. Each tile works independently while forming a larger visual narrative when viewed together.", link: "#" },
+  { id: "06", sector: "GRID_ARCHIVES", title: "Apogée Sequence", img: "https://images.unsplash.com/photo-1600132806370-bf17e65e942f?q=80&w=800&auto=format&fit=crop", year: "October 2024", context: "Freelance", client: "Apogée Fashion", time: "3 days", tags: ["Social Media", "Photography"], stacks: ["Photoshop", "Lightroom"], desc: "Carousel sequence for a fashion brand's seasonal drop. Designed to maximize swipe-through rate with progressive reveal storytelling.", link: "#" },
   // Social Posts
-  { id: "07", sector: "CONTENT_DEPLOYMENTS", title: "Cyberpunk Campaign", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=800&auto=format&fit=crop" },
+  { id: "07", sector: "CONTENT_DEPLOYMENTS", title: "Cyberpunk Campaign", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=800&auto=format&fit=crop", year: "September 2024", context: "Freelance", client: "Tech Influencer", time: "1 day", tags: ["Social Content", "Graphic Design"], stacks: ["Photoshop", "AI Tools"], desc: "Cyberpunk-themed content series for a tech influencer's product review campaign. Neon-heavy palette with HUD-style overlays.", link: "#" },
   // Logos
-  { id: "08", sector: "BRAND_IDENTITIES", title: "Nexus Logomark", img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=800&auto=format&fit=crop" },
+  { id: "08", sector: "BRAND_IDENTITIES", title: "Nexus Logomark", img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=800&auto=format&fit=crop", year: "August 2024", context: "Professional", client: "Nexus Gaming", time: "5 days", tags: ["Logo Design", "Brand Identity"], stacks: ["Illustrator", "Photoshop"], desc: "Minimal logomark for a gaming community. Explored geometric forms that convey both connection and competition. Delivered brand guide with usage rules.", link: "#" },
 ];
 
 const POSTS_DATA = [
@@ -1493,6 +1616,9 @@ export default function App() {
   const [activeSector, setActiveSector] = useState("KINETIC_CUTS");
   const filteredEvidence = useMemo(() => EVIDENCE_DATA.filter(item => item.sector === activeSector), [activeSector]);
   const carouselRef = useRef(null);
+
+  // Case Study Modal State
+  const [caseStudyItem, setCaseStudyItem] = useState(null);
 
   // Posts Cover Flow State
   const [activePostIndex, setActivePostIndex] = useState(Math.floor(POSTS_DATA.length / 2));
@@ -2079,8 +2205,8 @@ export default function App() {
                         transition={{ duration: 0.4, delay: i * 0.05 }}
                         className="shrink-0"
                      >
-                       <div className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none">
-                         
+                       <div className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none" onClick={() => setCaseStudyItem(work)}>
+
                          {/* Glass Card */}
                          <div className="relative aspect-[3/4] border border-[var(--border)] bg-[#050505] overflow-hidden transition-all duration-500 hover:border-[var(--red)]/50">
                            {/* Animated Top Red Line */}
@@ -2348,6 +2474,26 @@ export default function App() {
 
 
         </div>{/* End continuous scroll container wrapper */}
+
+        {/* ================= CASE STUDY MODAL ================= */}
+        <AnimatePresence>
+          {caseStudyItem && (
+            <CaseStudyModal
+              item={caseStudyItem}
+              onClose={() => setCaseStudyItem(null)}
+              onNext={() => {
+                const allItems = EVIDENCE_DATA;
+                const idx = allItems.findIndex(x => x.id === caseStudyItem.id);
+                setCaseStudyItem(allItems[(idx + 1) % allItems.length]);
+              }}
+              onPrev={() => {
+                const allItems = EVIDENCE_DATA;
+                const idx = allItems.findIndex(x => x.id === caseStudyItem.id);
+                setCaseStudyItem(allItems[(idx - 1 + allItems.length) % allItems.length]);
+              }}
+            />
+          )}
+        </AnimatePresence>
 
         {/* ================= PRELOADER ================= */}
         <AnimatePresence>
