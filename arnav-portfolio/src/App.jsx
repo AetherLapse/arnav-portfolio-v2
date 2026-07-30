@@ -186,11 +186,11 @@ const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "
 
 const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   <motion.div
-    className={className} style={style}
-    initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
-    whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+    className={className} style={{ ...style, willChange: 'transform, opacity' }}
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: "-50px" }}
-    transition={{ delay, duration: 0.8, ease: "easeOut" }}
+    transition={{ delay, duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
   >
     {children}
   </motion.div>
@@ -201,10 +201,10 @@ const ParticleTextSwap = ({ text }) => (
     <AnimatePresence mode="wait">
       <motion.span
         key={text}
-        initial={{ opacity: 0, filter: "blur(10px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        exit={{ opacity: 0, filter: "blur(10px)" }}
-        transition={{ duration: 0.6, ease: "easeInOut" }}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
         className="inline-block relative z-20"
       >
         {text}
@@ -584,66 +584,66 @@ const MagneticVideoCard = () => {
 // ================= CAREER TIMELINE SECTION =================
 
 const careerData = [
-  { year: '2024 — PRESENT', role: 'Senior Video Editor', company: 'Freelance', desc: 'Leading creative direction for independent clients. Motion graphics, color grading, and full post-production pipelines.', details: ['End-to-end post-production for 20+ clients', 'Specialized in cinematic color grading & sound design', 'Delivered 50+ projects across YouTube, Instagram, and broadcast', 'Tools: Premiere Pro, After Effects, DaVinci Resolve'] },
-  { year: '2023 — 2024', role: 'Video Editor & Motion Designer', company: 'Creative Agency XYZ', desc: 'Produced high-end commercial content for Fortune 500 brands. Managed team of 3 junior editors.', details: ['Led post-production for Nike, Adidas, and Samsung campaigns', 'Managed and mentored team of 3 junior editors', 'Reduced average turnaround time by 40%', 'Created reusable motion graphics template library'] },
-  { year: '2022 — 2023', role: 'Junior Editor', company: 'Studio Neon', desc: 'Cut promotional reels, social media content, and branded documentaries. First professional role in the industry.', details: ['Edited 100+ social media clips per month', 'Collaborated with directors on branded documentary series', 'Learned advanced color workflows under senior colorist', 'First exposure to broadcast delivery standards'] },
-  { year: '2021 — 2022', role: 'Freelance Motion Designer', company: 'Self-Employed', desc: 'Built client base from scratch. Specialized in YouTube intros, lyric videos, and event recap edits.', details: ['Grew from 0 to 15 recurring clients in 8 months', 'Created 200+ YouTube intros and channel packages', 'Developed signature style combining glitch and typography', 'Revenue: ₹3L+ in first year'] },
-  { year: '2020 — 2021', role: 'Intern — Post Production', company: 'Media House Alpha', desc: 'Assisted senior editors with footage organization, rough cuts, and asset management for broadcast content.', details: ['Organized 10TB+ of raw footage across 30 projects', 'Created rough cuts and assembly edits for review', 'Learned professional file management and naming conventions', 'Assisted in live broadcast switching'] },
-  { year: '2019 — 2020', role: 'Self-Taught Era', company: 'Origin Point', desc: 'Discovered passion for editing. Learned Premiere Pro, After Effects, DaVinci Resolve through personal projects and YouTube tutorials.', details: ['Completed 500+ hours of tutorial content', 'Created first showreel from personal passion projects', 'Experimented with VFX, motion tracking, and compositing', 'Built editing PC from scratch on a budget'] },
+  { year: 'JAN 2025 — PRESENT', role: 'Senior Video Editor', company: 'Visible Gain', desc: 'Creative advertising agency in Noida. Delivering impactful brand stories through model shoots, graphic design, video production, and digital campaigns.', details: ['End-to-end video production for brand campaigns', 'Model shoot direction & post-production', 'Graphic design & digital campaign delivery', 'Location: Noida Sector-63'] },
+  { year: 'AUG 2024 — JAN 2025', role: 'Graphic Designer & Video Editor', company: 'Promotion4u', desc: 'Leading digital marketing agency in Meerut with 5+ years of experience excelling in digital media, serving 100+ clients across diversified niches.', details: ['Served 100+ clients across multiple industries', 'Created designs for digital, print, and motion media', 'Worked across diversified niches & industries', 'Location: Meerut (250001)'] },
+  { year: '2022 — PRESENT', role: 'Freelance Creative', company: 'Self-Employed', desc: 'Working with a wide range of clients and well-known influencers across India and internationally. Delivering creative design solutions tailored for digital, print, and motion media.', details: ['Clients & influencers across India and internationally', 'Digital, print, and motion media solutions', 'Brand identity & social media content', 'Tools: Premiere Pro, After Effects, Photoshop, Illustrator, AI Tools'] },
 ];
 
 const CareerCard = ({ item, index }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.div
-      className="flex-shrink-0 w-[300px] md:w-[360px] flex flex-col items-center"
-      initial={{ opacity: 0, y: 30 }}
+      className={`flex-shrink-0 relative cursor-none transition-all duration-500 ease-out ${isHovered ? 'w-[320px] md:w-[400px]' : 'w-[180px] md:w-[220px]'}`}
+      style={{ height: '70vh', minHeight: '500px', maxHeight: '650px' }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      transition={{ duration: 0.4, delay: index * 0.08 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Node on the line */}
-      <div className="relative z-10 mb-6">
-        <div className="w-3.5 h-3.5 rotate-45 border border-[var(--red)] bg-[var(--red)] shadow-[0_0_10px_rgba(255,0,0,0.5)] group-hover:bg-white group-hover:border-white transition-all duration-300" />
-      </div>
+      {/* Card body */}
+      <div className="w-full h-full relative overflow-hidden bg-[#0D0D0D] border border-[var(--border)] hover:border-[var(--red)]/50 transition-all duration-500 group">
 
-      {/* Card */}
-      <div
-        className="w-full p-6 relative overflow-hidden bg-[#050505]/80 border border-[var(--border)] hover:border-[var(--red)]/40 backdrop-blur-sm transition-all duration-500 cursor-none group"
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
-      >
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+        {/* Corner brackets */}
+        <div className={`absolute top-3 left-3 w-4 h-4 border-t border-l transition-all duration-300 ${isHovered ? 'border-[var(--red)]' : 'border-transparent'}`} />
+        <div className={`absolute top-3 right-3 w-4 h-4 border-t border-r transition-all duration-300 ${isHovered ? 'border-[var(--red)]' : 'border-transparent'}`} />
+        <div className={`absolute bottom-3 left-3 w-4 h-4 border-b border-l transition-all duration-300 ${isHovered ? 'border-[var(--red)]' : 'border-transparent'}`} />
+        <div className={`absolute bottom-3 right-3 w-4 h-4 border-b border-r transition-all duration-300 ${isHovered ? 'border-[var(--red)]' : 'border-transparent'}`} />
 
-        <div className="font-clash text-[8px] tracking-widest uppercase mb-3 flex items-center gap-2 text-[var(--red)]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)] animate-pulse" />
-          {item.year}
+        {/* Red dots top */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1">
+          <div className="w-1 h-1 rounded-full bg-[var(--red)]" />
+          <div className="w-1 h-1 rounded-full bg-[var(--red)]" />
+          <div className="w-1 h-1 rounded-full bg-[var(--red)]" />
         </div>
-        <h3 className="font-clash font-bold text-base md:text-lg mb-1 text-[var(--black)] group-hover:text-[var(--red)] transition-colors duration-300">{item.role}</h3>
-        <div className="font-clash text-[10px] tracking-widest uppercase mb-3 text-[var(--muted)]">{item.company}</div>
-        <p className="font-clash text-xs leading-relaxed text-[var(--muted)]">{item.desc}</p>
 
-        {/* Expandable details */}
-        <div className={`grid transition-all duration-500 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0'}`}>
-          <div className="overflow-hidden">
-            <div className="border-t border-[var(--border)] pt-3">
-              <div className="font-clash text-[8px] tracking-widest uppercase mb-2 text-[var(--muted)]">// JOB_OVERVIEW</div>
-              <ul className="flex flex-col gap-1.5">
-                {item.details.map((detail, di) => (
-                  <li key={di} className="font-clash text-[10px] md:text-[11px] leading-relaxed flex items-start gap-2 text-[var(--muted)]">
-                    <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0 bg-[var(--red)]" />
-                    {detail}
-                  </li>
-                ))}
-              </ul>
+        {/* Vertical label on the side */}
+        <div className="absolute top-1/2 -translate-y-1/2 right-2 writing-mode-vertical font-clash text-[8px] tracking-widest text-[var(--red)] uppercase rotate-180" style={{ writingMode: 'vertical-rl' }}>
+          {item.company}
+        </div>
+
+        {/* Bottom content */}
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          {/* Red accent line */}
+          <div className={`h-[2px] bg-[var(--red)] mb-4 transition-all duration-500 ${isHovered ? 'w-full' : 'w-0'}`} />
+
+          <div className="font-clash text-[9px] tracking-widest uppercase mb-2 text-[var(--red)]">
+            {item.year}
+          </div>
+          <h3 className="font-clash font-bold text-lg md:text-xl text-[var(--black)] leading-tight mb-2">
+            {item.role}
+          </h3>
+
+          {/* Expandable details on hover */}
+          <div className={`transition-all duration-500 ease-out overflow-hidden ${isHovered ? 'max-h-[200px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+            <p className="font-clash text-[11px] leading-relaxed text-[var(--muted)] mb-3">{item.desc}</p>
+            <div className="font-clash text-[9px] tracking-widest text-[var(--muted)] uppercase">
+              [ VIEW DETAILS ]
             </div>
           </div>
         </div>
-
-        {/* Corner accents */}
-        <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-[var(--border)] group-hover:border-[var(--red)]/50 transition-colors duration-300" />
-        <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-[var(--border)] group-hover:border-[var(--red)]/50 transition-colors duration-300" />
       </div>
     </motion.div>
   );
@@ -753,21 +753,17 @@ const CareerTimeline = () => {
             </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
-              <span>ENTRIES_LOGGED: <span className="text-[var(--red)]">06</span></span>
+              <span>ENTRIES_LOGGED: <span className="text-[var(--red)]">03</span></span>
             </div>
           </div>
         </ParticleFlyer>
       </div>
 
-      {/* Horizontal scrolling timeline */}
+      {/* Horizontal scrolling cards */}
       <div className="relative w-full">
-        {/* Horizontal line */}
-        <div className="absolute top-[7px] left-0 right-0 h-[2px] bg-[var(--border)]" />
-
-        {/* Scrollable cards — vertical scroll converts to horizontal */}
         <div
           ref={scrollContainerRef}
-          className="flex gap-6 md:gap-8 overflow-x-auto px-4 md:px-8 pb-8 pt-0"
+          className="flex gap-3 md:gap-4 overflow-x-auto px-4 md:px-8 pb-8"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {careerData.map((item, i) => (
@@ -778,7 +774,7 @@ const CareerTimeline = () => {
 
       {/* Bottom metadata */}
       <div className="mt-12 flex justify-center px-4">
-        <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 06 — STATUS: ONGOING</span>
+        <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 03 — STATUS: ONGOING</span>
       </div>
     </section>
   );
@@ -1128,9 +1124,9 @@ const HeroBackground = ({ hasLoaded }) => {
         <motion.div
           ref={textContainerRef}
           className="flex flex-col items-start font-supertalls leading-none text-left"
-          initial={{ opacity: 0, filter: "blur(10px)" }}
-          animate={hasLoaded ? { opacity: 1, filter: "blur(0px)" } : {}}
-          transition={{ delay: 0.1, duration: 0.8, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={hasLoaded ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.1, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
           style={{
             fontSize: 'clamp(60px, 12vw, 160px)',
             '--mx': '0px',
@@ -2338,6 +2334,11 @@ export default function App() {
             <div className="absolute bottom-6 right-6 md:bottom-12 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
               SYS: <span className="text-[var(--red)] font-bold animate-pulse">OFFLINE</span><br/>
               END_OF_FILE
+            </div>
+
+            {/* Signature watermark */}
+            <div className="absolute bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 pointer-events-none">
+              <img src="/assets/photos/1677946322376.png" alt="" className="w-24 md:w-32 opacity-[0.06] invert" />
             </div>
 
             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-40">
