@@ -234,6 +234,50 @@ const ScrambleText = ({ children, delay = 0 }) => {
   return <span className="text-[var(--black)] font-bold">{text}</span>;
 };
 
+// --- MULTILINGUAL GREETING CYCLE (Windows OOBE style) ---
+const greetings = ['Hi', 'Hello', 'Hola', 'Bonjour', 'नमस्ते', 'Ciao', 'こんにちは', 'مرحبا'];
+const welcomeMessages = ['आपका स्वागत है', 'Welcome'];
+
+const GreetingCycle = ({ progress }) => {
+  const [index, setIndex] = useState(0);
+  const [welcomeIndex, setWelcomeIndex] = useState(0);
+  const isWelcome = progress >= 95;
+
+  useEffect(() => {
+    if (isWelcome) return;
+    const interval = setInterval(() => {
+      setIndex(prev => (prev + 1) % greetings.length);
+    }, 1200);
+    return () => clearInterval(interval);
+  }, [isWelcome]);
+
+  useEffect(() => {
+    if (!isWelcome) return;
+    setWelcomeIndex(0);
+    const timeout = setTimeout(() => setWelcomeIndex(1), 1500);
+    return () => clearTimeout(timeout);
+  }, [isWelcome]);
+
+  const currentText = isWelcome ? welcomeMessages[welcomeIndex] : greetings[index];
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[100px]">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={currentText}
+          initial={{ opacity: 0, scale: 0.92, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1.05, y: -8 }}
+          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
+          className="font-clash font-bold text-[clamp(40px,8vw,80px)] text-[var(--black)] leading-none"
+        >
+          {currentText}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // --- RUNNING TIMECODE ---
 const Timecode = () => {
   const spanRef = useRef(null);
@@ -1129,7 +1173,19 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute top-12 left-0 right-0 w-full flex flex-col items-center justify-center gap-3 transition-opacity duration-300 ${hudClass}`}>
-        <motion.div id="top-secret-marker" animate={{ scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] }} transition={{ repeat: Infinity, duration: 3 }} className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]" />
+        <motion.div
+          id="top-secret-marker"
+          initial={{ opacity: 0 }}
+          animate={hasLoaded
+            ? { opacity: 0.8, boxShadow: '0 0 12px white' }
+            : { opacity: 0 }
+          }
+          transition={hasLoaded
+            ? { duration: 1, delay: 1.6, ease: 'easeOut' }
+            : {}
+          }
+          className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]"
+        />
         <div className="border border-[var(--red)]/50 text-[var(--red)] text-[9px] md:text-[10px] px-4 py-1.5 tracking-[0.2em] bg-[var(--bg)]/50 backdrop-blur-sm font-clash">
           TOP SECRET // CASE #2026
         </div>
@@ -2297,44 +2353,46 @@ export default function App() {
           {!hasLoaded && (
             <motion.div
               key="preloader"
-              exit={{ opacity: 1 }} // Keep wrapper while curtains slide
-              transition={{ duration: 1.2 }}
-              className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505] overflow-hidden"
+              initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
+              exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
+              transition={{
+                duration: 1.2,
+                ease: [0.76, 0, 0.24, 1],
+                delay: 0.3,
+              }}
             >
-              {/* TOP CURTAIN (Camel eyelid lid) */}
-              <motion.div 
-                initial={{ y: 0 }}
-                exit={{ y: "-100%" }}
-                transition={{ duration: 1.2, ease: [0.7, 0, 0.3, 1] }}
-                className="absolute inset-0 bottom-1/2 bg-[#050505]"
-              />
-              
-              {/* BOTTOM CURTAIN (Camel eyelid lid) */}
-              <motion.div 
-                initial={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ duration: 1.2, ease: [0.7, 0, 0.3, 1] }}
-                className="absolute inset-0 top-1/2 bg-[#050505]"
+              {/* Bottom edge glow that intensifies on exit */}
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 h-px z-30 pointer-events-none"
+                initial={{ opacity: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
+                exit={{ opacity: 1, boxShadow: '0 0 15px 4px rgba(255,0,0,0.5), 0 0 30px 8px rgba(255,0,0,0.2)' }}
+                transition={{ duration: 0.8, delay: 0.3, ease: 'easeIn' }}
+                style={{ background: 'var(--red)' }}
               />
 
-              {/* PRELOADER CONTENT (Fades as lids open) */}
-              <motion.div 
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
+              {/* PRELOADER CONTENT */}
+              <motion.div
+                exit={{ opacity: 0, y: -40 }}
+                transition={{ duration: 0.3 }}
                 className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center"
               >
-                <div className="absolute top-1/2 left-8 right-8 md:left-16 md:right-16 h-[1px] bg-[var(--border)] -translate-y-1/2">
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
-                    style={{ left: `${loadingProgress}%` }}
-                  >
-                    <div className="absolute right-[50%] h-[2px] w-[100px] origin-right" style={{ background: "linear-gradient(to right, transparent, var(--red))", boxShadow: '0 0 10px rgba(255,0,0,0.8)' }} />
+                {/* Multilingual greeting — Windows OOBE style */}
+                <GreetingCycle progress={loadingProgress} />
+
+                {/* Bottom: percentage + progress bar */}
+                <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
+                  <div className="font-bebas text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
+                    {Math.floor(loadingProgress)}%
                   </div>
-                </div>
-                
-                {/* Restored to Bottom Right */}
-                <div className="absolute bottom-8 right-8 md:bottom-12 md:right-16 font-bebas text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
-                  {Math.floor(loadingProgress)}%
+                  <div className="w-full h-[1px] bg-[var(--border)] relative">
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
+                      style={{ left: `${loadingProgress}%` }}
+                    >
+                      <div className="absolute right-[50%] h-[2px] w-[100px] origin-right" style={{ background: "linear-gradient(to right, transparent, var(--red))", boxShadow: '0 0 10px rgba(255,0,0,0.8)' }} />
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
