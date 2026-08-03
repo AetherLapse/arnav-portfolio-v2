@@ -90,12 +90,53 @@ const GLOBAL_STYLES = `
     100% { top: 100%; opacity: 0; }
   }
 
+  @keyframes grain {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5%, -10%); }
+    30% { transform: translate(3%, -15%); }
+    50% { transform: translate(12%, 9%); }
+    70% { transform: translate(9%, 4%); }
+    90% { transform: translate(-1%, 7%); }
+  }
+
+  .noise-overlay::before {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    animation: grain 8s steps(10) infinite;
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
   @keyframes spin-forward { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes spin-backward { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
 `;
 
 // Global contexts
 const CursorContext = React.createContext({ cursorX: null, cursorY: null });
+
+// --- SOUND ENGINE (File-based) ---
+const SFX = (() => {
+  const cache = {};
+  const play = (src, volume = 0.3) => {
+    try {
+      if (!cache[src]) cache[src] = new Audio(src);
+      const audio = cache[src].cloneNode();
+      audio.volume = volume;
+      audio.play().catch(() => {});
+    } catch {}
+  };
+  return {
+    hover: () => play('/assets/sounds/hover.mp3', 0.15),
+    click: () => play('/assets/sounds/click.mp3', 0.2),
+    scroll: () => play('/assets/sounds/scroll.mp3', 0.08),
+    spaceEnter: () => play('/assets/sounds/boot.mp3', 0.3),
+  };
+})();
 
 // --- PHYSICS ENGINES ---
 const MagneticRepulsion = ({ children, repulsionForce = 40, radius = 200, className = "" }) => {
@@ -296,6 +337,49 @@ const Timecode = () => {
   }, []);
   return <span ref={spanRef} className="text-[var(--red)]" />;
 };
+
+// --- EDITING UI ELEMENTS ---
+const CutMarker = ({ label = "CUT" }) => (
+  <div className="w-full flex items-center gap-3 py-6 px-4 md:px-8 select-none">
+    <div className="flex items-center gap-2">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+      <span className="font-clash text-[8px] tracking-[0.3em] text-[var(--red)] uppercase">{label}</span>
+    </div>
+    <div className="flex-1 h-px bg-[var(--border)] relative">
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-3 bg-[var(--red)]" />
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-3 bg-[var(--red)]" />
+    </div>
+    <span className="font-clash text-[8px] tracking-widest text-[var(--muted)]"><Timecode /></span>
+  </div>
+);
+
+const WaveformDivider = () => {
+  const bars = 60;
+  return (
+    <div className="w-full flex items-center justify-center gap-[2px] py-4 px-4 opacity-30">
+      {Array.from({ length: bars }).map((_, i) => {
+        const h = Math.abs(Math.sin((i / bars) * Math.PI * 3)) * 16 + 2;
+        return <div key={i} className="w-[2px] bg-[var(--red)]" style={{ height: `${h}px` }} />;
+      })}
+    </div>
+  );
+};
+
+const RenderBar = ({ label = "RENDERING SEQUENCE" }) => (
+  <div className="w-full px-4 md:px-8 py-4 flex items-center gap-4 select-none">
+    <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase whitespace-nowrap">{label}</span>
+    <div className="flex-1 h-1 bg-[var(--border)] relative overflow-hidden">
+      <motion.div
+        className="absolute inset-y-0 left-0 bg-[var(--red)]"
+        initial={{ width: '0%' }}
+        whileInView={{ width: '100%' }}
+        viewport={{ once: true }}
+        transition={{ duration: 2, ease: 'linear' }}
+      />
+    </div>
+    <span className="font-clash text-[8px] tracking-widest text-[var(--muted)]">100%</span>
+  </div>
+);
 
 // --- DYNAMIC HUD COORDINATES ---
 const TrackedCoordinates = () => {
@@ -1680,8 +1764,13 @@ export default function App() {
   const tailOpacity = useTransform(scrollVelocity, [-200, 0, 200], [1, 0, 1]);
 
   // Make Nav visible after 100px of scrolling
+  const lastScrollSound = useRef(0);
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavVisible(latest > 100);
+    if (Math.abs(latest - lastScrollSound.current) > 600) {
+      lastScrollSound.current = latest;
+      SFX.scroll();
+    }
   });
 
 
@@ -1740,7 +1829,8 @@ export default function App() {
       const delay = setTimeout(() => {
         setHasLoaded(true);
         document.body.classList.remove('loading');
-      }, 400); 
+        SFX.spaceEnter();
+      }, 400);
       return () => clearTimeout(delay);
     } else {
       document.body.classList.add('loading');
@@ -1753,6 +1843,18 @@ export default function App() {
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
 
+  useEffect(() => {
+    let lastHoverTime = 0;
+    const handleHover = (e) => {
+      const now = Date.now();
+      if (now - lastHoverTime < 150) return;
+      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
+      if (el) { lastHoverTime = now; SFX.hover(); }
+    };
+    document.addEventListener('mouseenter', handleHover, true);
+    return () => document.removeEventListener('mouseenter', handleHover, true);
+  }, []);
+
   if (!isMounted) return null;
 
   return (
@@ -1760,6 +1862,43 @@ export default function App() {
       <div className="relative w-full min-h-screen bg-[var(--bg)] font-clash text-[var(--black)] selection:bg-[var(--red)] selection:text-[var(--bg)] overflow-x-hidden">
         <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
 
+        {/* Film grain noise overlay */}
+        <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
+
+        {/* Subtle ambient gradient blobs */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-[var(--red)] opacity-[0.015] blur-[120px]" />
+          <div className="absolute top-[50%] -right-[20%] w-[50vw] h-[50vw] rounded-full bg-[var(--red)] opacity-[0.01] blur-[150px]" />
+          <div className="absolute -bottom-[20%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-white opacity-[0.008] blur-[100px]" />
+        </div>
+
+        {/* Premiere-style vertical timeline tracks */}
+        <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-[0.04]">
+          <div className="absolute inset-0 flex justify-between px-[8%]">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="relative h-full">
+                <div className="w-px h-full bg-white" />
+                {i % 2 === 0 && (
+                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-2 h-2 border border-white/60 rotate-45" />
+                )}
+                {i % 3 === 0 && (
+                  <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-1 h-8 bg-white/40" />
+                )}
+                {i % 2 === 1 && (
+                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white/50" />
+                )}
+                {i % 3 === 1 && (
+                  <div className="absolute top-[75%] left-1/2 -translate-x-1/2 w-1 h-6 bg-white/30" />
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Horizontal time markers */}
+          <div className="absolute top-[20%] left-0 right-0 h-px bg-white/30" />
+          <div className="absolute top-[40%] left-0 right-0 h-px bg-white/15" />
+          <div className="absolute top-[60%] left-0 right-0 h-px bg-white/20" />
+          <div className="absolute top-[80%] left-0 right-0 h-px bg-white/15" />
+        </div>
 
         {/* THE DYNAMIC CURVED RED THREAD */}
         <CurvedThread hasLoaded={hasLoaded} />
@@ -1844,6 +1983,8 @@ export default function App() {
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
+
+          <CutMarker label="SCENE 02 — ABOUT" />
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32">
@@ -2028,6 +2169,9 @@ export default function App() {
           {/* ================= EXPERIENCE STATS STRIP ================= */}
           <ExperienceStrip />
 
+          <WaveformDivider />
+          <CutMarker label="SCENE 03 — CAREER" />
+
           {/* ================= CAREER TIMELINE SECTION ================= */}
           <CareerTimeline />
 
@@ -2142,6 +2286,8 @@ export default function App() {
             </div>
           </section>
 
+          <RenderBar label="EXPORT: EVIDENCE_BOARD.mp4" />
+          <CutMarker label="SCENE 04 — WORK" />
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -2175,7 +2321,8 @@ export default function App() {
                   {EVIDENCE_SECTORS.map((sector) => (
                     <button
                       key={sector.id}
-                      onClick={() => setActiveSector(sector.id)}
+                      onClick={() => { SFX.click(); setActiveSector(sector.id); }}
+                      onMouseEnter={() => SFX.hover()}
                       className={`font-clash text-[9px] md:text-[10px] tracking-widest whitespace-nowrap transition-colors duration-300 flex items-center gap-2 cursor-none ${
                         activeSector === sector.id ? "text-[var(--red)] font-bold" : "text-[var(--muted)] hover:text-[var(--black)]"
                       }`}
@@ -2205,7 +2352,7 @@ export default function App() {
                         transition={{ duration: 0.4, delay: i * 0.05 }}
                         className="shrink-0"
                      >
-                       <div className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none" onClick={() => setCaseStudyItem(work)}>
+                       <div className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none" onClick={() => { SFX.click(); setCaseStudyItem(work); }}>
 
                          {/* Glass Card */}
                          <div className="relative aspect-[3/4] border border-[var(--border)] bg-[#050505] overflow-hidden transition-all duration-500 hover:border-[var(--red)]/50">
@@ -2238,6 +2385,9 @@ export default function App() {
             </div>
           </section>
 
+
+          <WaveformDivider />
+          <CutMarker label="SCENE 05 — POSTS" />
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
@@ -2370,6 +2520,9 @@ export default function App() {
               </div>
             </div>
           </section>
+
+          <RenderBar label="LOADING: TOOLKIT_ASSETS" />
+          <CutMarker label="SCENE 06 — ARSENAL" />
 
           {/* ================= TOOLKIT SECTION ================= */}
           <ToolkitSection />
