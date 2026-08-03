@@ -493,7 +493,7 @@ const OrbitalRing = ({ radius, duration, reverse, items }) => {
 
   return (
     <div ref={containerRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
-      <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-40 pointer-events-none" />
+      <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-70 pointer-events-none" />
       {items.map((item, i) => (
         <div
           key={i}
@@ -1904,15 +1904,15 @@ export default function App() {
         <CurvedThread hasLoaded={hasLoaded} />
 
         {/* ================= HERO SECTION ================= */}
-        <section id="section-hero" className="relative w-full h-screen flex items-center justify-center z-10">
+        <section id="section-hero" className="relative w-full h-screen flex items-center justify-center z-10 overflow-visible">
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
             <HeroBackground hasLoaded={hasLoaded} />
           </div>
 
-          {/* GALAXY LAYER (z-15) - rendered once for performance */}
-          <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[15]">
+          {/* GALAXY LAYER (z-95) - rendered once for performance */}
+          <div className="fixed top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
             <OrbitalRing
               radius={320}
               duration={35}
@@ -1930,14 +1930,11 @@ export default function App() {
               duration={25}
               reverse={true}
               items={[
-                { label: "Blender", icon: <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png" alt="Blender" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
-                { label: "Kling", icon: <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe7zS6NYkeU_gYIDGhgvvsKs4iLzmTBz_ur-vz-yoA6PNqjozmASBiaQbr&s=10" alt="Kling" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
-                { label: "Higgsfield", icon: <img src="https://images.seeklogo.com/logo-png/66/1/higgsfield-logo-png_seeklogo-660244.png" alt="Higgsfield" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> }
+                { label: "Blender", icon: <img src="/assets/photos/blender logo.png" alt="Blender" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+                { label: "Kling", icon: <img src="/assets/photos/kling logo.png" alt="Kling" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+                { label: "Higgsfield", icon: <img src="/assets/photos/higgsfield logo.png" alt="Higgsfield" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> }
               ]}
             />
-            <motion.div initial={{ scale: 0 }} animate={{ scale: hasLoaded ? 1 : 0 }} transition={{ delay: 0.7, type: "spring", stiffness: 150, damping: 20 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--bg)] px-6 py-2.5 rounded-full border border-[var(--border)] text-[var(--red)] font-bold tracking-widest shadow-xl">
-              #stAycReative
-            </motion.div>
           </div>
 
           {/* PORTRAIT LAYER (z-90) */}
