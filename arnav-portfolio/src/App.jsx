@@ -1185,14 +1185,27 @@ const PremiereTimeline = () => {
 // ================= DINO RUNNER GAME =================
 
 const DinoRunner = () => {
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setShouldLoad(true); observer.disconnect(); }
+    }, { rootMargin: '200px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="w-full max-w-[90rem] mx-auto px-4 md:px-12 py-16 z-10 relative">
+    <div ref={containerRef} className="w-full max-w-[90rem] mx-auto px-4 md:px-12 py-16 z-10 relative">
       <div className="font-clash text-[9px] tracking-widest text-[var(--red)] uppercase mb-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
         // BREAK_PROTOCOL [MINI GAME]
       </div>
-      <div className="border border-[var(--border)] overflow-hidden rounded-sm">
-        <DinoGame />
+      <div className="border border-[var(--border)] overflow-hidden rounded-sm" style={{ minHeight: '150px' }}>
+        {shouldLoad && <DinoGame />}
       </div>
       <div className="font-clash text-[8px] tracking-widest text-[var(--muted)] mt-3 text-center">
         SPACE / CLICK TO JUMP — DOWN ARROW TO DUCK / FAST FALL
@@ -1248,34 +1261,45 @@ const InteractiveDotGrid = () => {
   const mouseRef = useRef({ x: -1000, y: -1000 });
 
   useEffect(() => {
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animId;
-    const gap = 18;
+    let running = false;
+    let visible = true;
+    const gap = 24;
     const dotSize = 0.6;
     const influenceRadius = 100;
+    const dpr = Math.min(window.devicePixelRatio, 1.5);
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const onMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    };
-    window.addEventListener('mousemove', onMove);
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible && running) draw();
+    });
+    observer.observe(canvas);
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!visible || !running) return;
+      ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
 
-      for (let x = gap; x < canvas.width; x += gap) {
-        for (let y = gap; y < canvas.height; y += gap) {
+      for (let x = gap; x < w; x += gap) {
+        for (let y = gap; y < h; y += gap) {
           const dx = x - mx;
           const dy = y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1297,12 +1321,20 @@ const InteractiveDotGrid = () => {
       }
       animId = requestAnimationFrame(draw);
     };
-    draw();
+
+    const onMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      if (!running) { running = true; draw(); }
+    };
+    window.addEventListener('mousemove', onMove);
 
     return () => {
+      running = false;
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
+      observer.disconnect();
     };
   }, []);
 
@@ -1767,7 +1799,7 @@ export default function App() {
   const lastScrollSound = useRef(0);
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavVisible(latest > 100);
-    if (Math.abs(latest - lastScrollSound.current) > 600) {
+    if (Math.abs(latest - lastScrollSound.current) > 1500) {
       lastScrollSound.current = latest;
       SFX.scroll();
     }
@@ -1912,7 +1944,7 @@ export default function App() {
           </div>
 
           {/* GALAXY LAYER (z-95) - rendered once for performance */}
-          <div className="fixed top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
+          <div className="absolute top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
             <OrbitalRing
               radius={320}
               duration={35}
