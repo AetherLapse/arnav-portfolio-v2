@@ -1859,7 +1859,7 @@ export default function App() {
 
   return (
     <CursorContext.Provider value={{ cursorX, cursorY }}>
-      <div className="relative w-full min-h-screen bg-[var(--bg)] font-clash text-[var(--black)] selection:bg-[var(--red)] selection:text-[var(--bg)] overflow-x-hidden">
+      <div className="relative w-full min-h-screen bg-[var(--bg)] font-clash text-[var(--black)] selection:bg-[var(--red)] selection:text-[var(--bg)]">
         <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
 
         {/* Film grain noise overlay */}
@@ -1946,7 +1946,7 @@ export default function App() {
             style={{ minHeight: '60vh' }}
           >
             <motion.img
-              src="/assets/photos/DSC00747 - 01.png"
+              src="/assets/photos/DSC00747-01.webp"
               alt="Arnav Rai"
               className="relative w-full h-auto min-h-[60vh] object-bottom"
               style={{ objectFit: 'cover' }}
@@ -1974,6 +1974,7 @@ export default function App() {
               loop
               muted
               playsInline
+              preload="metadata"
               className="w-full h-auto object-cover"
             />
           </section>
@@ -2020,7 +2021,7 @@ export default function App() {
                       <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[var(--red)] z-10" />
                       
                       
-                      <img src="/assets/photos/DSC00747 - 01.png" alt="Arnav Profile" className="w-full h-full object-cover object-top opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" />
+                      <img src="/assets/photos/DSC00747-01.webp" alt="Arnav Profile" loading="lazy" className="w-full h-full object-cover object-top opacity-60 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500" />
                       
                     </div>
 
@@ -2210,7 +2211,7 @@ export default function App() {
                         <div className="absolute bottom-2 right-2 w-2 h-2 border-b border-r border-[var(--red)] z-10" />
 
                         {/* Image */}
-                        <img src={brand.logo} alt={brand.name} className="w-full h-full object-cover opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
+                        <img src={brand.logo} alt={brand.name} loading="lazy" className="w-full h-full object-cover opacity-40 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
                         
 
                         {/* Vignette */}
@@ -2250,7 +2251,7 @@ export default function App() {
                         <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] z-20 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
 
                         {/* Image */}
-                        <img src={creator.dp} alt={creator.name} className="w-full h-full object-cover opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
+                        <img src={creator.dp} alt={creator.name} loading="lazy" className="w-full h-full object-cover opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100" />
                         
                         {/* Vignette */}
                         <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/20 to-transparent opacity-90 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none" />
@@ -2362,7 +2363,7 @@ export default function App() {
                            </div>
                            
                            {/* Image (Grayscale to Color) */}
-                           <img src={work.img} alt={work.title} className="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-105 group-hover:scale-100" />
+                           <img src={work.img} alt={work.title} loading="lazy" className="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-105 group-hover:scale-100" />
                            
                            {/* Vignette Shadow */}
                            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent opacity-80 pointer-events-none" />
