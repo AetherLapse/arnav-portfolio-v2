@@ -32,6 +32,17 @@ const GLOBAL_STYLES = `
 
   body {
     background-color: var(--bg);
+    /* Creative layered background — all painted gradients (no filters, no extra
+       composited layers, no fixed attachment) so even iGPUs pay ~nothing:
+       red ambient glows + blueprint grid + CRT scanlines */
+    background-image:
+      radial-gradient(ellipse 100% 60% at 50% -10%, rgba(255, 0, 0, 0.07), transparent 65%),
+      radial-gradient(ellipse 70% 45% at 90% 108%, rgba(255, 0, 0, 0.05), transparent 60%),
+      radial-gradient(ellipse 45% 35% at 8% 105%, rgba(255, 255, 255, 0.035), transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
+    background-size: auto, auto, auto, 80px 80px, 80px 80px, auto;
     color: var(--black);
     font-family: 'Clash Grotesk', sans-serif;
     overflow-x: hidden;
