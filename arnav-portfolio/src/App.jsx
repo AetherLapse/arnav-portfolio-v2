@@ -1523,80 +1523,99 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
 
 // --- DYNAMIC SWEEPING RED THREAD (SINE WAVE) ---
 const CurvedThread = ({ hasLoaded }) => {
-  const { scrollYProgress } = useScroll();
-  
-  // Slowed down the acceleration. 
-  // It now maps almost 1:1 with the scroll, finishing the drawing right as you reach the end of the page (95% scroll)
-  const drawProgress = useTransform(scrollYProgress, [0, 0.95], [0, 1]);
-  
-  const [pathDef, setPathDef] = useState("");
+  // Geometry lives in a ref so the scroll handler never re-subscribes.
+  const geo = useRef({ topY: 0, bottomY: 0, x: 0, amp: 0, totalH: 1, docH: 1, pinEnd: 0 });
+  const [pathDef, setPathDef] = useState("");      // unlit groove (full path, start tracks the hero)
+  const [drawnPath, setDrawnPath] = useState("");  // red thread (grows downward from the marker)
   const [circlePos, setCirclePos] = useState({ topY: 0, bottomY: 0, x: 0 });
   const containerRef = useRef(null);
+  const rafRef = useRef(0);
+
+  // Sine param by ABSOLUTE y so the wave crests stay fixed on the page while
+  // the drawn segment grows (phase never resets per segment).
+  const buildSine = (x, y1, y2, amp, totalH) => {
+    const len = y2 - y1;
+    if (len <= 0.5) return `M ${x} ${y1} L ${x} ${y1 + 0.5}`;
+    const steps = Math.max(24, Math.min(150, Math.round(len / 30)));
+    let d = `M ${x} ${y1} `;
+    for (let i = 0; i <= steps; i++) {
+      const cy = y1 + (i / steps) * len;
+      const cx = x + Math.sin((cy / totalH) * Math.PI * 2) * amp;
+      d += `L ${cx} ${cy} `;
+    }
+    return d;
+  };
+
+  const updateGeometry = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    const vh = window.innerHeight;
+
+    // Start circle latches exactly onto the white TOP SECRET marker
+    const topEl = document.getElementById('top-secret-marker');
+    let topY = vh * 0.15; // Fallback
+    if (topEl) {
+      const topRect = topEl.getBoundingClientRect();
+      const containerRect = el.getBoundingClientRect();
+      topY = topRect.top - containerRect.top + (topRect.height / 2);
+    }
+
+    // End circle perfectly above the "CHANNEL OPEN" text
+    const channelEl = document.getElementById('channel-open-marker');
+    let bottomY = h - (vh * 0.5) - 100; // Fallback
+    if (channelEl) {
+      const channelRect = channelEl.getBoundingClientRect();
+      const containerRect = el.getBoundingClientRect();
+      bottomY = channelRect.top - containerRect.top - 64;
+    }
+
+    const midX = w / 2;
+    const amp = w > 768 ? w * 0.35 : w * 0.45;
+    // Stack deck: while the hero is sticky (pinEnd of scroll), the thread's start
+    // must track the hero; after that it scrolls away with the page naturally.
+    const heroEl = document.getElementById('section-hero');
+    const deckH = heroEl ? heroEl.parentElement.getBoundingClientRect().height : vh;
+    geo.current = {
+      topY, bottomY, x: midX, amp,
+      totalH: Math.max(bottomY - topY, 1),
+      docH: Math.max(document.documentElement.scrollHeight, 1),
+      pinEnd: Math.max(deckH - vh, 0),
+    };
+    setCirclePos({ topY, bottomY, x: midX });
+    updateDrawn();
+  };
+
+  const updateDrawn = () => {
+    const g = geo.current;
+    const s = window.scrollY;
+    // Keep the thread's START glued to the hero while it is pinned:
+    // viewport position of the marker stays at topY during the stack.
+    const startY = g.topY + Math.min(s, g.pinEnd);
+    const frac = Math.min(s / (0.95 * g.docH), 1.05);
+    const endY = startY + g.totalH * frac;
+    setPathDef(buildSine(g.x, startY, g.bottomY, g.amp, g.totalH));
+    setDrawnPath(buildSine(g.x, startY, Math.max(endY, startY + 1), g.amp, g.totalH));
+  };
 
   useEffect(() => {
-    const updatePath = () => {
-      if (!containerRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      const vh = window.innerHeight;
-
-      // Start circle latches exactly onto the white TOP SECRET marker
-      const topEl = document.getElementById('top-secret-marker');
-      let topY = vh * 0.15; // Fallback
-      
-      if (topEl && containerRef.current) {
-        const topRect = topEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate precise vertical center of the white dot
-        topY = topRect.top - containerRect.top + (topRect.height / 2);
-      }
-      
-      // End circle perfectly above the "CHANNEL OPEN" text
-      const channelEl = document.getElementById('channel-open-marker');
-      let bottomY = h - (vh * 0.5) - 100; // Fallback
-      
-      if (channelEl && containerRef.current) {
-        const channelRect = channelEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate absolute Y position relative to the SVG container
-        // Increased the offset from 24 to 64 to avoid overlapping
-        bottomY = channelRect.top - containerRect.top - 64; 
-      }
-
-      const midX = w / 2;
-
-      setCirclePos({ topY, bottomY, x: midX });
-
-      if (h < vh * 2) {
-         setPathDef(`M ${midX} ${topY} L ${midX} ${bottomY}`);
-         return;
-      }
-
-      // Generate a perfect mathematical Sine Curve!
-      const amplitude = w > 768 ? w * 0.35 : w * 0.45;
-      const steps = 150; // High resolution for perfect smoothness
-      let d = `M ${midX} ${topY} `;
-      
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        // Linear interpolation for Y
-        const currentY = topY + t * (bottomY - topY);
-        // Sine wave for X (1 full cycle: right, left, center)
-        const currentX = midX + Math.sin(t * Math.PI * 2) * amplitude;
-        d += `L ${currentX} ${currentY} `;
-      }
-      
-      setPathDef(d);
-    };
-
-    updatePath();
-    const observer = new ResizeObserver(updatePath);
+    updateGeometry();
+    const observer = new ResizeObserver(updateGeometry);
     if (containerRef.current) observer.observe(containerRef.current);
-    
-    const timeout = setTimeout(updatePath, 200);
+    const timeout = setTimeout(updateGeometry, 200);
+    window.addEventListener('resize', updateGeometry);
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; updateDrawn(); });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       observer.disconnect();
       clearTimeout(timeout);
+      window.removeEventListener('resize', updateGeometry);
+      window.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [hasLoaded]);
 
@@ -1605,29 +1624,12 @@ const CurvedThread = ({ hasLoaded }) => {
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         {/* Unlit Tracking Groove */}
         <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
-        
-        {/* The Live Red Thread — fake glow via wide+thin strokes.
-            A drop-shadow filter on a full-page path re-rasterizes the whole
-            giant SVG every scroll frame (GPU killer on iGPUs). Two strokes
-            give the same neon look at ~zero filter cost. */}
-        <motion.path
-          d={pathDef}
-          stroke="rgba(255,0,0,0.25)"
-          strokeWidth="6"
-          fill="none"
-          style={{ pathLength: drawProgress }}
-        />
-        <motion.path
-          d={pathDef}
-          stroke="var(--red)"
-          strokeWidth="2"
-          fill="none"
-          style={{ pathLength: drawProgress }}
-        />
 
-        {/* Removed redundant top anchor circle; the glowing white dot now acts as the true source */}
-        
-        {/* Bottom Anchor Circle (Increased radius) */}
+        {/* The Live Red Thread — fake glow via wide+thin strokes (no filters). */}
+        <path d={drawnPath} stroke="rgba(255,0,0,0.25)" strokeWidth="6" fill="none" />
+        <path d={drawnPath} stroke="var(--red)" strokeWidth="2" fill="none" />
+
+        {/* Bottom Anchor Circle */}
         <circle cx={circlePos.x} cy={circlePos.bottomY} r={10} fill="var(--black)" stroke="var(--border)" strokeWidth="2" className="drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
       </svg>
     </div>
