@@ -1997,8 +1997,8 @@ export default function App() {
           </div>
         </section>
 
-          {/* SHOWREEL VIDEO — the card that slides up over the pinned hero */}
-          <section className="relative w-full z-20 bg-[#0A0A0A] rounded-t-[2rem] md:rounded-t-[2.5rem] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
+          {/* SHOWREEL VIDEO — the card that slides up over the pinned hero (flat edges = true stack) */}
+          <section className="relative w-full z-20 bg-[#0A0A0A] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
             <ShowreelVideo />
           </section>
         </div>
