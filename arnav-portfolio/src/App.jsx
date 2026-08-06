@@ -106,10 +106,16 @@ const GLOBAL_STYLES = `
     width: 200%;
     height: 200%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    animation: grain 8s steps(10) infinite;
     pointer-events: none;
     z-index: 9000;
     opacity: 0.4;
+  }
+
+  /* Perf: skip rendering sections that are off-screen (page is ~15k px tall).
+     IntersectionObserver + whileInView still fire, so scroll animations are unaffected. */
+  section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
   }
 
   @keyframes spin-forward { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -384,20 +390,22 @@ const RenderBar = ({ label = "RENDERING SEQUENCE" }) => (
 // --- DYNAMIC HUD COORDINATES ---
 const TrackedCoordinates = () => {
   const { cursorX, cursorY } = useContext(CursorContext);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const spanRef = useRef(null);
 
+  // Update on mousemove only (rAF-throttled, direct DOM write — no React re-renders, no rAF poll)
   useEffect(() => {
-    let animationFrameId;
-    let frameCount = 0;
-    const updatePos = () => {
-      frameCount++;
-      if (frameCount % 3 === 0 && cursorX && cursorY) {
-        setCoords({ x: Math.floor(cursorX.get()), y: Math.floor(cursorY.get()) });
-      }
-      animationFrameId = requestAnimationFrame(updatePos);
+    let raf = 0;
+    const onMove = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (spanRef.current && cursorX && cursorY) {
+          spanRef.current.textContent = `X ${Math.floor(cursorX.get())} Y ${Math.floor(cursorY.get())}`;
+        }
+      });
     };
-    animationFrameId = requestAnimationFrame(updatePos);
-    return () => cancelAnimationFrame(animationFrameId);
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => { window.removeEventListener('mousemove', onMove); if (raf) cancelAnimationFrame(raf); };
   }, [cursorX, cursorY]);
 
   const springX = useSpring(cursorX, { damping: 40, stiffness: 300, mass: 0.5 });
@@ -409,7 +417,7 @@ const TrackedCoordinates = () => {
       style={{ x: springX, y: springY, translateX: '24px', translateY: '24px' }}
     >
       <div className="w-1.5 h-1.5 bg-[var(--red)]" />
-      <span>X {coords.x} Y {coords.y}</span>
+      <span ref={spanRef}>X 0 Y 0</span>
     </motion.div>
   );
 };
@@ -441,68 +449,35 @@ const GalaxyIcon = ({ label, children }) => {
 };
 
 const OrbitalRing = ({ radius, duration, reverse, items }) => {
-  const containerRef = useRef(null);
-  const itemRefs = useRef([]);
-  const angleRef = useRef(0);
-  const lastTimeRef = useRef(null);
-  const visibleRef = useRef(true);
-
-  useEffect(() => {
-    let frameId;
-    const speed = (reverse ? -1 : 1) * (360 / duration);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        visibleRef.current = entry.isIntersecting;
-        if (entry.isIntersecting) {
-          lastTimeRef.current = null;
-          frameId = requestAnimationFrame(tick);
-        }
-      },
-      { rootMargin: '100px' }
-    );
-
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    function tick(timestamp) {
-      if (!visibleRef.current) return;
-      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
-      const delta = (timestamp - lastTimeRef.current) / 1000;
-      lastTimeRef.current = timestamp;
-      angleRef.current = (angleRef.current + speed * delta) % 360;
-
-      items.forEach((_, i) => {
-        const el = itemRefs.current[i];
-        if (!el) return;
-        const itemAngle = angleRef.current + (i * 360) / items.length;
-        const rad = (itemAngle * Math.PI) / 180;
-        const x = Math.cos(rad) * radius;
-        const y = Math.sin(rad) * radius;
-        el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-      });
-
-      frameId = requestAnimationFrame(tick);
-    }
-
-    frameId = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frameId);
-      observer.disconnect();
-    };
-  }, [radius, duration, reverse, items.length]);
+  // Pure-CSS orbit: each item rides a rotating wrapper (compositor-driven,
+  // zero main-thread cost) and counter-rotates on itself to stay upright.
+  const spin = reverse ? 'spin-backward' : 'spin-forward';
+  const counterSpin = reverse ? 'spin-forward' : 'spin-backward';
 
   return (
-    <div ref={containerRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
       <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-70 pointer-events-none" />
       {items.map((item, i) => (
         <div
           key={i}
-          ref={(el) => { itemRefs.current[i] = el; }}
-          className="absolute top-1/2 left-1/2 flex justify-center items-center pointer-events-auto"
+          className="absolute top-1/2 left-1/2 pointer-events-none"
+          style={{ width: 0, height: 0, animation: `${spin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
         >
-          <GalaxyIcon label={item.label}>
-            {item.icon}
-          </GalaxyIcon>
+          {/* spacer: carries the translate to the ring point (no animation, so its transform survives) */}
+          <div
+            className="absolute pointer-events-auto"
+            style={{ transform: `translateX(${radius}px) translate(-50%, -50%)` }}
+          >
+            {/* counter-rotator: keeps the icon upright (its own animation only affects itself) */}
+            <div
+              className="flex justify-center items-center"
+              style={{ animation: `${counterSpin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
+            >
+              <GalaxyIcon label={item.label}>
+                {item.icon}
+              </GalaxyIcon>
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -1871,18 +1846,6 @@ export default function App() {
     window.addEventListener('mousemove', move);
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
-
-  useEffect(() => {
-    let lastHoverTime = 0;
-    const handleHover = (e) => {
-      const now = Date.now();
-      if (now - lastHoverTime < 150) return;
-      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
-      if (el) { lastHoverTime = now; SFX.hover(); }
-    };
-    document.addEventListener('mouseenter', handleHover, true);
-    return () => document.removeEventListener('mouseenter', handleHover, true);
-  }, []);
 
   if (!isMounted) return null;
 
