@@ -1347,7 +1347,7 @@ const ShowreelVideo = () => {
       loop
       muted
       playsInline
-      preload="metadata"
+      preload="none"
       className="w-full h-auto object-cover"
     />
   );
@@ -1835,7 +1835,7 @@ export default function App() {
     setIsMounted(true);
 
     let resourcesLoaded = 0;
-    const totalResources = 2;
+    const totalResources = 1;
 
     const checkResourceLoad = () => {
       resourcesLoaded++;
@@ -1843,19 +1843,16 @@ export default function App() {
       setTargetProgress(newTarget);
     };
 
-    if (document.readyState === 'complete') checkResourceLoad();
-    else window.addEventListener('load', checkResourceLoad);
-
-    const img = new Image();
-    img.src = "https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png";
-    img.onload = checkResourceLoad;
-    img.onerror = checkResourceLoad;
-
+    // Gate on DOMContentLoaded, NOT window 'load' — window load waits for the
+    // autoplay video, every font and every image (8-10s on slow machines).
+    // The app is interactive at DOMContentLoaded; heavy media loads lazily.
+    if (document.readyState === 'complete' || document.readyState === 'interactive') checkResourceLoad();
+    else window.addEventListener('DOMContentLoaded', checkResourceLoad);
 
     const fallbackTimer = setTimeout(() => { setTargetProgress(100); }, 5000);
 
     return () => {
-      window.removeEventListener('load', checkResourceLoad);
+      window.removeEventListener('DOMContentLoaded', checkResourceLoad);
       clearTimeout(fallbackTimer);
     };
   }, []);
