@@ -1933,7 +1933,10 @@ export default function App() {
         <CurvedThread hasLoaded={hasLoaded} />
 
         {/* ============ STACK DECK: the video card slides over the pinned hero ============ */}
-        <div className="relative z-10" style={{ height: 'calc(100vh + 56.25vw)' }}>
+        {/* Height is auto: hero (100vh, sticky) + the video card's natural height.
+            Hardcoding 56.25vw was wrong — the showreel is 1920x892 (21:9), so its
+            height is ~46.5vw; a fixed taller value left phantom space after the card. */}
+        <div className="relative z-10">
 
         {/* ================= HERO SECTION ================= */}
         <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-visible">
