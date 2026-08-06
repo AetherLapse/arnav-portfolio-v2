@@ -1932,8 +1932,11 @@ export default function App() {
         {/* THE DYNAMIC CURVED RED THREAD */}
         <CurvedThread hasLoaded={hasLoaded} />
 
+        {/* ============ STACK DECK: the video card slides over the pinned hero ============ */}
+        <div className="relative z-10" style={{ height: 'calc(100vh + 56.25vw)' }}>
+
         {/* ================= HERO SECTION ================= */}
-        <section id="section-hero" className="relative w-full h-screen flex items-center justify-center z-10 overflow-visible">
+        <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-visible">
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
@@ -1991,14 +1994,14 @@ export default function App() {
           </div>
         </section>
 
+          {/* SHOWREEL VIDEO — the card that slides up over the pinned hero */}
+          <section className="relative w-full z-20 bg-[#0A0A0A] rounded-t-[2rem] md:rounded-t-[2.5rem] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
+            <ShowreelVideo />
+          </section>
+        </div>
 
         {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
         <div className="relative w-full pb-32 z-10">
-
-          {/* SHOWREEL VIDEO */}
-          <section className="relative w-full z-10">
-            <ShowreelVideo />
-          </section>
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
