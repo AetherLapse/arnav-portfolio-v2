@@ -2680,30 +2680,32 @@ export default function App() {
           {!hasLoaded && (
             <motion.div
               key="preloader"
-              className="fixed inset-0 z-[200] flex items-center justify-center"
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]"
               initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
               exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
               transition={{
-                duration: 1.2,
+                duration: 1.1,
                 ease: [0.76, 0, 0.24, 1],
-                delay: 0.3,
+                delay: 0.15,
               }}
             >
-              {/* Liquid curtain — wavy bottom edge that flattens as the preloader slides up (manndamani-style).
-                  The overlay background IS this SVG path; the curve dips below the viewport and
-                  "unwrinkles" (morphs to flat) while the whole thing lifts. */}
+              {/* Liquid curtain — manndamani-exact: wavy bottom edge dips ~150px below the
+                  viewport (control at +300px-equivalent) and flattens (1.7s, delay .3) while
+                  the whole overlay slides up (1.1s, delay .15). The overlay keeps its bg;
+                  the SVG's wave extends past the container box (overflow visible) so the page
+                  shows through the wave valleys. */}
               <motion.svg
-                className="absolute left-0 top-0 w-full h-[115%] pointer-events-none"
-                viewBox="0 0 100 115"
+                className="absolute left-0 top-0 w-full h-[118%] pointer-events-none"
+                viewBox="0 0 100 118"
                 preserveAspectRatio="none"
                 style={{ zIndex: 5 }}
               >
                 <motion.path
                   fill="#050505"
-                  initial={{ d: "M0 0 H100 V100 Q50 130 0 100 Z" }}
-                  animate={{ d: "M0 0 H100 V100 Q50 130 0 100 Z" }}
+                  initial={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
+                  animate={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
                   exit={{ d: "M0 0 H100 V100 Q50 100 0 100 Z" }}
-                  transition={{ duration: 1.1, ease: [0.76, 0, 0.24, 1], delay: 0.15 }}
+                  transition={{ duration: 1.7, ease: [0.76, 0, 0.24, 1], delay: 0.3 }}
                 />
               </motion.svg>
 
