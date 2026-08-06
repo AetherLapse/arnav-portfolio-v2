@@ -1595,13 +1595,23 @@ const CurvedThread = ({ hasLoaded }) => {
         {/* Unlit Tracking Groove */}
         <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
         
-        {/* The Live Red Thread */}
-        <motion.path 
-          d={pathDef} 
-          stroke="var(--red)" 
-          strokeWidth="2" 
-          fill="none" 
-          style={{ pathLength: drawProgress, filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' }} 
+        {/* The Live Red Thread — fake glow via wide+thin strokes.
+            A drop-shadow filter on a full-page path re-rasterizes the whole
+            giant SVG every scroll frame (GPU killer on iGPUs). Two strokes
+            give the same neon look at ~zero filter cost. */}
+        <motion.path
+          d={pathDef}
+          stroke="rgba(255,0,0,0.25)"
+          strokeWidth="6"
+          fill="none"
+          style={{ pathLength: drawProgress }}
+        />
+        <motion.path
+          d={pathDef}
+          stroke="var(--red)"
+          strokeWidth="2"
+          fill="none"
+          style={{ pathLength: drawProgress }}
         />
 
         {/* Removed redundant top anchor circle; the glowing white dot now acts as the true source */}
