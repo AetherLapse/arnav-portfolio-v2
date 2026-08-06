@@ -1459,13 +1459,13 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
           <motion.div animate={!isBase ? { opacity: [1, 0, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[var(--red)] rounded-full" />
           LIVE FEED
         </div>
-        <span>LAT: 48.8566 N</span>
-        <span>LON: 2.3522 E</span>
+        <span>LAT: 28.9845 N</span>
+        <span>LON: 77.7064 E</span>
         <span>SECURE_GRID_99</span>
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
-        12187eme enqueteur sur cette affaire<br/>
+        12,187th investigator on this case<br/>
         SYS: DIAGNOSTIC<br/>
         <span className="text-[var(--red)] font-bold">STABLE</span>
       </ParticleFlyer>
@@ -1678,6 +1678,7 @@ const BRANDS_DATA = [
 ];
 
 const CREATORS_DATA = [
+  // TODO: replace with Arnav's real creator names + links (yt/ig)
   { id: "C_01", name: "Creator One", dp: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
   { id: "C_02", name: "Creator Two", dp: "https://images.unsplash.com/photo-1530268729831-4b0b9e170218?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
   { id: "C_03", name: "Creator Three", dp: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
@@ -1693,8 +1694,9 @@ const EVIDENCE_SECTORS = [
 
 const EVIDENCE_DATA = [
   // Video Editing
+  // TODO: swap these in for Arnav's REAL project names, images, and links
   { id: "01", sector: "KINETIC_CUTS", title: "Ophelia", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop", year: "March 2025", context: "Commercial", client: "Ophelia Studios", time: "5 days", tags: ["Color Grading", "Motion Graphics"], stacks: ["Premiere Pro", "After Effects"], desc: "A high-contrast cinematic commercial edit blending surreal visuals with precise color grading. The client wanted an ethereal mood that pulled viewers into a dreamlike narrative.", link: "#" },
-  { id: "02", sector: "KINETIC_CUTS", title: "J. Pancras", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
+  { id: "02", sector: "KINETIC_CUTS", title: "Launch Reel", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
   { id: "03", sector: "KINETIC_CUTS", title: "2026 Greet", img: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop", year: "December 2025", context: "Personal", client: "Self-Initiated", time: "2 days", tags: ["Motion Graphics", "Typography"], stacks: ["After Effects", "Illustrator"], desc: "A personal new year greeting animation exploring glitch aesthetics and bold type treatments. Shared across social media to celebrate the creative community.", link: "#" },
   { id: "04", sector: "KINETIC_CUTS", title: "Ciao", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop", year: "November 2024", context: "Freelance", client: "Indie Artist", time: "4 days", tags: ["Music Video", "VFX"], stacks: ["Premiere Pro", "After Effects", "Blender"], desc: "Lyric video for an indie artist combining 3D environments with hand-drawn frame-by-frame animation overlays. Delivered across 3 aspect ratios for multi-platform release.", link: "#" },
   // Social Grids
@@ -1796,13 +1798,8 @@ export default function App() {
   const tailOpacity = useTransform(scrollVelocity, [-200, 0, 200], [1, 0, 1]);
 
   // Make Nav visible after 100px of scrolling
-  const lastScrollSound = useRef(0);
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavVisible(latest > 100);
-    if (Math.abs(latest - lastScrollSound.current) > 1500) {
-      lastScrollSound.current = latest;
-      SFX.scroll();
-    }
   });
 
 
@@ -2683,7 +2680,7 @@ export default function App() {
           {!hasLoaded && (
             <motion.div
               key="preloader"
-              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505] overflow-hidden"
+              className="fixed inset-0 z-[200] flex items-center justify-center"
               initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
               exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
               transition={{
@@ -2692,6 +2689,24 @@ export default function App() {
                 delay: 0.3,
               }}
             >
+              {/* Liquid curtain — wavy bottom edge that flattens as the preloader slides up (manndamani-style).
+                  The overlay background IS this SVG path; the curve dips below the viewport and
+                  "unwrinkles" (morphs to flat) while the whole thing lifts. */}
+              <motion.svg
+                className="absolute left-0 top-0 w-full h-[115%] pointer-events-none"
+                viewBox="0 0 100 115"
+                preserveAspectRatio="none"
+                style={{ zIndex: 5 }}
+              >
+                <motion.path
+                  fill="#050505"
+                  initial={{ d: "M0 0 H100 V100 Q50 130 0 100 Z" }}
+                  animate={{ d: "M0 0 H100 V100 Q50 130 0 100 Z" }}
+                  exit={{ d: "M0 0 H100 V100 Q50 100 0 100 Z" }}
+                  transition={{ duration: 1.1, ease: [0.76, 0, 0.24, 1], delay: 0.15 }}
+                />
+              </motion.svg>
+
               {/* Bottom edge glow that intensifies on exit */}
               <motion.div
                 className="absolute bottom-0 left-0 right-0 h-px z-30 pointer-events-none"
