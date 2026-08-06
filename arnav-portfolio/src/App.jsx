@@ -1241,8 +1241,7 @@ const InteractiveDotGrid = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let animId;
-    let running = false;
+    let raf = 0;
     let visible = true;
     const gap = 24;
     const dotSize = 0.6;
@@ -1254,19 +1253,15 @@ const InteractiveDotGrid = () => {
       const h = canvas.offsetHeight;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      if (visible && running) draw();
-    });
-    observer.observe(canvas);
-
+    // Draw ONE frame only — dots are static except near the cursor, so a
+    // continuous rAF loop would redraw 660+ arcs 60x/sec for zero change.
     const draw = () => {
-      if (!visible || !running) return;
+      if (!visible) return;
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
@@ -1294,19 +1289,28 @@ const InteractiveDotGrid = () => {
           ctx.fill();
         }
       }
-      animId = requestAnimationFrame(draw);
     };
+
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; draw(); });
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible) schedule();
+    });
+    observer.observe(canvas);
 
     const onMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      if (!running) { running = true; draw(); }
+      schedule();
     };
     window.addEventListener('mousemove', onMove);
 
     return () => {
-      running = false;
-      cancelAnimationFrame(animId);
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
       observer.disconnect();
@@ -1314,6 +1318,39 @@ const InteractiveDotGrid = () => {
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+};
+
+const ShowreelVideo = () => {
+  const videoRef = useRef(null);
+
+  // Play only while on screen; pause when scrolled away. A looping muted
+  // autoplay video decodes frames forever otherwise (5.7MB mp4 = constant
+  // battery/CPU on phones even when the section is off-screen).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+      },
+      { rootMargin: '200px' }
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src="/assets/output-compressed.mp4"
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="metadata"
+      className="w-full h-auto object-cover"
+    />
+  );
 };
 
 const HeroBackground = ({ hasLoaded }) => {
@@ -1857,13 +1894,6 @@ export default function App() {
         {/* Film grain noise overlay */}
         <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
 
-        {/* Subtle ambient gradient blobs */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-[var(--red)] opacity-[0.015] blur-[120px]" />
-          <div className="absolute top-[50%] -right-[20%] w-[50vw] h-[50vw] rounded-full bg-[var(--red)] opacity-[0.01] blur-[150px]" />
-          <div className="absolute -bottom-[20%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-white opacity-[0.008] blur-[100px]" />
-        </div>
-
         {/* Premiere-style vertical timeline tracks */}
         <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-[0.04]">
           <div className="absolute inset-0 flex justify-between px-[8%]">
@@ -1960,15 +1990,7 @@ export default function App() {
 
           {/* SHOWREEL VIDEO */}
           <section className="relative w-full z-10">
-            <video
-              src="/assets/output-compressed.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              className="w-full h-auto object-cover"
-            />
+            <ShowreelVideo />
           </section>
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
