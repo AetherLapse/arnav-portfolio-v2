@@ -32,6 +32,17 @@ const GLOBAL_STYLES = `
 
   body {
     background-color: var(--bg);
+    /* Creative layered background — all painted gradients (no filters, no extra
+       composited layers, no fixed attachment) so even iGPUs pay ~nothing:
+       red ambient glows + blueprint grid + CRT scanlines */
+    background-image:
+      radial-gradient(ellipse 100% 60% at 50% -10%, rgba(255, 0, 0, 0.07), transparent 65%),
+      radial-gradient(ellipse 70% 45% at 90% 108%, rgba(255, 0, 0, 0.05), transparent 60%),
+      radial-gradient(ellipse 45% 35% at 8% 105%, rgba(255, 255, 255, 0.035), transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
+    background-size: auto, auto, auto, 80px 80px, 80px 80px, auto;
     color: var(--black);
     font-family: 'Clash Grotesk', sans-serif;
     overflow-x: hidden;
@@ -106,10 +117,16 @@ const GLOBAL_STYLES = `
     width: 200%;
     height: 200%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    animation: grain 8s steps(10) infinite;
     pointer-events: none;
     z-index: 9000;
     opacity: 0.4;
+  }
+
+  /* Perf: skip rendering sections that are off-screen (page is ~15k px tall).
+     IntersectionObserver + whileInView still fire, so scroll animations are unaffected. */
+  section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 900px;
   }
 
   @keyframes spin-forward { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -384,20 +401,22 @@ const RenderBar = ({ label = "RENDERING SEQUENCE" }) => (
 // --- DYNAMIC HUD COORDINATES ---
 const TrackedCoordinates = () => {
   const { cursorX, cursorY } = useContext(CursorContext);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const spanRef = useRef(null);
 
+  // Update on mousemove only (rAF-throttled, direct DOM write — no React re-renders, no rAF poll)
   useEffect(() => {
-    let animationFrameId;
-    let frameCount = 0;
-    const updatePos = () => {
-      frameCount++;
-      if (frameCount % 3 === 0 && cursorX && cursorY) {
-        setCoords({ x: Math.floor(cursorX.get()), y: Math.floor(cursorY.get()) });
-      }
-      animationFrameId = requestAnimationFrame(updatePos);
+    let raf = 0;
+    const onMove = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (spanRef.current && cursorX && cursorY) {
+          spanRef.current.textContent = `X ${Math.floor(cursorX.get())} Y ${Math.floor(cursorY.get())}`;
+        }
+      });
     };
-    animationFrameId = requestAnimationFrame(updatePos);
-    return () => cancelAnimationFrame(animationFrameId);
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => { window.removeEventListener('mousemove', onMove); if (raf) cancelAnimationFrame(raf); };
   }, [cursorX, cursorY]);
 
   const springX = useSpring(cursorX, { damping: 40, stiffness: 300, mass: 0.5 });
@@ -409,7 +428,7 @@ const TrackedCoordinates = () => {
       style={{ x: springX, y: springY, translateX: '24px', translateY: '24px' }}
     >
       <div className="w-1.5 h-1.5 bg-[var(--red)]" />
-      <span>X {coords.x} Y {coords.y}</span>
+      <span ref={spanRef}>X 0 Y 0</span>
     </motion.div>
   );
 };
@@ -441,68 +460,35 @@ const GalaxyIcon = ({ label, children }) => {
 };
 
 const OrbitalRing = ({ radius, duration, reverse, items }) => {
-  const containerRef = useRef(null);
-  const itemRefs = useRef([]);
-  const angleRef = useRef(0);
-  const lastTimeRef = useRef(null);
-  const visibleRef = useRef(true);
-
-  useEffect(() => {
-    let frameId;
-    const speed = (reverse ? -1 : 1) * (360 / duration);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        visibleRef.current = entry.isIntersecting;
-        if (entry.isIntersecting) {
-          lastTimeRef.current = null;
-          frameId = requestAnimationFrame(tick);
-        }
-      },
-      { rootMargin: '100px' }
-    );
-
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    function tick(timestamp) {
-      if (!visibleRef.current) return;
-      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
-      const delta = (timestamp - lastTimeRef.current) / 1000;
-      lastTimeRef.current = timestamp;
-      angleRef.current = (angleRef.current + speed * delta) % 360;
-
-      items.forEach((_, i) => {
-        const el = itemRefs.current[i];
-        if (!el) return;
-        const itemAngle = angleRef.current + (i * 360) / items.length;
-        const rad = (itemAngle * Math.PI) / 180;
-        const x = Math.cos(rad) * radius;
-        const y = Math.sin(rad) * radius;
-        el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-      });
-
-      frameId = requestAnimationFrame(tick);
-    }
-
-    frameId = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frameId);
-      observer.disconnect();
-    };
-  }, [radius, duration, reverse, items.length]);
+  // Pure-CSS orbit: each item rides a rotating wrapper (compositor-driven,
+  // zero main-thread cost) and counter-rotates on itself to stay upright.
+  const spin = reverse ? 'spin-backward' : 'spin-forward';
+  const counterSpin = reverse ? 'spin-forward' : 'spin-backward';
 
   return (
-    <div ref={containerRef} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
       <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-70 pointer-events-none" />
       {items.map((item, i) => (
         <div
           key={i}
-          ref={(el) => { itemRefs.current[i] = el; }}
-          className="absolute top-1/2 left-1/2 flex justify-center items-center pointer-events-auto"
+          className="absolute top-1/2 left-1/2 pointer-events-none"
+          style={{ width: 0, height: 0, animation: `${spin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
         >
-          <GalaxyIcon label={item.label}>
-            {item.icon}
-          </GalaxyIcon>
+          {/* spacer: carries the translate to the ring point (no animation, so its transform survives) */}
+          <div
+            className="absolute pointer-events-auto"
+            style={{ transform: `translateX(${radius}px) translate(-50%, -50%)` }}
+          >
+            {/* counter-rotator: keeps the icon upright (its own animation only affects itself) */}
+            <div
+              className="flex justify-center items-center"
+              style={{ animation: `${counterSpin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
+            >
+              <GalaxyIcon label={item.label}>
+                {item.icon}
+              </GalaxyIcon>
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -1266,8 +1252,7 @@ const InteractiveDotGrid = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let animId;
-    let running = false;
+    let raf = 0;
     let visible = true;
     const gap = 24;
     const dotSize = 0.6;
@@ -1279,19 +1264,15 @@ const InteractiveDotGrid = () => {
       const h = canvas.offsetHeight;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      if (visible && running) draw();
-    });
-    observer.observe(canvas);
-
+    // Draw ONE frame only — dots are static except near the cursor, so a
+    // continuous rAF loop would redraw 660+ arcs 60x/sec for zero change.
     const draw = () => {
-      if (!visible || !running) return;
+      if (!visible) return;
       ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
@@ -1319,19 +1300,28 @@ const InteractiveDotGrid = () => {
           ctx.fill();
         }
       }
-      animId = requestAnimationFrame(draw);
     };
+
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; draw(); });
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible) schedule();
+    });
+    observer.observe(canvas);
 
     const onMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      if (!running) { running = true; draw(); }
+      schedule();
     };
     window.addEventListener('mousemove', onMove);
 
     return () => {
-      running = false;
-      cancelAnimationFrame(animId);
+      if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', onMove);
       observer.disconnect();
@@ -1339,6 +1329,39 @@ const InteractiveDotGrid = () => {
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+};
+
+const ShowreelVideo = () => {
+  const videoRef = useRef(null);
+
+  // Play only while on screen; pause when scrolled away. A looping muted
+  // autoplay video decodes frames forever otherwise (5.7MB mp4 = constant
+  // battery/CPU on phones even when the section is off-screen).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) { v.play().catch(() => {}); } else { v.pause(); }
+      },
+      { rootMargin: '200px' }
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src="/assets/output-compressed.mp4"
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="none"
+      className="w-full h-auto object-cover"
+    />
+  );
 };
 
 const HeroBackground = ({ hasLoaded }) => {
@@ -1459,13 +1482,13 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
           <motion.div animate={!isBase ? { opacity: [1, 0, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[var(--red)] rounded-full" />
           LIVE FEED
         </div>
-        <span>LAT: 48.8566 N</span>
-        <span>LON: 2.3522 E</span>
+        <span>LAT: 28.9845 N</span>
+        <span>LON: 77.7064 E</span>
         <span>SECURE_GRID_99</span>
       </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
-        12187eme enqueteur sur cette affaire<br/>
+        12,187th investigator on this case<br/>
         SYS: DIAGNOSTIC<br/>
         <span className="text-[var(--red)] font-bold">STABLE</span>
       </ParticleFlyer>
@@ -1500,80 +1523,105 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
 
 // --- DYNAMIC SWEEPING RED THREAD (SINE WAVE) ---
 const CurvedThread = ({ hasLoaded }) => {
-  const { scrollYProgress } = useScroll();
-  
-  // Slowed down the acceleration. 
-  // It now maps almost 1:1 with the scroll, finishing the drawing right as you reach the end of the page (95% scroll)
-  const drawProgress = useTransform(scrollYProgress, [0, 0.95], [0, 1]);
-  
-  const [pathDef, setPathDef] = useState("");
+  // Geometry lives in a ref so the scroll handler never re-subscribes.
+  const geo = useRef({ topY: 0, bottomY: 0, x: 0, amp: 0, totalH: 1, docH: 1, pinEnd: 0 });
+  const [pathDef, setPathDef] = useState("");      // unlit groove (full path, start tracks the hero)
+  const [drawnPath, setDrawnPath] = useState("");  // red thread (grows downward from the marker)
   const [circlePos, setCirclePos] = useState({ topY: 0, bottomY: 0, x: 0 });
   const containerRef = useRef(null);
+  const rafRef = useRef(0);
+
+  // Wave phase is RELATIVE to the segment start, with a FIXED period (totalH =
+  // full thread length). This gives three properties at once:
+  //  - start is always exactly at (x, y1) — attached to the marker dot
+  //  - while the hero is pinned, crests stay frozen in the VIEWPORT (the line
+  //    grows downward without the top scrolling up or the wave sliding)
+  //  - the drawn shape is stable as it grows (no compression wobble)
+  const buildSine = (x, y1, y2, amp, totalH) => {
+    const len = y2 - y1;
+    if (len <= 0.5) return `M ${x} ${y1} L ${x} ${y1 + 0.5}`;
+    const steps = Math.max(24, Math.min(150, Math.round(len / 30)));
+    let d = `M ${x} ${y1} `;
+    for (let i = 0; i <= steps; i++) {
+      const cy = y1 + (i / steps) * len;
+      const cx = x + Math.sin(((cy - y1) / totalH) * Math.PI * 2) * amp;
+      d += `L ${cx} ${cy} `;
+    }
+    return d;
+  };
+
+  const updateGeometry = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    const vh = window.innerHeight;
+
+    // Start circle latches exactly onto the white TOP SECRET marker
+    const topEl = document.getElementById('top-secret-marker');
+    let topY = vh * 0.15; // Fallback
+    if (topEl) {
+      const topRect = topEl.getBoundingClientRect();
+      const containerRect = el.getBoundingClientRect();
+      topY = topRect.top - containerRect.top + (topRect.height / 2);
+    }
+
+    // End circle perfectly above the "CHANNEL OPEN" text
+    const channelEl = document.getElementById('channel-open-marker');
+    let bottomY = h - (vh * 0.5) - 100; // Fallback
+    if (channelEl) {
+      const channelRect = channelEl.getBoundingClientRect();
+      const containerRect = el.getBoundingClientRect();
+      bottomY = channelRect.top - containerRect.top - 64;
+    }
+
+    const midX = w / 2;
+    // Mobile: tiny amplitude so the thread reads as a graceful progress line,
+    // not a full-width detour (45% of a 390px screen = edge-to-edge swings).
+    const amp = w > 768 ? w * 0.35 : w * 0.16;
+    // Stack deck: while the hero is sticky (pinEnd of scroll), the thread's start
+    // must track the hero; after that it scrolls away with the page naturally.
+    const heroEl = document.getElementById('section-hero');
+    const deckH = heroEl ? heroEl.parentElement.getBoundingClientRect().height : vh;
+    geo.current = {
+      topY, bottomY, x: midX, amp,
+      totalH: Math.max(bottomY - topY, 1),
+      docH: Math.max(document.documentElement.scrollHeight, 1),
+      pinEnd: Math.max(deckH - vh, 0),
+    };
+    setCirclePos({ topY, bottomY, x: midX });
+    updateDrawn();
+  };
+
+  const updateDrawn = () => {
+    const g = geo.current;
+    const s = window.scrollY;
+    // Keep the thread's START glued to the hero while it is pinned:
+    // viewport position of the marker stays at topY during the stack.
+    const startY = g.topY + Math.min(s, g.pinEnd);
+    const frac = Math.min(s / (0.95 * g.docH), 1.05);
+    const endY = startY + g.totalH * frac;
+    setPathDef(buildSine(g.x, startY, g.bottomY, g.amp, g.totalH));
+    setDrawnPath(buildSine(g.x, startY, Math.max(endY, startY + 1), g.amp, g.totalH));
+  };
 
   useEffect(() => {
-    const updatePath = () => {
-      if (!containerRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      const vh = window.innerHeight;
-
-      // Start circle latches exactly onto the white TOP SECRET marker
-      const topEl = document.getElementById('top-secret-marker');
-      let topY = vh * 0.15; // Fallback
-      
-      if (topEl && containerRef.current) {
-        const topRect = topEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate precise vertical center of the white dot
-        topY = topRect.top - containerRect.top + (topRect.height / 2);
-      }
-      
-      // End circle perfectly above the "CHANNEL OPEN" text
-      const channelEl = document.getElementById('channel-open-marker');
-      let bottomY = h - (vh * 0.5) - 100; // Fallback
-      
-      if (channelEl && containerRef.current) {
-        const channelRect = channelEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate absolute Y position relative to the SVG container
-        // Increased the offset from 24 to 64 to avoid overlapping
-        bottomY = channelRect.top - containerRect.top - 64; 
-      }
-
-      const midX = w / 2;
-
-      setCirclePos({ topY, bottomY, x: midX });
-
-      if (h < vh * 2) {
-         setPathDef(`M ${midX} ${topY} L ${midX} ${bottomY}`);
-         return;
-      }
-
-      // Generate a perfect mathematical Sine Curve!
-      const amplitude = w > 768 ? w * 0.35 : w * 0.45;
-      const steps = 150; // High resolution for perfect smoothness
-      let d = `M ${midX} ${topY} `;
-      
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        // Linear interpolation for Y
-        const currentY = topY + t * (bottomY - topY);
-        // Sine wave for X (1 full cycle: right, left, center)
-        const currentX = midX + Math.sin(t * Math.PI * 2) * amplitude;
-        d += `L ${currentX} ${currentY} `;
-      }
-      
-      setPathDef(d);
-    };
-
-    updatePath();
-    const observer = new ResizeObserver(updatePath);
+    updateGeometry();
+    const observer = new ResizeObserver(updateGeometry);
     if (containerRef.current) observer.observe(containerRef.current);
-    
-    const timeout = setTimeout(updatePath, 200);
+    const timeout = setTimeout(updateGeometry, 200);
+    window.addEventListener('resize', updateGeometry);
+    const onScroll = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; updateDrawn(); });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       observer.disconnect();
       clearTimeout(timeout);
+      window.removeEventListener('resize', updateGeometry);
+      window.removeEventListener('scroll', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [hasLoaded]);
 
@@ -1582,19 +1630,12 @@ const CurvedThread = ({ hasLoaded }) => {
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         {/* Unlit Tracking Groove */}
         <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
-        
-        {/* The Live Red Thread */}
-        <motion.path 
-          d={pathDef} 
-          stroke="var(--red)" 
-          strokeWidth="2" 
-          fill="none" 
-          style={{ pathLength: drawProgress, filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' }} 
-        />
 
-        {/* Removed redundant top anchor circle; the glowing white dot now acts as the true source */}
-        
-        {/* Bottom Anchor Circle (Increased radius) */}
+        {/* The Live Red Thread — fake glow via wide+thin strokes (no filters). */}
+        <path d={drawnPath} stroke="rgba(255,0,0,0.25)" strokeWidth="6" fill="none" />
+        <path d={drawnPath} stroke="var(--red)" strokeWidth="2" fill="none" />
+
+        {/* Bottom Anchor Circle */}
         <circle cx={circlePos.x} cy={circlePos.bottomY} r={10} fill="var(--black)" stroke="var(--border)" strokeWidth="2" className="drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
       </svg>
     </div>
@@ -1678,6 +1719,7 @@ const BRANDS_DATA = [
 ];
 
 const CREATORS_DATA = [
+  // TODO: replace with Arnav's real creator names + links (yt/ig)
   { id: "C_01", name: "Creator One", dp: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
   { id: "C_02", name: "Creator Two", dp: "https://images.unsplash.com/photo-1530268729831-4b0b9e170218?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
   { id: "C_03", name: "Creator Three", dp: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" },
@@ -1693,8 +1735,9 @@ const EVIDENCE_SECTORS = [
 
 const EVIDENCE_DATA = [
   // Video Editing
+  // TODO: swap these in for Arnav's REAL project names, images, and links
   { id: "01", sector: "KINETIC_CUTS", title: "Ophelia", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop", year: "March 2025", context: "Commercial", client: "Ophelia Studios", time: "5 days", tags: ["Color Grading", "Motion Graphics"], stacks: ["Premiere Pro", "After Effects"], desc: "A high-contrast cinematic commercial edit blending surreal visuals with precise color grading. The client wanted an ethereal mood that pulled viewers into a dreamlike narrative.", link: "#" },
-  { id: "02", sector: "KINETIC_CUTS", title: "J. Pancras", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
+  { id: "02", sector: "KINETIC_CUTS", title: "Launch Reel", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
   { id: "03", sector: "KINETIC_CUTS", title: "2026 Greet", img: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop", year: "December 2025", context: "Personal", client: "Self-Initiated", time: "2 days", tags: ["Motion Graphics", "Typography"], stacks: ["After Effects", "Illustrator"], desc: "A personal new year greeting animation exploring glitch aesthetics and bold type treatments. Shared across social media to celebrate the creative community.", link: "#" },
   { id: "04", sector: "KINETIC_CUTS", title: "Ciao", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop", year: "November 2024", context: "Freelance", client: "Indie Artist", time: "4 days", tags: ["Music Video", "VFX"], stacks: ["Premiere Pro", "After Effects", "Blender"], desc: "Lyric video for an indie artist combining 3D environments with hand-drawn frame-by-frame animation overlays. Delivered across 3 aspect ratios for multi-platform release.", link: "#" },
   // Social Grids
@@ -1796,13 +1839,8 @@ export default function App() {
   const tailOpacity = useTransform(scrollVelocity, [-200, 0, 200], [1, 0, 1]);
 
   // Make Nav visible after 100px of scrolling
-  const lastScrollSound = useRef(0);
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavVisible(latest > 100);
-    if (Math.abs(latest - lastScrollSound.current) > 1500) {
-      lastScrollSound.current = latest;
-      SFX.scroll();
-    }
   });
 
 
@@ -1816,7 +1854,7 @@ export default function App() {
     setIsMounted(true);
 
     let resourcesLoaded = 0;
-    const totalResources = 2;
+    const totalResources = 1;
 
     const checkResourceLoad = () => {
       resourcesLoaded++;
@@ -1824,19 +1862,16 @@ export default function App() {
       setTargetProgress(newTarget);
     };
 
-    if (document.readyState === 'complete') checkResourceLoad();
-    else window.addEventListener('load', checkResourceLoad);
-
-    const img = new Image();
-    img.src = "https://i.ibb.co/JbHp8w7/Whats-App-Image-2026-04-25-at-1-18-58-PM-Photoroom.png";
-    img.onload = checkResourceLoad;
-    img.onerror = checkResourceLoad;
-
+    // Gate on DOMContentLoaded, NOT window 'load' — window load waits for the
+    // autoplay video, every font and every image (8-10s on slow machines).
+    // The app is interactive at DOMContentLoaded; heavy media loads lazily.
+    if (document.readyState === 'complete' || document.readyState === 'interactive') checkResourceLoad();
+    else window.addEventListener('DOMContentLoaded', checkResourceLoad);
 
     const fallbackTimer = setTimeout(() => { setTargetProgress(100); }, 5000);
 
     return () => {
-      window.removeEventListener('load', checkResourceLoad);
+      window.removeEventListener('DOMContentLoaded', checkResourceLoad);
       clearTimeout(fallbackTimer);
     };
   }, []);
@@ -1875,18 +1910,6 @@ export default function App() {
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
 
-  useEffect(() => {
-    let lastHoverTime = 0;
-    const handleHover = (e) => {
-      const now = Date.now();
-      if (now - lastHoverTime < 150) return;
-      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
-      if (el) { lastHoverTime = now; SFX.hover(); }
-    };
-    document.addEventListener('mouseenter', handleHover, true);
-    return () => document.removeEventListener('mouseenter', handleHover, true);
-  }, []);
-
   if (!isMounted) return null;
 
   return (
@@ -1896,13 +1919,6 @@ export default function App() {
 
         {/* Film grain noise overlay */}
         <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
-
-        {/* Subtle ambient gradient blobs */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute -top-[30%] -left-[20%] w-[60vw] h-[60vw] rounded-full bg-[var(--red)] opacity-[0.015] blur-[120px]" />
-          <div className="absolute top-[50%] -right-[20%] w-[50vw] h-[50vw] rounded-full bg-[var(--red)] opacity-[0.01] blur-[150px]" />
-          <div className="absolute -bottom-[20%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-white opacity-[0.008] blur-[100px]" />
-        </div>
 
         {/* Premiere-style vertical timeline tracks */}
         <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-[0.04]">
@@ -1935,8 +1951,14 @@ export default function App() {
         {/* THE DYNAMIC CURVED RED THREAD */}
         <CurvedThread hasLoaded={hasLoaded} />
 
+        {/* ============ STACK DECK: the video card slides over the pinned hero ============ */}
+        {/* Height is auto: hero (100vh, sticky) + the video card's natural height.
+            Hardcoding 56.25vw was wrong — the showreel is 1920x892 (21:9), so its
+            height is ~46.5vw; a fixed taller value left phantom space after the card. */}
+        <div className="relative z-10">
+
         {/* ================= HERO SECTION ================= */}
-        <section id="section-hero" className="relative w-full h-screen flex items-center justify-center z-10 overflow-visible">
+        <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-visible">
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
@@ -1994,22 +2016,14 @@ export default function App() {
           </div>
         </section>
 
+          {/* SHOWREEL VIDEO — the card that slides up over the pinned hero (flat edges = true stack) */}
+          <section className="relative w-full z-20 bg-[#0A0A0A] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
+            <ShowreelVideo />
+          </section>
+        </div>
 
         {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
         <div className="relative w-full pb-32 z-10">
-
-          {/* SHOWREEL VIDEO */}
-          <section className="relative w-full z-10">
-            <video
-              src="/assets/output-compressed.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              className="w-full h-auto object-cover"
-            />
-          </section>
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
@@ -2683,15 +2697,35 @@ export default function App() {
           {!hasLoaded && (
             <motion.div
               key="preloader"
-              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505] overflow-hidden"
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]"
               initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
               exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
               transition={{
-                duration: 1.2,
+                duration: 1.1,
                 ease: [0.76, 0, 0.24, 1],
-                delay: 0.3,
+                delay: 0.15,
               }}
             >
+              {/* Liquid curtain — manndamani-exact: wavy bottom edge dips ~150px below the
+                  viewport (control at +300px-equivalent) and flattens (1.7s, delay .3) while
+                  the whole overlay slides up (1.1s, delay .15). The overlay keeps its bg;
+                  the SVG's wave extends past the container box (overflow visible) so the page
+                  shows through the wave valleys. */}
+              <motion.svg
+                className="absolute left-0 top-0 w-full h-[118%] pointer-events-none"
+                viewBox="0 0 100 118"
+                preserveAspectRatio="none"
+                style={{ zIndex: 5 }}
+              >
+                <motion.path
+                  fill="#050505"
+                  initial={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
+                  animate={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
+                  exit={{ d: "M0 0 H100 V100 Q50 100 0 100 Z" }}
+                  transition={{ duration: 1.7, ease: [0.76, 0, 0.24, 1], delay: 0.3 }}
+                />
+              </motion.svg>
+
               {/* Bottom edge glow that intensifies on exit */}
               <motion.div
                 className="absolute bottom-0 left-0 right-0 h-px z-30 pointer-events-none"
