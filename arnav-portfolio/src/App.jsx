@@ -1531,19 +1531,20 @@ const CurvedThread = ({ hasLoaded }) => {
   const containerRef = useRef(null);
   const rafRef = useRef(0);
 
-  // Sine param by ABSOLUTE y so wave crests stay fixed on the page while the
-  // drawn segment grows — but anchored so the path starts EXACTLY at (x, y1):
-  // subtract the phase at y1, otherwise the start is displaced sideways and
-  // the first segment runs horizontal before turning (the "detour").
+  // Wave phase is RELATIVE to the segment start, with a FIXED period (totalH =
+  // full thread length). This gives three properties at once:
+  //  - start is always exactly at (x, y1) — attached to the marker dot
+  //  - while the hero is pinned, crests stay frozen in the VIEWPORT (the line
+  //    grows downward without the top scrolling up or the wave sliding)
+  //  - the drawn shape is stable as it grows (no compression wobble)
   const buildSine = (x, y1, y2, amp, totalH) => {
     const len = y2 - y1;
     if (len <= 0.5) return `M ${x} ${y1} L ${x} ${y1 + 0.5}`;
     const steps = Math.max(24, Math.min(150, Math.round(len / 30)));
-    const phase0 = (y1 / totalH) * Math.PI * 2;
     let d = `M ${x} ${y1} `;
     for (let i = 0; i <= steps; i++) {
       const cy = y1 + (i / steps) * len;
-      const cx = x + (Math.sin((cy / totalH) * Math.PI * 2) - Math.sin(phase0)) * amp;
+      const cx = x + Math.sin(((cy - y1) / totalH) * Math.PI * 2) * amp;
       d += `L ${cx} ${cy} `;
     }
     return d;
