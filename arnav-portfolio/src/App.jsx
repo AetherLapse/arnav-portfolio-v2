@@ -1572,7 +1572,9 @@ const CurvedThread = ({ hasLoaded }) => {
     }
 
     const midX = w / 2;
-    const amp = w > 768 ? w * 0.35 : w * 0.45;
+    // Mobile: tiny amplitude so the thread reads as a graceful progress line,
+    // not a full-width detour (45% of a 390px screen = edge-to-edge swings).
+    const amp = w > 768 ? w * 0.35 : w * 0.16;
     // Stack deck: while the hero is sticky (pinEnd of scroll), the thread's start
     // must track the hero; after that it scrolls away with the page naturally.
     const heroEl = document.getElementById('section-hero');
