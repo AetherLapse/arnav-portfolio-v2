@@ -1523,105 +1523,80 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
 
 // --- DYNAMIC SWEEPING RED THREAD (SINE WAVE) ---
 const CurvedThread = ({ hasLoaded }) => {
-  // Geometry lives in a ref so the scroll handler never re-subscribes.
-  const geo = useRef({ topY: 0, bottomY: 0, x: 0, amp: 0, totalH: 1, docH: 1, pinEnd: 0 });
-  const [pathDef, setPathDef] = useState("");      // unlit groove (full path, start tracks the hero)
-  const [drawnPath, setDrawnPath] = useState("");  // red thread (grows downward from the marker)
+  const { scrollYProgress } = useScroll();
+  
+  // Slowed down the acceleration. 
+  // It now maps almost 1:1 with the scroll, finishing the drawing right as you reach the end of the page (95% scroll)
+  const drawProgress = useTransform(scrollYProgress, [0, 0.95], [0, 1]);
+  
+  const [pathDef, setPathDef] = useState("");
   const [circlePos, setCirclePos] = useState({ topY: 0, bottomY: 0, x: 0 });
   const containerRef = useRef(null);
-  const rafRef = useRef(0);
-
-  // Wave phase is RELATIVE to the segment start, with a FIXED period (totalH =
-  // full thread length). This gives three properties at once:
-  //  - start is always exactly at (x, y1) — attached to the marker dot
-  //  - while the hero is pinned, crests stay frozen in the VIEWPORT (the line
-  //    grows downward without the top scrolling up or the wave sliding)
-  //  - the drawn shape is stable as it grows (no compression wobble)
-  const buildSine = (x, y1, y2, amp, totalH) => {
-    const len = y2 - y1;
-    if (len <= 0.5) return `M ${x} ${y1} L ${x} ${y1 + 0.5}`;
-    const steps = Math.max(24, Math.min(150, Math.round(len / 30)));
-    let d = `M ${x} ${y1} `;
-    for (let i = 0; i <= steps; i++) {
-      const cy = y1 + (i / steps) * len;
-      const cx = x + Math.sin(((cy - y1) / totalH) * Math.PI * 2) * amp;
-      d += `L ${cx} ${cy} `;
-    }
-    return d;
-  };
-
-  const updateGeometry = () => {
-    const el = containerRef.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    const h = el.clientHeight;
-    const vh = window.innerHeight;
-
-    // Start circle latches exactly onto the white TOP SECRET marker
-    const topEl = document.getElementById('top-secret-marker');
-    let topY = vh * 0.15; // Fallback
-    if (topEl) {
-      const topRect = topEl.getBoundingClientRect();
-      const containerRect = el.getBoundingClientRect();
-      topY = topRect.top - containerRect.top + (topRect.height / 2);
-    }
-
-    // End circle perfectly above the "CHANNEL OPEN" text
-    const channelEl = document.getElementById('channel-open-marker');
-    let bottomY = h - (vh * 0.5) - 100; // Fallback
-    if (channelEl) {
-      const channelRect = channelEl.getBoundingClientRect();
-      const containerRect = el.getBoundingClientRect();
-      bottomY = channelRect.top - containerRect.top - 64;
-    }
-
-    const midX = w / 2;
-    // Mobile: tiny amplitude so the thread reads as a graceful progress line,
-    // not a full-width detour (45% of a 390px screen = edge-to-edge swings).
-    const amp = w > 768 ? w * 0.35 : w * 0.16;
-    // Stack deck: while the hero is sticky (pinEnd of scroll), the thread's start
-    // must track the hero; after that it scrolls away with the page naturally.
-    const heroEl = document.getElementById('section-hero');
-    const deckH = heroEl ? heroEl.parentElement.getBoundingClientRect().height : vh;
-    geo.current = {
-      topY, bottomY, x: midX, amp,
-      totalH: Math.max(bottomY - topY, 1),
-      docH: Math.max(document.documentElement.scrollHeight, 1),
-      pinEnd: Math.max(deckH - vh, 0),
-    };
-    setCirclePos({ topY, bottomY, x: midX });
-    updateDrawn();
-  };
-
-  const updateDrawn = () => {
-    const g = geo.current;
-    const s = window.scrollY;
-    // Keep the thread's START glued to the hero while it is pinned:
-    // viewport position of the marker stays at topY during the stack.
-    const startY = g.topY + Math.min(s, g.pinEnd);
-    const frac = Math.min(s / (0.95 * g.docH), 1.05);
-    const endY = startY + g.totalH * frac;
-    setPathDef(buildSine(g.x, startY, g.bottomY, g.amp, g.totalH));
-    setDrawnPath(buildSine(g.x, startY, Math.max(endY, startY + 1), g.amp, g.totalH));
-  };
 
   useEffect(() => {
-    updateGeometry();
-    const observer = new ResizeObserver(updateGeometry);
-    if (containerRef.current) observer.observe(containerRef.current);
-    const timeout = setTimeout(updateGeometry, 200);
-    window.addEventListener('resize', updateGeometry);
-    const onScroll = () => {
-      if (rafRef.current) return;
-      rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; updateDrawn(); });
+    const updatePath = () => {
+      if (!containerRef.current) return;
+      const w = containerRef.current.clientWidth;
+      const h = containerRef.current.clientHeight;
+      const vh = window.innerHeight;
+
+      // Start circle latches exactly onto the white TOP SECRET marker
+      const topEl = document.getElementById('top-secret-marker');
+      let topY = vh * 0.15; // Fallback
+      
+      if (topEl && containerRef.current) {
+        const topRect = topEl.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        // Calculate precise vertical center of the white dot
+        topY = topRect.top - containerRect.top + (topRect.height / 2);
+      }
+      
+      // End circle perfectly above the "CHANNEL OPEN" text
+      const channelEl = document.getElementById('channel-open-marker');
+      let bottomY = h - (vh * 0.5) - 100; // Fallback
+      
+      if (channelEl && containerRef.current) {
+        const channelRect = channelEl.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        // Calculate absolute Y position relative to the SVG container
+        // Increased the offset from 24 to 64 to avoid overlapping
+        bottomY = channelRect.top - containerRect.top - 64; 
+      }
+
+      const midX = w / 2;
+
+      setCirclePos({ topY, bottomY, x: midX });
+
+      if (h < vh * 2) {
+         setPathDef(`M ${midX} ${topY} L ${midX} ${bottomY}`);
+         return;
+      }
+
+      // Generate a perfect mathematical Sine Curve!
+      const amplitude = w > 768 ? w * 0.35 : w * 0.45;
+      const steps = 150; // High resolution for perfect smoothness
+      let d = `M ${midX} ${topY} `;
+      
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        // Linear interpolation for Y
+        const currentY = topY + t * (bottomY - topY);
+        // Sine wave for X (1 full cycle: right, left, center)
+        const currentX = midX + Math.sin(t * Math.PI * 2) * amplitude;
+        d += `L ${currentX} ${currentY} `;
+      }
+      
+      setPathDef(d);
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+
+    updatePath();
+    const observer = new ResizeObserver(updatePath);
+    if (containerRef.current) observer.observe(containerRef.current);
+    
+    const timeout = setTimeout(updatePath, 200);
     return () => {
       observer.disconnect();
       clearTimeout(timeout);
-      window.removeEventListener('resize', updateGeometry);
-      window.removeEventListener('scroll', onScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [hasLoaded]);
 
@@ -1630,17 +1605,164 @@ const CurvedThread = ({ hasLoaded }) => {
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         {/* Unlit Tracking Groove */}
         <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
+        
+        {/* The Live Red Thread */}
+        <motion.path 
+          d={pathDef} 
+          stroke="var(--red)" 
+          strokeWidth="2" 
+          fill="none" 
+          style={{ pathLength: drawProgress, filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' }} 
+        />
 
-        {/* The Live Red Thread — fake glow via wide+thin strokes (no filters). */}
-        <path d={drawnPath} stroke="rgba(255,0,0,0.25)" strokeWidth="6" fill="none" />
-        <path d={drawnPath} stroke="var(--red)" strokeWidth="2" fill="none" />
-
-        {/* Bottom Anchor Circle */}
+        {/* Removed redundant top anchor circle; the glowing white dot now acts as the true source */}
+        
+        {/* Bottom Anchor Circle (Increased radius) */}
         <circle cx={circlePos.x} cy={circlePos.bottomY} r={10} fill="var(--black)" stroke="var(--border)" strokeWidth="2" className="drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
       </svg>
     </div>
   );
 };
+
+
+// --- SCROLL FX: velocity motion blur on titles, opacity reveals, portrait face effect ---
+// GPU-safe: filter updates only on viewport-visible small text layers; the portrait
+// uses transform-only parallax + a one-shot blur transition (no per-frame filter on
+// big layers). Framer keeps ownership of transforms — we never touch transform here.
+const ScrollFX = () => {
+  const rafRef = useRef(0);
+  const lastY = useRef(0);
+  const idleT = useRef(0);
+  const titlesRef = useRef([]);
+  const visible = useRef(new Set());
+  const pinnedRef = useRef(0);
+
+  useEffect(() => {
+    // Big section titles only — exclude the scrolling marquee (bg-colored class)
+    const titles = Array.from(document.querySelectorAll('h2.font-supertalls'))
+      .filter((t) => !t.className.includes('text-[var(--bg)]'))
+      .slice(0, 12);
+    titlesRef.current = titles;
+
+    titles.forEach((t) => {
+      t.classList.add('fx-reveal');
+      t.style.willChange = 'filter';
+    });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('fx-in'); visible.current.add(e.target); }
+        else { visible.current.delete(e.target); }
+      });
+    }, { threshold: 0.2 });
+    titles.forEach((t) => io.observe(t));
+
+    const portrait = document.getElementById('fx-portrait');
+    const hero = document.getElementById('section-hero');
+    const deck = hero ? hero.parentElement : null;
+    const measurePin = () => {
+      pinnedRef.current = deck ? Math.max(deck.getBoundingClientRect().height - window.innerHeight, 0) : 0;
+    };
+    measurePin();
+
+    lastY.current = window.scrollY;
+    const loop = () => {
+      const y = window.scrollY;
+      const vel = Math.abs(y - lastY.current);
+      lastY.current = y;
+      // velocity motion blur: fast scroll -> titles blur (capped 9px), idle -> sharp
+      const blur = Math.min(vel * 0.035, 9);
+      if (blur > 0.5) {
+        titlesRef.current.forEach((t) => {
+          if (visible.current.has(t)) t.style.filter = `blur(${blur.toFixed(2)}px)`;
+        });
+        idleT.current = 0;
+      } else if (idleT.current++ > 14) {
+        titlesRef.current.forEach((t) => { if (t.style.filter) t.style.filter = ''; });
+      }
+      // portrait: parallax lift + subtle scale while the card covers it; one-shot blur near the end
+      if (portrait) {
+        const s = Math.min(y, pinnedRef.current);
+        portrait.style.transform = `translateY(${(s * 0.07).toFixed(1)}px) scale(${(1 + s * 0.00004).toFixed(4)})`;
+        portrait.style.filter = s > pinnedRef.current * 0.62 ? 'blur(5px)' : '';
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    window.addEventListener('resize', measurePin);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      io.disconnect();
+      window.removeEventListener('resize', measurePin);
+      titles.forEach((t) => { t.classList.remove('fx-reveal', 'fx-in'); t.style.filter = ''; t.style.willChange = ''; });
+    };
+  }, []);
+
+  return (
+    <style>{`
+      .fx-reveal { opacity: 0 !important; transition: opacity 1s cubic-bezier(0.22, 0.61, 0.36, 1) !important; }
+      .fx-reveal.fx-in { opacity: 1 !important; }
+      #fx-portrait { will-change: transform, filter; transition: filter 0.7s ease; }
+    `}</style>
+  );
+};
+
+// --- EDIT FX: glitch text, editing HUD chips, signature glow (CSS-only, GPU-light) ---
+// Glitch animates ONLY brief RGB-split bursts (~4 frames every ~4s) on small text
+// layers; chips are static + tiny transform/opacity loops. All compositor-friendly.
+const EditFX = () => (
+  <style>{`
+    /* --- glitch text (needs data-text attr) --- */
+    .fx-glitch { position: relative; }
+    .fx-glitch::before, .fx-glitch::after {
+      content: attr(data-text);
+      position: absolute; left: 0; top: 0; width: 100%;
+      pointer-events: none; opacity: 0; will-change: transform, clip-path;
+    }
+    .fx-glitch::before { color: #ff2a2a; animation: glitchA 5.2s steps(1) infinite; }
+    .fx-glitch::after  { color: #2af2ff; animation: glitchB 4.1s steps(1) infinite; }
+    @keyframes glitchA {
+      0%, 92%, 100% { opacity: 0; transform: translate(0); }
+      93% { opacity: .85; transform: translate(-3px, -2px); clip-path: inset(12% 0 58% 0); }
+      94% { opacity: .85; transform: translate(3px, 1px);  clip-path: inset(62% 0 8% 0); }
+      95% { opacity: .85; transform: translate(-2px, 2px); clip-path: inset(30% 0 42% 0); }
+      96% { opacity: .85; transform: translate(2px, -1px); clip-path: inset(82% 0 2% 0); }
+    }
+    @keyframes glitchB {
+      0%, 88%, 100% { opacity: 0; transform: translate(0); }
+      89% { opacity: .7; transform: translate(3px, 1px);  clip-path: inset(45% 0 22% 0); }
+      90% { opacity: .7; transform: translate(-3px, -2px); clip-path: inset(6% 0 78% 0); }
+      91% { opacity: .7; transform: translate(2px, 2px);  clip-path: inset(70% 0 12% 0); }
+    }
+
+    /* --- editing HUD chips --- */
+    .edit-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid rgba(255, 0, 0, 0.35); background: rgba(5, 5, 5, 0.65);
+      padding: 5px 10px; font-size: 9px; letter-spacing: 0.18em;
+      font-family: 'Courier New', monospace; color: #ff4d4d;
+      text-transform: uppercase; backdrop-filter: blur(3px);
+    }
+    .rec-dot { width: 7px; height: 7px; border-radius: 50%; background: #ff2a2a; box-shadow: 0 0 8px rgba(255, 0, 0, 0.9); animation: rec-blink 1.2s steps(1) infinite; }
+    @keyframes rec-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.15; } }
+    .wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+    .wave i { width: 2px; background: var(--red); transform-origin: center; animation: wave-bounce 0.9s ease-in-out infinite; }
+    @keyframes wave-bounce { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+    .scrubber { position: relative; width: 88px; height: 3px; background: rgba(255, 255, 255, 0.14); overflow: visible; }
+    .scrubber::after { content: ''; position: absolute; top: -3px; left: 0; width: 2px; height: 9px; background: var(--red); box-shadow: 0 0 6px rgba(255, 0, 0, 0.8); animation: scrub-run 3.4s ease-in-out infinite; }
+    @keyframes scrub-run { 0%, 100% { left: 0; } 50% { left: calc(100% - 2px); } }
+    .cut-tick { width: 8px; height: 1px; background: var(--red); position: relative; }
+    .cut-tick::after { content: '✂'; position: absolute; left: 2px; top: -5px; font-size: 8px; color: var(--red); }
+
+    /* --- signature --- */
+    .sig {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(30px, 5.5vw, 46px); line-height: 1; color: #ffffff;
+      text-shadow: 0 0 12px rgba(255, 0, 0, 0.9), 0 0 34px rgba(255, 0, 0, 0.45), 0 0 70px rgba(255, 0, 0, 0.25);
+    }
+    .edit-glow { filter: drop-shadow(0 0 16px rgba(255, 0, 0, 0.75)); animation: sig-float 5.5s ease-in-out infinite; }
+    @keyframes sig-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  `}</style>
+);
 
 // --- BOLD ICONS ---
 const AdobeIcon = ({ text }) => (
@@ -1951,6 +2073,12 @@ export default function App() {
         {/* THE DYNAMIC CURVED RED THREAD */}
         <CurvedThread hasLoaded={hasLoaded} />
 
+        {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
+        <ScrollFX />
+
+        {/* EDIT FX: glitch, editing chips, signature glow */}
+        <EditFX />
+
         {/* ============ STACK DECK: the video card slides over the pinned hero ============ */}
         {/* Height is auto: hero (100vh, sticky) + the video card's natural height.
             Hardcoding 56.25vw was wrong — the showreel is 1920x892 (21:9), so its
@@ -1999,20 +2127,29 @@ export default function App() {
             className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
             style={{ minHeight: '60vh' }}
           >
-            <motion.img
-              src="/assets/photos/DSC00747-01.webp"
-              alt="Arnav Rai"
-              className="relative w-full h-auto min-h-[60vh] object-bottom"
-              style={{ objectFit: 'cover' }}
-              initial={{ filter: 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
-              animate={{ filter: hasLoaded ? 'drop-shadow(0 0 40px rgba(255,0,0,0.25)) drop-shadow(0 0 80px rgba(255,0,0,0.1))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
-              transition={{ delay: hasLoaded ? 2 : 0, duration: 1.5, ease: "easeOut" }}
-            />
+            <div id="fx-portrait" className="relative w-full">
+              <motion.img
+                src="/assets/photos/DSC00747-01.webp"
+                alt="Arnav Rai"
+                className="relative w-full h-auto min-h-[60vh] object-bottom"
+                style={{ objectFit: 'cover' }}
+                initial={{ filter: 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
+                animate={{ filter: hasLoaded ? 'drop-shadow(0 0 40px rgba(255,0,0,0.25)) drop-shadow(0 0 80px rgba(255,0,0,0.1))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
+                transition={{ delay: hasLoaded ? 2 : 0, duration: 1.5, ease: "easeOut" }}
+              />
+            </div>
           </motion.div>
 
           {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
           <div className="absolute inset-0 z-[100] pointer-events-none">
             <HeroForeground isBase={false} hasLoaded={hasLoaded} titleIndex={titleIndex} titles={titles} />
+          </div>
+
+          {/* EDITING HUD CHIPS (z-110) — the editor's touch */}
+          <div className="absolute bottom-6 left-6 z-[110] pointer-events-none flex flex-col items-start gap-2">
+            <div className="edit-chip"><span className="rec-dot" /> REC <span className="opacity-60">00:01:23:07</span></div>
+            <div className="edit-chip"><span className="wave"><i style={{ height: '8px' }} /><i style={{ height: '13px' }} /><i style={{ height: '6px' }} /><i style={{ height: '11px' }} /><i style={{ height: '9px' }} /><i style={{ height: '13px' }} /><i style={{ height: '7px' }} /></span> <span className="opacity-60">LUT_04</span></div>
+            <div className="edit-chip"><span className="scrubber" /> <span className="opacity-60">✂ HORNET_CUT</span></div>
           </div>
         </section>
 
@@ -2589,7 +2726,7 @@ export default function App() {
                
                {/* Typography */}
                <div className="relative mb-16 text-center flex flex-col items-center">
-                 <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] m-0">
+                 <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] m-0 fx-glitch" data-text="GET IN TOUCH">
                    GET IN TOUCH
                  </h2>
                </div>
@@ -2659,13 +2796,10 @@ export default function App() {
               END_OF_FILE
             </div>
 
-            {/* Signature watermark */}
-            <div className="absolute bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 pointer-events-none">
-              <img src="/assets/photos/1677946322376.png" alt="" className="w-24 md:w-32 opacity-[0.06] invert" />
-            </div>
-
-            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-40">
-              #stAycReative
+            {/* THE SIGNATURE — Hornet brand mark, hugging the bottom under the hashtag */}
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-40 pointer-events-none">
+              <img src="/assets/photos/hornet.png" alt="Hornet" className="w-10 md:w-12 edit-glow opacity-80" />
+              <span>#stAycReative</span>
             </div>
           </section>
 
