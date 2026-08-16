@@ -1466,15 +1466,6 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
         </div>
       </ParticleFlyer>
 
-      <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute bottom-24 left-6 md:bottom-16 md:left-8 font-clash text-[8px] md:text-[9px] text-[var(--muted)] flex flex-col gap-1 tracking-widest transition-opacity duration-300 ${hudClass}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <motion.div animate={!isBase ? { opacity: [1, 0, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[var(--red)] rounded-full" />
-          LIVE FEED
-        </div>
-        <span>LAT: 28.9845 N</span>
-        <span>LON: 77.7064 E</span>
-        <span>SECURE_GRID_99</span>
-      </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
         12,187th investigator on this case<br/>
@@ -2868,6 +2859,19 @@ export default function App() {
                 }}
               />
             </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Custom scrollbar — visible only while scrolling */}
+        <motion.div
+          className="fixed top-4 right-3 bottom-4 w-[3px] z-[9990] pointer-events-none"
+          style={{ opacity: useTransform(scrollVelocity, [-50, 0, 50], [1, 0, 1]) }}
+        >
+          <div className="relative w-full h-full rounded-full bg-white/[0.05]">
+            <motion.div
+              className="absolute top-0 left-0 w-full rounded-full bg-[var(--red)]"
+              style={{ height: useTransform(smoothScrollProgress, [0, 1], ['0%', '100%']) }}
+            />
           </div>
         </motion.div>
 
