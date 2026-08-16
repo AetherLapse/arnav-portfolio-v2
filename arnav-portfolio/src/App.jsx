@@ -972,8 +972,8 @@ const toolkitData = [
   { name: 'Illustrator', icon: 'Ai', color: '#FF9A00', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Adobe_Illustrator_CC_icon.svg/960px-Adobe_Illustrator_CC_icon.svg.png', video: '/assets/videos/ai.mp4' },
   { name: 'Blender', icon: 'Bl', color: '#F5792A', category: '3D', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png', video: '/assets/videos/blendee.mp4' },
   { name: 'Lightroom', icon: 'Lr', color: '#31A8FF', category: 'PHOTO' },
-  { name: 'Kling', icon: 'Kl', color: '#00D4AA', category: 'AI', logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRe7zS6NYkeU_gYIDGhgvvsKs4iLzmTBz_ur-vz-yoA6PNqjozmASBiaQbr&s=10', video: '/assets/videos/kling.mp4' },
-  { name: 'Higgsfield', icon: 'Hf', color: '#FF3366', category: 'AI', logo: 'https://images.seeklogo.com/logo-png/66/1/higgsfield-logo-png_seeklogo-660244.png' },
+  { name: 'Kling', icon: 'Kl', color: '#00D4AA', category: 'AI', logo: 'https://www.freelogovectors.net/wp-content/uploads/2026/03/kling-ai-logo-icon_freelogovectors.net_.png', video: '/assets/videos/kling.mp4' },
+  { name: 'Higgsfield', icon: 'Hf', color: '#FF3366', category: 'AI', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-higgsfield-icon-svg-download-png-14426782.png?f=webp' },
 ];
 
 const ToolkitSection = () => {
