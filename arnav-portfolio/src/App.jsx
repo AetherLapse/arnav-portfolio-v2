@@ -32,17 +32,6 @@ const GLOBAL_STYLES = `
 
   body {
     background-color: var(--bg);
-    /* Creative layered background — all painted gradients (no filters, no extra
-       composited layers, no fixed attachment) so even iGPUs pay ~nothing:
-       red ambient glows + blueprint grid + CRT scanlines */
-    background-image:
-      radial-gradient(ellipse 100% 60% at 50% -10%, rgba(255, 0, 0, 0.07), transparent 65%),
-      radial-gradient(ellipse 70% 45% at 90% 108%, rgba(255, 0, 0, 0.05), transparent 60%),
-      radial-gradient(ellipse 45% 35% at 8% 105%, rgba(255, 255, 255, 0.035), transparent 60%),
-      linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-      repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
-    background-size: auto, auto, auto, 80px 80px, 80px 80px, auto;
     color: var(--black);
     font-family: 'Clash Grotesk', sans-serif;
     overflow-x: hidden;
@@ -1540,16 +1529,8 @@ const CurvedThread = ({ hasLoaded }) => {
       const h = containerRef.current.clientHeight;
       const vh = window.innerHeight;
 
-      // Start circle latches exactly onto the white TOP SECRET marker
-      const topEl = document.getElementById('top-secret-marker');
-      let topY = vh * 0.15; // Fallback
-      
-      if (topEl && containerRef.current) {
-        const topRect = topEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate precise vertical center of the white dot
-        topY = topRect.top - containerRect.top + (topRect.height / 2);
-      }
+      // Start from the very top of the scroll content container
+      let topY = 0;
       
       // End circle perfectly above the "CHANNEL OPEN" text
       const channelEl = document.getElementById('channel-open-marker');
@@ -1592,8 +1573,8 @@ const CurvedThread = ({ hasLoaded }) => {
     updatePath();
     const observer = new ResizeObserver(updatePath);
     if (containerRef.current) observer.observe(containerRef.current);
-    
-    const timeout = setTimeout(updatePath, 200);
+
+    const timeout = setTimeout(updatePath, 500);
     return () => {
       observer.disconnect();
       clearTimeout(timeout);
@@ -1601,7 +1582,7 @@ const CurvedThread = ({ hasLoaded }) => {
   }, [hasLoaded]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
+    <div ref={containerRef} className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         {/* Unlit Tracking Groove */}
         <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
@@ -2042,36 +2023,6 @@ export default function App() {
         {/* Film grain noise overlay */}
         <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
 
-        {/* Premiere-style vertical timeline tracks */}
-        <div className="fixed inset-0 pointer-events-none z-[1] overflow-hidden opacity-[0.04]">
-          <div className="absolute inset-0 flex justify-between px-[8%]">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="relative h-full">
-                <div className="w-px h-full bg-white" />
-                {i % 2 === 0 && (
-                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-2 h-2 border border-white/60 rotate-45" />
-                )}
-                {i % 3 === 0 && (
-                  <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-1 h-8 bg-white/40" />
-                )}
-                {i % 2 === 1 && (
-                  <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white/50" />
-                )}
-                {i % 3 === 1 && (
-                  <div className="absolute top-[75%] left-1/2 -translate-x-1/2 w-1 h-6 bg-white/30" />
-                )}
-              </div>
-            ))}
-          </div>
-          {/* Horizontal time markers */}
-          <div className="absolute top-[20%] left-0 right-0 h-px bg-white/30" />
-          <div className="absolute top-[40%] left-0 right-0 h-px bg-white/15" />
-          <div className="absolute top-[60%] left-0 right-0 h-px bg-white/20" />
-          <div className="absolute top-[80%] left-0 right-0 h-px bg-white/15" />
-        </div>
-
-        {/* THE DYNAMIC CURVED RED THREAD */}
-        <CurvedThread hasLoaded={hasLoaded} />
 
         {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
         <ScrollFX />
@@ -2087,6 +2038,7 @@ export default function App() {
 
         {/* ================= HERO SECTION ================= */}
         <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-visible">
+
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
@@ -2159,16 +2111,18 @@ export default function App() {
           </section>
         </div>
 
-        {/* ================= CONTINUOUS SCROLL CONTENT ================= */}
-        <div className="relative w-full pb-32 z-10">
+        {/* ================= CONTINUOUS SCROLL CONTENT (STACKING CARDS) ================= */}
+        <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
+
+          {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
-          <QuoteReveal />
-
-          <CutMarker label="SCENE 02 — ABOUT" />
+          <div className="sticky top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[11] overflow-hidden">
+            <QuoteReveal />
+          </div>
 
           {/* ABOUT SECTION */}
-          <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32">
+          <section id="section-intro" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[12]">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -2347,18 +2301,14 @@ export default function App() {
             </div>
           </section>
 
-          {/* ================= EXPERIENCE STATS STRIP ================= */}
-          <ExperienceStrip />
-
-          <WaveformDivider />
-          <CutMarker label="SCENE 03 — CAREER" />
-
-          {/* ================= CAREER TIMELINE SECTION ================= */}
-          <CareerTimeline />
-
+          {/* ================= EXPERIENCE + CAREER (CARD) ================= */}
+          <div className="sticky top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[13] overflow-hidden">
+            <ExperienceStrip />
+            <CareerTimeline />
+          </div>
 
           {/* ================= WORKED WITH SECTION ================= */}
-          <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
+          <section id="section-worked-with" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[14] overflow-hidden">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
@@ -2467,11 +2417,9 @@ export default function App() {
             </div>
           </section>
 
-          <RenderBar label="EXPORT: EVIDENCE_BOARD.mp4" />
-          <CutMarker label="SCENE 04 — WORK" />
 
           {/* EVIDENCE BOARD SECTION */}
-          <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
+          <section id="section-works" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[15] overflow-hidden">
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -2567,11 +2515,9 @@ export default function App() {
           </section>
 
 
-          <WaveformDivider />
-          <CutMarker label="SCENE 05 — POSTS" />
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
-          <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 z-10 overflow-hidden">
+          <section id="section-posts" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[16] overflow-hidden">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
@@ -2702,17 +2648,15 @@ export default function App() {
             </div>
           </section>
 
-          <RenderBar label="LOADING: TOOLKIT_ASSETS" />
-          <CutMarker label="SCENE 06 — ARSENAL" />
 
-          {/* ================= TOOLKIT SECTION ================= */}
-          <ToolkitSection />
-
-          {/* ================= RUNNER GAME ================= */}
-          <DinoRunner />
+          {/* ================= TOOLKIT + GAME (CARD) ================= */}
+          <div className="sticky top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[17] overflow-hidden">
+            <ToolkitSection />
+            <DinoRunner />
+          </div>
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 z-10 pb-12 overflow-hidden">
+          <section id="section-contact" className="sticky top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] pb-12 overflow-hidden">
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
 
@@ -2782,7 +2726,7 @@ export default function App() {
             </ParticleFlyer>
 
             {/* Absolute bottom details */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:bottom-12 font-clash text-[10px] tracking-widest text-[var(--muted)] flex gap-1.5 items-center whitespace-nowrap">
+            <div className="absolute bottom-32 md:bottom-36 left-1/2 -translate-x-1/2 font-clash text-[10px] tracking-widest text-[var(--muted)] flex gap-1.5 items-center whitespace-nowrap">
               <span>Country of origin:</span>
               <span className="text-white font-bold flex gap-[1px]">
                 <span className="text-[#138808]">I</span>
@@ -2791,14 +2735,14 @@ export default function App() {
               </span>
             </div>
 
-            <div className="absolute bottom-6 right-6 md:bottom-12 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
+            <div className="absolute bottom-32 md:bottom-36 right-6 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
               SYS: <span className="text-[var(--red)] font-bold animate-pulse">OFFLINE</span><br/>
               END_OF_FILE
             </div>
 
-            {/* THE SIGNATURE — Hornet brand mark, hugging the bottom under the hashtag */}
-            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-40 pointer-events-none">
-              <img src="/assets/photos/hornet.png" alt="Hornet" className="w-10 md:w-12 edit-glow opacity-80" />
+            {/* THE SIGNATURE — Hornet brand mark */}
+            <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-70 pointer-events-none">
+              <img src="/assets/photos/hornet.png" alt="Hornet" className="w-16 md:w-20 brightness-150" />
               <span>#stAycReative</span>
             </div>
           </section>
