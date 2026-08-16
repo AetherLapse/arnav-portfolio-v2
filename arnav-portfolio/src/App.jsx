@@ -2649,14 +2649,18 @@ export default function App() {
           </section>
 
 
-          {/* ================= TOOLKIT + GAME (CARD) ================= */}
+          {/* ================= TOOLKIT (CARD) ================= */}
           <div className="sticky top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[17] overflow-hidden">
             <ToolkitSection />
+          </div>
+
+          {/* ================= DINO GAME (CARD) ================= */}
+          <div className="sticky top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] overflow-hidden">
             <DinoRunner />
           </div>
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="sticky top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] pb-12 overflow-hidden">
+          <section id="section-contact" className="sticky top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[19] pb-12 overflow-hidden">
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
 
