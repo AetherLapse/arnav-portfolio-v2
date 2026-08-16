@@ -113,7 +113,7 @@ const DinoGame = () => {
     */
     var FPS = 60;
     /** @const */
-    var IS_HIDPI = window.devicePixelRatio > 1;
+    var IS_HIDPI = false;
     /** @const */
     var IS_IOS =
     window.navigator.userAgent.indexOf('UIWebViewForStaticFileContent') > -1;
@@ -355,7 +355,7 @@ const DinoGame = () => {
     var boxStyles = window.getComputedStyle(this.outerContainerEl);
     var padding = Number(boxStyles.paddingLeft.substr(0,
     boxStyles.paddingLeft.length - 2));
-    this.dimensions.WIDTH = this.outerContainerEl.offsetWidth - padding * 2;
+    this.dimensions.WIDTH = Math.min(this.outerContainerEl.offsetWidth - padding * 2, DEFAULT_WIDTH);
     // Redraw the elements back onto the canvas.
     if (this.canvas) {
     this.canvas.width = this.dimensions.WIDTH;
@@ -707,7 +707,7 @@ const DinoGame = () => {
     Runner.updateCanvasScaling = function(canvas, opt_width, opt_height) {
     var context = canvas.getContext('2d');
     // Query the various pixel ratios
-    var devicePixelRatio = Math.floor(window.devicePixelRatio) || 1;
+    var devicePixelRatio = 1;
     var backingStoreRatio = Math.floor(context.webkitBackingStorePixelRatio) || 1;
     var ratio = devicePixelRatio / backingStoreRatio;
     // Upscale the canvas if the two ratios don't match
@@ -2026,13 +2026,14 @@ const DinoGame = () => {
         .interstitial-wrapper .runner-container {
           height: 150px;
           max-width: 1200px;
+          margin: 0 auto;
           overflow: hidden;
           position: relative;
-          width: 44px;
+          width: 100%;
           z-index: 2;
         }
         .interstitial-wrapper .runner-canvas {
-          filter: invert(1) hue-rotate(180deg);
+          filter: invert(1);
           height: 150px;
           max-width: 1200px;
           opacity: 1;

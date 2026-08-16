@@ -102,13 +102,13 @@ const GLOBAL_STYLES = `
   .noise-overlay::before {
     content: '';
     position: fixed;
-    inset: -50%;
-    width: 200%;
-    height: 200%;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-repeat: repeat;
     pointer-events: none;
     z-index: 9000;
-    opacity: 0.4;
+    opacity: 0.3;
+    will-change: auto;
   }
 
   /* Perf: skip rendering sections that are off-screen (page is ~15k px tall).
@@ -150,15 +150,25 @@ const MagneticRepulsion = ({ children, repulsionForce = 40, radius = 200, classN
   const triggerRef = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const visibleRef = useRef(false);
 
   const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.2 });
   const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.2 });
 
   useEffect(() => {
     let animationFrameId;
+    const el = triggerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visibleRef.current = entry.isIntersecting;
+      if (entry.isIntersecting) animationFrameId = requestAnimationFrame(checkDistance);
+    }, { rootMargin: '100px' });
+    observer.observe(el);
+
     const checkDistance = () => {
-      if (!triggerRef.current || !cursorX || !cursorY) return;
-      const rect = triggerRef.current.getBoundingClientRect();
+      if (!visibleRef.current || !cursorX || !cursorY) return;
+      const rect = el.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
@@ -167,7 +177,7 @@ const MagneticRepulsion = ({ children, repulsionForce = 40, radius = 200, classN
       const distance = Math.sqrt(distanceX ** 2 + distanceY ** 2);
 
       if (distance < radius) {
-        const force = (radius - distance) / radius; 
+        const force = (radius - distance) / radius;
         x.set(-(distanceX / distance) * force * repulsionForce);
         y.set(-(distanceY / distance) * force * repulsionForce);
       } else {
@@ -175,8 +185,7 @@ const MagneticRepulsion = ({ children, repulsionForce = 40, radius = 200, classN
       }
       animationFrameId = requestAnimationFrame(checkDistance);
     };
-    animationFrameId = requestAnimationFrame(checkDistance);
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => { cancelAnimationFrame(animationFrameId); observer.disconnect(); };
   }, [cursorX, cursorY, radius, repulsionForce, x, y]);
 
   return (
@@ -193,15 +202,25 @@ const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "
   const triggerRef = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const visibleRef = useRef(false);
 
   const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.2 });
   const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.2 });
 
   useEffect(() => {
     let animationFrameId;
+    const el = triggerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visibleRef.current = entry.isIntersecting;
+      if (entry.isIntersecting) animationFrameId = requestAnimationFrame(checkDistance);
+    }, { rootMargin: '100px' });
+    observer.observe(el);
+
     const checkDistance = () => {
-      if (!triggerRef.current || !cursorX || !cursorY) return;
-      const rect = triggerRef.current.getBoundingClientRect();
+      if (!visibleRef.current || !cursorX || !cursorY) return;
+      const rect = el.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
 
@@ -210,7 +229,7 @@ const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "
       const distance = Math.sqrt(distanceX ** 2 + distanceY ** 2);
 
       if (distance < radius) {
-        const pull = (radius - distance) / radius; 
+        const pull = (radius - distance) / radius;
         x.set(distanceX * pull * force);
         y.set(distanceY * pull * force);
       } else {
@@ -218,8 +237,7 @@ const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "
       }
       animationFrameId = requestAnimationFrame(checkDistance);
     };
-    animationFrameId = requestAnimationFrame(checkDistance);
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => { cancelAnimationFrame(animationFrameId); observer.disconnect(); };
   }, [cursorX, cursorY, radius, force, x, y]);
 
   return (
@@ -705,9 +723,19 @@ const MagneticVideoCard = () => {
 
   useEffect(() => {
     let animationFrameId;
+    const visibleRef = { current: false };
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visibleRef.current = entry.isIntersecting;
+      if (entry.isIntersecting) animationFrameId = requestAnimationFrame(updatePhysics);
+    }, { rootMargin: '100px' });
+    observer.observe(el);
+
     const updatePhysics = () => {
-      if (!cardRef.current || !cursorX || !cursorY) return;
-      const rect = cardRef.current.getBoundingClientRect();
+      if (!visibleRef.current || !cursorX || !cursorY) return;
+      const rect = el.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       const cX = cursorX.get();
@@ -720,31 +748,30 @@ const MagneticVideoCard = () => {
       if (isInside) {
         setIsHovered(true);
         setSpotlightPos({ x: cX - rect.left, y: cY - rect.top });
-        rawScale.set(1.08); 
+        rawScale.set(1.08);
         rawX.set(0); rawY.set(0);
         rawRotateX.set((distY / (rect.height/2)) * 15);
         rawRotateY.set(-(distX / (rect.width/2)) * 15);
-        cardRef.current.style.zIndex = 30;
+        el.style.zIndex = 30;
       } else {
         setIsHovered(false);
-        const pushRadius = rect.width * 1.6; 
+        const pushRadius = rect.width * 1.6;
         if (distance < pushRadius) {
           const force = (pushRadius - distance) / pushRadius;
           const easeForce = Math.pow(force, 1.5);
           rawScale.set(1);
-          rawX.set(-(distX / distance) * easeForce * 35); 
-          rawY.set(-(distY / distance) * easeForce * 35); 
+          rawX.set(-(distX / distance) * easeForce * 35);
+          rawY.set(-(distY / distance) * easeForce * 35);
           rawRotateX.set(0); rawRotateY.set(0);
-          cardRef.current.style.zIndex = 10;
+          el.style.zIndex = 10;
         } else {
           rawScale.set(1); rawX.set(0); rawY.set(0); rawRotateX.set(0); rawRotateY.set(0);
-          cardRef.current.style.zIndex = 1;
+          el.style.zIndex = 1;
         }
       }
       animationFrameId = requestAnimationFrame(updatePhysics);
     };
-    animationFrameId = requestAnimationFrame(updatePhysics);
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => { cancelAnimationFrame(animationFrameId); observer.disconnect(); };
   }, [cursorX, cursorY, rawX, rawY, rawScale, rawRotateX, rawRotateY]);
 
   return (
@@ -776,7 +803,7 @@ const CareerCard = ({ item, index }) => {
 
   return (
     <motion.div
-      className={`flex-shrink-0 relative cursor-none transition-all duration-500 ease-out ${isHovered ? 'w-[320px] md:w-[400px]' : 'w-[180px] md:w-[220px]'}`}
+      className={`flex-shrink-0 relative cursor-none transition-all duration-500 ease-out ${isHovered ? 'w-[360px] md:w-[450px]' : 'w-[250px] md:w-[300px]'}`}
       style={{ height: '70vh', minHeight: '500px', maxHeight: '650px' }}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -945,7 +972,7 @@ const CareerTimeline = () => {
       <div className="relative w-full">
         <div
           ref={scrollContainerRef}
-          className="flex gap-3 md:gap-4 overflow-x-auto px-4 md:px-8 pb-8"
+          className="flex gap-4 md:gap-6 justify-center flex-wrap px-4 md:px-8 pb-8"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {careerData.map((item, i) => (
