@@ -128,6 +128,9 @@ const CursorContext = React.createContext({ cursorX: null, cursorY: null });
 // --- SOUND ENGINE (File-based) ---
 const SFX = (() => {
   const cache = {};
+  let unlocked = false;
+  let pendingEntry = false;
+
   const play = (src, volume = 0.3) => {
     try {
       if (!cache[src]) cache[src] = new Audio(src);
@@ -136,11 +139,31 @@ const SFX = (() => {
       audio.play().catch(() => {});
     } catch {}
   };
+
+  const unlock = () => {
+    if (unlocked) return;
+    unlocked = true;
+    if (pendingEntry) {
+      pendingEntry = false;
+      play('/assets/sounds/entry.mp3', 0.4);
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    ['click', 'touchstart', 'keydown', 'mousemove'].forEach(evt =>
+      document.addEventListener(evt, unlock, { once: true, passive: true })
+    );
+  }
+
   return {
-    hover: () => play('/assets/sounds/hover.mp3', 0.15),
+    hover: () => play('/assets/sounds/expand.mp3', 0.15),
     click: () => play('/assets/sounds/click.mp3', 0.2),
     scroll: () => play('/assets/sounds/scroll.mp3', 0.08),
-    spaceEnter: () => play('/assets/sounds/boot.mp3', 0.3),
+    spaceEnter: () => {
+      if (unlocked) play('/assets/sounds/entry.mp3', 0.4);
+      else pendingEntry = true;
+    },
+    woosh: () => play('/assets/sounds/woosh.mp3', 0.4),
   };
 })();
 
@@ -1004,8 +1027,16 @@ const toolkitData = [
 ];
 
 const ToolkitSection = () => {
+  const [hoveredVideo, setHoveredVideo] = useState(null);
+  const [pipPos, setPipPos] = useState({ x: 0, y: 0 });
+  const sectionRef = useRef(null);
+
+  const handleMouseMove = (e) => {
+    setPipPos({ x: e.clientX + 16, y: e.clientY + 16 });
+  };
+
   return (
-    <section className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden">
+    <section ref={sectionRef} className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden" onMouseMove={handleMouseMove}>
       <div className="w-full max-w-[90rem] mx-auto relative z-10">
 
         {/* Header */}
@@ -1031,6 +1062,8 @@ const ToolkitSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
+              onMouseEnter={() => tool.video && setHoveredVideo(tool.video)}
+              onMouseLeave={() => setHoveredVideo(null)}
             >
               {/* Logo / Icon */}
               <div className="mb-4 h-10 flex items-center justify-center">
@@ -1051,6 +1084,29 @@ const ToolkitSection = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* PiP Video Player — follows cursor */}
+        <AnimatePresence>
+          {hoveredVideo && (
+            <motion.div
+              className="fixed pointer-events-none z-[9500] rounded-lg overflow-hidden border border-[var(--red)]/50 shadow-[0_0_30px_rgba(255,0,0,0.3)]"
+              style={{ left: pipPos.x, top: pipPos.y }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <video
+                src={hoveredVideo}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-[200px] md:w-[260px] aspect-video object-cover"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Bottom metadata */}
         <div className="mt-16 flex justify-center">
@@ -1220,6 +1276,7 @@ const DinoRunner = () => {
 const QuoteReveal = () => {
   const containerRef = useRef(null);
   const textRef = useRef(null);
+  const hasPlayedWoosh = useRef(false);
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start end", "end start"]
@@ -1228,6 +1285,19 @@ const QuoteReveal = () => {
   const smoothProgress = useSpring(scrollYProgress, { damping: 50, stiffness: 300, mass: 0.5 });
 
   const prevProgress = useRef(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !hasPlayedWoosh.current) {
+        hasPlayedWoosh.current = true;
+        SFX.woosh();
+      }
+    }, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = textRef.current;
@@ -2021,12 +2091,21 @@ export default function App() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [targetProgress]);
 
+  const [readyToEnter, setReadyToEnter] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
+  const handleEnter = () => {
+    setIsEntering(true);
+    SFX.spaceEnter();
+    setTimeout(() => {
+      setHasLoaded(true);
+      document.body.classList.remove('loading');
+    }, 1800);
+  };
+
   useEffect(() => {
     if (loadingProgress === 100) {
       const delay = setTimeout(() => {
-        setHasLoaded(true);
-        document.body.classList.remove('loading');
-        SFX.spaceEnter();
+        setReadyToEnter(true);
       }, 400);
       return () => clearTimeout(delay);
     } else {
@@ -2039,6 +2118,18 @@ export default function App() {
     window.addEventListener('mousemove', move);
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
+
+  useEffect(() => {
+    let lastHoverTime = 0;
+    const handleHover = (e) => {
+      const now = Date.now();
+      if (now - lastHoverTime < 150) return;
+      const el = e.target.closest('a, button, [role="button"], .group');
+      if (el) { lastHoverTime = now; SFX.hover(); }
+    };
+    document.addEventListener('mouseenter', handleHover, true);
+    return () => document.removeEventListener('mouseenter', handleHover, true);
+  }, []);
 
   if (!isMounted) return null;
 
@@ -2144,12 +2235,12 @@ export default function App() {
           {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
-          <div className="sticky top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[11] overflow-hidden">
+          <div className="md:sticky md:top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[11] overflow-hidden">
             <QuoteReveal />
           </div>
 
           {/* ABOUT SECTION */}
-          <section id="section-intro" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[12]">
+          <section id="section-intro" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[12]">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -2329,13 +2420,13 @@ export default function App() {
           </section>
 
           {/* ================= EXPERIENCE + CAREER (CARD) ================= */}
-          <div className="sticky top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[13] overflow-hidden">
+          <div className="md:sticky md:top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[13] overflow-hidden">
             <ExperienceStrip />
             <CareerTimeline />
           </div>
 
           {/* ================= WORKED WITH SECTION ================= */}
-          <section id="section-worked-with" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[14] overflow-hidden">
+          <section id="section-worked-with" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[14] overflow-hidden">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
@@ -2446,7 +2537,7 @@ export default function App() {
 
 
           {/* EVIDENCE BOARD SECTION */}
-          <section id="section-works" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[15] overflow-hidden">
+          <section id="section-works" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[15] overflow-hidden">
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -2544,7 +2635,7 @@ export default function App() {
 
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
-          <section id="section-posts" className="sticky top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[16] overflow-hidden">
+          <section id="section-posts" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[16] overflow-hidden">
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
@@ -2677,17 +2768,17 @@ export default function App() {
 
 
           {/* ================= TOOLKIT (CARD) ================= */}
-          <div className="sticky top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[17] overflow-hidden">
+          <div className="md:sticky md:top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[17] overflow-hidden">
             <ToolkitSection />
           </div>
 
           {/* ================= DINO GAME (CARD) ================= */}
-          <div className="sticky top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] overflow-hidden">
+          <div className="md:sticky md:top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] overflow-hidden">
             <DinoRunner />
           </div>
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="sticky top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[19] pb-12 overflow-hidden">
+          <section id="section-contact" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[19] pb-12 overflow-hidden">
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
 
@@ -2851,12 +2942,65 @@ export default function App() {
                 className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center"
               >
                 {/* Multilingual greeting — Windows OOBE style */}
-                <GreetingCycle progress={loadingProgress} />
+                {!readyToEnter && <GreetingCycle progress={loadingProgress} />}
+
+                {/* PLAY button — appears when loading is complete */}
+                <AnimatePresence>
+                  {readyToEnter && (<>
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.4 }}
+                      onClick={handleEnter}
+                      disabled={isEntering}
+                      className={`px-8 py-4 border flex items-center gap-3 cursor-none group relative overflow-hidden transition-all duration-1000 ease-out ${
+                        isEntering
+                          ? 'border-white bg-white/10 shadow-[0_0_40px_rgba(255,255,255,0.3)]'
+                          : 'border-[var(--red)] hover:shadow-[0_0_30px_rgba(255,0,0,0.4),inset_0_0_30px_rgba(255,0,0,0.1)]'
+                      }`}
+                    >
+                      <div className={`absolute inset-0 transition-all duration-1000 ease-out ${isEntering ? 'bg-white/10' : 'bg-[var(--red)]/0 group-hover:bg-[var(--red)]/10'}`} />
+                      {/* Play icon — slides over text after 1s */}
+                      <motion.svg
+                        width="16" height="16" viewBox="0 0 24 24"
+                        fill={isEntering ? 'white' : 'var(--red)'}
+                        className="relative z-10"
+                        animate={isEntering ? { x: [0, 0, 60], transition: { times: [0, 0.4, 1], duration: 1.5, ease: 'easeInOut' } } : {}}
+                      >
+                        <path d="M8 5v14l11-7z"/>
+                      </motion.svg>
+                      {/* Text — gets wiped by the icon sliding over */}
+                      <span className={`font-clash text-sm tracking-[0.3em] font-bold relative z-10 transition-all duration-1000 ease-out overflow-hidden ${
+                        isEntering ? 'text-white' : 'text-[var(--red)]'
+                      }`}>
+                        <motion.span
+                          className="inline-block"
+                          animate={isEntering ? { clipPath: ['inset(0 0 0 0)', 'inset(0 0 0 0)', 'inset(0 0 0 100%)'], transition: { times: [0, 0.4, 1], duration: 1.5, ease: 'easeInOut' } } : {}}
+                        >
+                          {isEntering ? 'ENTERING' : 'PLAY'}
+                        </motion.span>
+                      </span>
+                    </motion.button>
+                    {!isEntering && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6, duration: 0.5 }}
+                        className="flex items-center gap-2 mt-5"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                        <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">Better with headphones</span>
+                      </motion.div>
+                    )}
+                  </>
+                  )}
+                </AnimatePresence>
 
                 {/* Bottom: percentage + progress bar */}
                 <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
                   <div className="font-bebas text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
-                    {Math.floor(loadingProgress)}%
+                    {readyToEnter ? 'READY' : `${Math.floor(loadingProgress)}%`}
                   </div>
                   <div className="w-full h-[1px] bg-[var(--border)] relative">
                     <div
