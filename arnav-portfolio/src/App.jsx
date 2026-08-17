@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useContext, lazy, Suspense } from 'react';
 import DinoGame from './DinoGame';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent } from 'framer-motion';
+
+const TubesBackground = lazy(() => import('./TubesBackground'));
+const LightRays = lazy(() => import('./LightRays'));
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -1563,15 +1566,6 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
         </div>
       </ParticleFlyer>
 
-      <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute bottom-24 left-6 md:bottom-16 md:left-8 font-clash text-[8px] md:text-[9px] text-[var(--muted)] flex flex-col gap-1 tracking-widest transition-opacity duration-300 ${hudClass}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <motion.div animate={!isBase ? { opacity: [1, 0, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-[var(--red)] rounded-full" />
-          LIVE FEED
-        </div>
-        <span>LAT: 28.9845 N</span>
-        <span>LON: 77.7064 E</span>
-        <span>SECURE_GRID_99</span>
-      </ParticleFlyer>
 
       <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
         12,187th investigator on this case<br/>
@@ -2155,8 +2149,14 @@ export default function App() {
         <div className="relative z-10">
 
         {/* ================= HERO SECTION ================= */}
-        <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-visible">
+        <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-hidden">
 
+          {/* 3D TUBES BACKGROUND (z-0) */}
+          <div className="absolute inset-0 z-0">
+            <Suspense fallback={null}>
+              {hasLoaded && <TubesBackground />}
+            </Suspense>
+          </div>
 
           {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
           <div className="absolute inset-0 z-10 pointer-events-none">
@@ -2241,6 +2241,7 @@ export default function App() {
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[12]">
+            <Suspense fallback={null}><LightRays raysOrigin="top-left" raysColor="#FF0000" raysSpeed={0.6} lightSpread={1.4} rayLength={1.5} mouseInfluence={0.08} noiseAmount={0.01} distortion={0.03} className="opacity-30" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -2427,6 +2428,7 @@ export default function App() {
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[14] overflow-hidden">
+            <Suspense fallback={null}><LightRays raysOrigin="top-right" raysColor="#FF0000" raysSpeed={0.8} lightSpread={1.2} rayLength={1.8} mouseInfluence={0.12} noiseAmount={0.02} distortion={0.04} className="opacity-25" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
@@ -2538,6 +2540,7 @@ export default function App() {
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[15] overflow-hidden">
+            <Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#FF0000" raysSpeed={0.5} lightSpread={1.6} rayLength={2.0} mouseInfluence={0.06} noiseAmount={0.015} distortion={0.02} className="opacity-20" /></Suspense>
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -2636,6 +2639,7 @@ export default function App() {
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[16] overflow-hidden">
+            <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
@@ -2779,6 +2783,7 @@ export default function App() {
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[19] pb-12 overflow-hidden">
+            <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
 
@@ -3016,34 +3021,41 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* BOTTOM PROGRESS BAR WITH SCANNER LINE */}
+        {/* BOTTOM PROGRESS BAR — Premiere-style playhead */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: hasLoaded ? 1 : 0, y: hasLoaded ? 0 : 20 }}
           transition={{ delay: 0.6 }}
-          className="fixed bottom-12 left-8 right-8 md:left-16 md:right-16 h-[1px] z-[100] pointer-events-none hidden md:block"
+          className="fixed bottom-6 left-8 right-8 md:left-16 md:right-16 h-[14px] z-[100] pointer-events-none hidden md:flex items-center"
         >
-          {/* Overflow wrapper: Hides horizontal bleed without cutting off the vertical glow */}
-          <div className="absolute -top-8 -bottom-8 left-0 right-0 overflow-hidden">
-            {/* The actual track line */}
-            <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[1px] bg-[var(--border)]" />
-            
-            <motion.div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
-              style={{ left: starLeft }}
-            >
-              <motion.div
-                className="absolute right-[50%] h-[2px] w-[100px] origin-right"
-                style={{
-                  background: "linear-gradient(to right, transparent, var(--red))",
-                  rotate: tailRotate,
-                  scaleX: tailScaleX,
-                  opacity: tailOpacity,
-                  boxShadow: '0 0 10px rgba(255,0,0,0.8)'
-                }}
-              />
-            </motion.div>
-          </div>
+          {/* Track background with tick marks */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[1px] bg-[var(--border)]" />
+          {/* Tick marks */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} className="absolute top-0 bottom-0 flex items-center" style={{ left: `${(i / 19) * 100}%` }}>
+              <div className={`w-px ${i % 5 === 0 ? 'h-[10px] bg-white/20' : 'h-[6px] bg-white/10'}`} />
+            </div>
+          ))}
+          {/* Filled red portion */}
+          <motion.div
+            className="absolute top-1/2 -translate-y-1/2 left-0 h-[2px] bg-[var(--red)] rounded-full shadow-[0_0_6px_rgba(255,0,0,0.5)]"
+            style={{ width: starLeft }}
+          />
+          {/* Playhead — Premiere style triangle */}
+          <motion.div
+            className="absolute top-0 -translate-x-1/2 flex flex-col items-center"
+            style={{ left: starLeft }}
+          >
+            <div className="w-3 h-2 bg-[var(--red)] clip-path-[polygon(0_0,100%_0,50%_100%)]" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+            <div className="w-[2px] h-[10px] bg-[var(--red)] shadow-[0_0_4px_rgba(255,0,0,0.8)]" />
+          </motion.div>
+          {/* Timecode */}
+          <motion.div
+            className="absolute -top-5 font-clash text-[8px] tracking-widest text-[var(--red)]"
+            style={{ left: starLeft, translateX: '-50%' }}
+          >
+            <Timecode />
+          </motion.div>
         </motion.div>
 
         {/* Dynamic Target Coordinates attached to cursor */}
