@@ -36,7 +36,7 @@ const GLOBAL_STYLES = `
   body {
     background-color: var(--bg);
     color: var(--black);
-    font-family: 'Clash Grotesk', sans-serif;
+    font-family: 'Unbounded', sans-serif;
     overflow-x: hidden;
     overflow-y: auto;
     margin: 0;
@@ -67,7 +67,7 @@ const GLOBAL_STYLES = `
   .font-bebas { font-family: 'Bebas Neue', sans-serif; }
   .font-caveat { font-family: 'Caveat', cursive; }
   .font-dancing { font-family: 'Dancing Script', cursive; }
-  .font-clash { font-family: 'Clash Grotesk', sans-serif; }
+  .font-clash { font-family: 'Unbounded', sans-serif; }
   
   /* New Supertalls Utility Class */
   .font-supertalls { font-family: 'Supertalls'; }
@@ -128,6 +128,111 @@ const GLOBAL_STYLES = `
 // Global contexts
 const CursorContext = React.createContext({ cursorX: null, cursorY: null });
 
+// --- PAGE TRANSITION (Brick Shutter) ---
+const SHUTTER_COLS = 10;
+const SHUTTER_ROWS = 7;
+const SHUTTER_DURATION = 500;
+const SHUTTER_STAGGER = 35;
+const SHUTTER_HOLD = 90;
+const SHUTTER_EASE = 'cubic-bezier(0.83, 0, 0.17, 1)';
+
+const PageTransition = ({ active, onMidpoint }) => {
+  const shutterRef = useRef(null);
+  const bricksRef = useRef([]);
+  const builtRef = useRef(false);
+
+  useEffect(() => {
+    if (!shutterRef.current || builtRef.current) return;
+    builtRef.current = true;
+
+    const container = shutterRef.current;
+    const colWidth = 100 / SHUTTER_COLS;
+    const brickHeight = 100 / SHUTTER_ROWS;
+    const bricks = [];
+
+    for (let c = 0; c < SHUTTER_COLS; c++) {
+      const colEl = document.createElement('div');
+      colEl.style.cssText = `position:absolute;top:0;bottom:0;left:${c * colWidth}vw;width:${colWidth}vw;display:flex;flex-direction:column;`;
+
+      const offset = c % 2 === 1;
+
+      if (offset) {
+        const half = document.createElement('div');
+        half.className = 'shutter-brick';
+        half.style.cssText = `background:var(--red);flex:0 0 ${brickHeight / 2}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
+        colEl.appendChild(half);
+        bricks.push({ el: half, row: -0.5, col: c });
+      }
+
+      for (let r = 0; r < SHUTTER_ROWS; r++) {
+        const brick = document.createElement('div');
+        brick.className = 'shutter-brick';
+        brick.style.cssText = `background:var(--red);flex:0 0 ${brickHeight}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
+        colEl.appendChild(brick);
+        bricks.push({ el: brick, row: r, col: c });
+      }
+
+      if (offset) {
+        const half = document.createElement('div');
+        half.className = 'shutter-brick';
+        half.style.cssText = `background:var(--red);flex:0 0 ${brickHeight / 2}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
+        colEl.appendChild(half);
+        bricks.push({ el: half, row: SHUTTER_ROWS, col: c });
+      }
+
+      container.appendChild(colEl);
+    }
+
+    const maxDist = SHUTTER_ROWS + SHUTTER_COLS;
+    bricks.forEach(b => {
+      b.delay = ((b.row + b.col) / maxDist) * (SHUTTER_STAGGER * maxDist * 0.35);
+    });
+
+    bricksRef.current = bricks;
+  }, []);
+
+  const onMidpointRef = useRef(onMidpoint);
+  onMidpointRef.current = onMidpoint;
+
+  useEffect(() => {
+    if (!active || !bricksRef.current.length) return;
+    const bricks = bricksRef.current;
+    const maxDelay = Math.max(...bricks.map(b => b.delay));
+
+    // Cover
+    bricks.forEach(b => {
+      b.el.style.transition = `transform ${SHUTTER_DURATION}ms ${SHUTTER_EASE} ${b.delay}ms`;
+      b.el.style.transform = 'scaleY(1)';
+    });
+
+    const totalCover = SHUTTER_DURATION + maxDelay;
+
+    // Midpoint: swap content while hidden
+    const midTimer = setTimeout(() => {
+      onMidpointRef.current && onMidpointRef.current();
+    }, totalCover);
+
+    // Reveal: reverse from opposite corner
+    const revealTimer = setTimeout(() => {
+      bricks.forEach(b => {
+        const reverseDelay = maxDelay - b.delay;
+        b.el.style.transition = `transform ${SHUTTER_DURATION}ms ${SHUTTER_EASE} ${reverseDelay}ms`;
+        b.el.style.transform = 'scaleY(0)';
+      });
+    }, totalCover + SHUTTER_HOLD);
+
+    return () => { clearTimeout(midTimer); clearTimeout(revealTimer); };
+  }, [active]);
+
+  return (
+    <div
+      ref={shutterRef}
+      className="fixed inset-0 z-[250] overflow-hidden"
+      style={{ pointerEvents: active ? 'auto' : 'none' }}
+    />
+  );
+};
+
 // --- SOUND ENGINE (File-based) ---
 const SFX = (() => {
   const cache = {};
@@ -166,7 +271,6 @@ const SFX = (() => {
       if (unlocked) play('/assets/sounds/entry.mp3', 0.4);
       else pendingEntry = true;
     },
-    woosh: () => play('/assets/sounds/woosh.mp3', 0.4),
   };
 })();
 
@@ -287,6 +391,62 @@ const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   </motion.div>
 );
 
+const BreathingText = ({ text, className = '' }) => {
+  const charsRef = useRef([]);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    let raf;
+    let running = false;
+    const speed = 0.003;
+    const width = 3;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      running = entry.isIntersecting;
+      if (running) raf = requestAnimationFrame(animate);
+    }, { rootMargin: '100px' });
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    const animate = (now) => {
+      if (!running) return;
+      const totalChars = charsRef.current.length;
+      const pos = (now * speed) % (totalChars + width * 2);
+      for (let i = 0; i < totalChars; i++) {
+        const el = charsRef.current[i];
+        if (!el) continue;
+        const dist = Math.abs(i - pos + width);
+        const t = Math.max(0, 1 - dist / width);
+        const ease = t * t * (3 - 2 * t);
+        el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
+      }
+      raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
+  }, []);
+
+  const lines = text.split('\n');
+  let charIndex = 0;
+
+  return (
+    <span ref={containerRef} className={`tracking-[0.05em] ${className}`}>
+      {lines.map((line, li) => (
+        <span key={li} className="block">
+          {line.split('').map((char) => {
+            const idx = charIndex++;
+            if (char === ' ') return <span key={idx} className="inline-block w-[0.3em]">&nbsp;</span>;
+            return (
+              <span key={idx} ref={el => { charsRef.current[idx] = el; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
+                {char}
+              </span>
+            );
+          })}
+        </span>
+      ))}
+    </span>
+  );
+};
+
 const ParticleTextSwap = ({ text }) => (
   <span className="relative inline-flex items-center justify-center whitespace-nowrap">
     <AnimatePresence mode="wait">
@@ -332,35 +492,35 @@ const welcomeMessages = ['आपका स्वागत है', 'Welcome'];
 const GreetingCycle = ({ progress }) => {
   const [index, setIndex] = useState(0);
   const [welcomeIndex, setWelcomeIndex] = useState(0);
-  const isWelcome = progress >= 95;
+  const isWelcome = progress >= 75;
 
   useEffect(() => {
     if (isWelcome) return;
     const interval = setInterval(() => {
       setIndex(prev => (prev + 1) % greetings.length);
-    }, 1200);
+    }, 600);
     return () => clearInterval(interval);
   }, [isWelcome]);
 
   useEffect(() => {
     if (!isWelcome) return;
     setWelcomeIndex(0);
-    const timeout = setTimeout(() => setWelcomeIndex(1), 1500);
+    const timeout = setTimeout(() => setWelcomeIndex(1), 1000);
     return () => clearTimeout(timeout);
   }, [isWelcome]);
 
   const currentText = isWelcome ? welcomeMessages[welcomeIndex] : greetings[index];
 
   return (
-    <div className="flex flex-col items-center justify-center h-[100px]">
+    <div className="flex flex-col items-center justify-center h-[120px] overflow-hidden px-4">
       <AnimatePresence mode="wait">
         <motion.span
           key={currentText}
-          initial={{ opacity: 0, scale: 0.92, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.05, y: -8 }}
-          transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }}
-          className="font-clash font-bold text-[clamp(40px,8vw,80px)] text-[var(--black)] leading-none"
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut', exit: { duration: 0.1 } }}
+          className="font-clash font-light text-[clamp(40px,8vw,80px)] text-[var(--black)] leading-none"
         >
           {currentText}
         </motion.span>
@@ -500,12 +660,12 @@ const OrbitalRing = ({ radius, duration, reverse, items }) => {
 
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: radius * 2, height: radius * 2 }}>
-      <div className="absolute inset-0 rounded-full border border-dashed border-[var(--border)] opacity-70 pointer-events-none" />
+      <div className="absolute inset-0 rounded-full border border-[var(--border)] opacity-40 pointer-events-none" />
       {items.map((item, i) => (
         <div
           key={i}
           className="absolute top-1/2 left-1/2 pointer-events-none"
-          style={{ width: 0, height: 0, animation: `${spin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
+          style={{ width: 0, height: 0, animation: `${spin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s`, willChange: 'transform' }}
         >
           {/* spacer: carries the translate to the ring point (no animation, so its transform survives) */}
           <div
@@ -515,7 +675,7 @@ const OrbitalRing = ({ radius, duration, reverse, items }) => {
             {/* counter-rotator: keeps the icon upright (its own animation only affects itself) */}
             <div
               className="flex justify-center items-center"
-              style={{ animation: `${counterSpin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s` }}
+              style={{ animation: `${counterSpin} ${duration}s linear infinite`, animationDelay: `${-((i / items.length) * duration)}s`, willChange: 'transform' }}
             >
               <GalaxyIcon label={item.label}>
                 {item.icon}
@@ -1295,7 +1455,6 @@ const QuoteReveal = () => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && !hasPlayedWoosh.current) {
         hasPlayedWoosh.current = true;
-        SFX.woosh();
       }
     }, { threshold: 0.1 });
     observer.observe(el);
@@ -1474,11 +1633,12 @@ const HeroBackground = ({ hasLoaded }) => {
       <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
         <motion.div
           ref={textContainerRef}
-          className="flex flex-col items-start font-supertalls leading-none text-left"
+          className="flex flex-col items-start leading-none text-left"
           initial={{ opacity: 0, y: 20 }}
           animate={hasLoaded ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.1, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
           style={{
+            fontFamily: "'Unbounded', sans-serif",
             fontSize: 'clamp(60px, 12vw, 160px)',
             '--mx': '0px',
             '--my': '0px',
@@ -1489,8 +1649,7 @@ const HeroBackground = ({ hasLoaded }) => {
             letterSpacing: '0.02em',
           }}
         >
-          <span className="tracking-[0.05em] block">ARNAV</span>
-          <span className="tracking-[0.05em] block mt-2 md:mt-4">RAI</span>
+          <BreathingText text={"ARNAV\nRAI"} className="[&>span:nth-child(2)]:mt-2 md:[&>span:nth-child(2)]:mt-4" />
         </motion.div>
         <motion.p
           className="font-clash text-[var(--muted)] tracking-[0.3em] uppercase mt-4 md:mt-6"
@@ -1702,7 +1861,6 @@ const CurvedThread = ({ hasLoaded }) => {
 // uses transform-only parallax + a one-shot blur transition (no per-frame filter on
 // big layers). Framer keeps ownership of transforms — we never touch transform here.
 const ScrollFX = () => {
-  const rafRef = useRef(0);
   const lastY = useRef(0);
   const idleT = useRef(0);
   const titlesRef = useRef([]);
@@ -1737,34 +1895,34 @@ const ScrollFX = () => {
     measurePin();
 
     lastY.current = window.scrollY;
-    const loop = () => {
+    let scrollTimeout;
+    const onScroll = () => {
       const y = window.scrollY;
       const vel = Math.abs(y - lastY.current);
       lastY.current = y;
-      // velocity motion blur: fast scroll -> titles blur (capped 9px), idle -> sharp
       const blur = Math.min(vel * 0.035, 9);
       if (blur > 0.5) {
         titlesRef.current.forEach((t) => {
           if (visible.current.has(t)) t.style.filter = `blur(${blur.toFixed(2)}px)`;
         });
-        idleT.current = 0;
-      } else if (idleT.current++ > 14) {
-        titlesRef.current.forEach((t) => { if (t.style.filter) t.style.filter = ''; });
       }
-      // portrait: parallax lift + subtle scale while the card covers it; one-shot blur near the end
       if (portrait) {
         const s = Math.min(y, pinnedRef.current);
         portrait.style.transform = `translateY(${(s * 0.07).toFixed(1)}px) scale(${(1 + s * 0.00004).toFixed(4)})`;
         portrait.style.filter = s > pinnedRef.current * 0.62 ? 'blur(5px)' : '';
       }
-      rafRef.current = requestAnimationFrame(loop);
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        titlesRef.current.forEach((t) => { if (t.style.filter) t.style.filter = ''; });
+      }, 150);
     };
-    rafRef.current = requestAnimationFrame(loop);
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', measurePin);
     return () => {
-      cancelAnimationFrame(rafRef.current);
       io.disconnect();
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', measurePin);
+      clearTimeout(scrollTimeout);
       titles.forEach((t) => { t.classList.remove('fx-reveal', 'fx-in'); t.style.filter = ''; t.style.willChange = ''; });
     };
   }, []);
@@ -1958,7 +2116,6 @@ export default function App() {
 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [targetProgress, setTargetProgress] = useState(15);
 
   const [titleIndex, setTitleIndex] = useState(0);
   const titles = useMemo(() => [{ left: "MOTION", right: "DESIGNER" }, { left: "VIDEO", right: "EDITOR" }], []);
@@ -2032,7 +2189,36 @@ export default function App() {
   const tailScaleX = useTransform(scrollVelocity, [-1000, 0, 1000], [1.5, 0, 1.5]);
   const tailOpacity = useTransform(scrollVelocity, [-200, 0, 200], [1, 0, 1]);
 
-  // Make Nav visible after 100px of scrolling
+  // Nav state: scroll-driven morph from bar to pill
+  const [navMenuOpen, setNavMenuOpen] = useState(false);
+  const [pageTransition, setPageTransition] = useState(false);
+  const transitionTarget = useRef(null);
+
+  const navigateWithTransition = (href) => {
+    transitionTarget.current = href;
+    setPageTransition(true);
+    setNavMenuOpen(false);
+  };
+
+  const handleTransitionMidpoint = () => {
+    if (transitionTarget.current) {
+      const el = document.querySelector(transitionTarget.current);
+      if (el) el.scrollIntoView({ behavior: 'instant' });
+    }
+  };
+
+  useEffect(() => {
+    if (!pageTransition) return;
+    const timer = setTimeout(() => setPageTransition(false), 2500);
+    return () => clearTimeout(timer);
+  }, [pageTransition]);
+  const navProgress = useTransform(scrollY, [0, window.innerHeight * 0.7], [0, 1]);
+  const navProgressClamped = useTransform(navProgress, v => Math.min(Math.max(v, 0), 1));
+  const [navIsContracted, setNavIsContracted] = useState(false);
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setNavIsContracted(latest > window.innerHeight * 0.7);
+  });
+
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavVisible(latest > 100);
   });
@@ -2046,66 +2232,32 @@ export default function App() {
 
   useEffect(() => {
     setIsMounted(true);
+    document.body.classList.add('loading');
 
-    let resourcesLoaded = 0;
-    const totalResources = 1;
+    const duration = 7500;
+    const start = performance.now();
+    let animId;
 
-    const checkResourceLoad = () => {
-      resourcesLoaded++;
-      const newTarget = 15 + (resourcesLoaded / totalResources) * 85;
-      setTargetProgress(newTarget);
+    const tick = () => {
+      const elapsed = performance.now() - start;
+      const progress = Math.min((elapsed / duration) * 100, 100);
+      setLoadingProgress(progress);
+      if (progress < 100) {
+        animId = requestAnimationFrame(tick);
+      }
     };
+    animId = requestAnimationFrame(tick);
 
-    // Gate on DOMContentLoaded, NOT window 'load' — window load waits for the
-    // autoplay video, every font and every image (8-10s on slow machines).
-    // The app is interactive at DOMContentLoaded; heavy media loads lazily.
-    if (document.readyState === 'complete' || document.readyState === 'interactive') checkResourceLoad();
-    else window.addEventListener('DOMContentLoaded', checkResourceLoad);
-
-    const fallbackTimer = setTimeout(() => { setTargetProgress(100); }, 5000);
-
-    return () => {
-      window.removeEventListener('DOMContentLoaded', checkResourceLoad);
-      clearTimeout(fallbackTimer);
-    };
-  }, []);
-
-  useEffect(() => {
-    let animationFrameId;
-    const lerp = () => {
-      setLoadingProgress((prev) => {
-        const diff = targetProgress - prev;
-        if (diff > 0.1) return prev + diff * 0.08; 
-        else if (targetProgress === 100 && prev >= 99.5) return 100; 
-        return prev;
-      });
-      animationFrameId = requestAnimationFrame(lerp);
-    };
-    animationFrameId = requestAnimationFrame(lerp);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [targetProgress]);
-
-  const [readyToEnter, setReadyToEnter] = useState(false);
-  const [isEntering, setIsEntering] = useState(false);
-  const handleEnter = () => {
-    setIsEntering(true);
-    SFX.spaceEnter();
-    setTimeout(() => {
+    const finishTimer = setTimeout(() => {
       setHasLoaded(true);
       document.body.classList.remove('loading');
-    }, 1800);
-  };
+    }, duration + 400);
 
-  useEffect(() => {
-    if (loadingProgress === 100) {
-      const delay = setTimeout(() => {
-        setReadyToEnter(true);
-      }, 400);
-      return () => clearTimeout(delay);
-    } else {
-      document.body.classList.add('loading');
-    }
-  }, [loadingProgress]);
+    return () => {
+      cancelAnimationFrame(animId);
+      clearTimeout(finishTimer);
+    };
+  }, []);
 
   useEffect(() => {
     const move = (e) => { cursorX.set(e.clientX); cursorY.set(e.clientY); };
@@ -2135,6 +2287,62 @@ export default function App() {
         {/* Film grain noise overlay */}
         <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
 
+        {/* ================= MORPHING NAVBAR ================= */}
+        {hasLoaded && (
+          <motion.nav
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="fixed top-0 left-0 right-0 z-[150] flex justify-center pt-3"
+          >
+            <div className={`h-12 md:h-14 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative transition-all duration-500 ease-out ${
+              navIsContracted
+                ? 'w-[240px] md:w-[260px] rounded-full bg-black/85'
+                : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-xl bg-black/60'
+            }`}>
+              {/* Expanded state content */}
+              <div className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
+                <div className="flex items-center gap-8">
+                  <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
+                  <button onClick={() => navigateWithTransition('#section-works')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">WORKS</button>
+                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
+                </div>
+              </div>
+
+              {/* Contracted state content */}
+              <div className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <button onClick={() => setNavMenuOpen(!navMenuOpen)} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
+                  <div className={`w-4 h-px bg-white transition-all duration-300 ${navMenuOpen ? 'rotate-45 translate-y-[3px]' : ''}`} />
+                  <div className={`w-4 h-px bg-white transition-all duration-300 ${navMenuOpen ? '-rotate-45 -translate-y-[2px]' : ''}`} />
+                </button>
+                <span className="font-supertalls text-sm text-white">A.</span>
+                <a href="#section-contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
+                  <div className="w-2 h-2 rounded-full bg-[var(--red)]" />
+                </a>
+              </div>
+            </div>
+
+            {/* Dropdown menu */}
+            <AnimatePresence>
+              {navMenuOpen && navIsContracted && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.25 }}
+                  className="absolute top-16 left-1/2 -translate-x-1/2 w-[220px] md:w-[260px] bg-black/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl py-4 px-6 flex flex-col gap-3 shadow-[0_16px_48px_rgba(0,0,0,0.8)]"
+                >
+                  <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">ABOUT</button>
+                  <button onClick={() => navigateWithTransition('#section-works')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">WORK</button>
+                  <button onClick={() => navigateWithTransition('#section-posts')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">POSTS</button>
+                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">CONTACT</button>
+                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[10px] tracking-widest text-center text-[var(--bg)] bg-[var(--red)] px-4 py-2 rounded-full hover:bg-white transition-all cursor-none mt-2 w-full">HIRE ME</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.nav>
+        )}
 
         {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
         <ScrollFX />
@@ -2204,7 +2412,7 @@ export default function App() {
                 className="relative w-full h-auto min-h-[60vh] object-bottom"
                 style={{ objectFit: 'cover' }}
                 initial={{ filter: 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
-                animate={{ filter: hasLoaded ? 'drop-shadow(0 0 40px rgba(255,0,0,0.25)) drop-shadow(0 0 80px rgba(255,0,0,0.1))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
+                animate={{ filter: hasLoaded ? 'drop-shadow(0 0 20px rgba(255,0,0,0.1)) drop-shadow(0 0 40px rgba(255,0,0,0.05))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
                 transition={{ delay: hasLoaded ? 2 : 0, duration: 1.5, ease: "easeOut" }}
               />
             </div>
@@ -2760,13 +2968,17 @@ export default function App() {
               ))}
             </div>
 
-            {/* Active Post Info */}
-            <div className="flex justify-center mt-6">
+            {/* Navigation */}
+            <div className="flex justify-center items-center mt-6 gap-6">
+              <button onClick={() => setActivePostIndex(prev => (prev - 1 + POSTS_DATA.length) % POSTS_DATA.length)} className="w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
               <div className="font-clash text-[9px] tracking-widest text-[var(--muted)] flex items-center gap-4">
-                <span>DRAG TO NAVIGATE</span>
-                <span className="text-[var(--red)]">|</span>
                 <span>{activePostIndex + 1} / {POSTS_DATA.length}</span>
               </div>
+              <button onClick={() => setActivePostIndex(prev => (prev + 1) % POSTS_DATA.length)} className="w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             </div>
           </section>
 
@@ -2897,12 +3109,16 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        {/* ================= PAGE TRANSITION ================= */}
+        <PageTransition active={pageTransition} onMidpoint={handleTransitionMidpoint} />
+
         {/* ================= PRELOADER ================= */}
         <AnimatePresence>
           {!hasLoaded && (
             <motion.div
               key="preloader"
               className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]"
+              style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,0,0,0.04) 0%, transparent 60%)' }}
               initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
               exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
               transition={{
@@ -2947,65 +3163,12 @@ export default function App() {
                 className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center"
               >
                 {/* Multilingual greeting — Windows OOBE style */}
-                {!readyToEnter && <GreetingCycle progress={loadingProgress} />}
-
-                {/* PLAY button — appears when loading is complete */}
-                <AnimatePresence>
-                  {readyToEnter && (<>
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.4 }}
-                      onClick={handleEnter}
-                      disabled={isEntering}
-                      className={`px-8 py-4 border flex items-center gap-3 cursor-none group relative overflow-hidden transition-all duration-1000 ease-out ${
-                        isEntering
-                          ? 'border-white bg-white/10 shadow-[0_0_40px_rgba(255,255,255,0.3)]'
-                          : 'border-[var(--red)] hover:shadow-[0_0_30px_rgba(255,0,0,0.4),inset_0_0_30px_rgba(255,0,0,0.1)]'
-                      }`}
-                    >
-                      <div className={`absolute inset-0 transition-all duration-1000 ease-out ${isEntering ? 'bg-white/10' : 'bg-[var(--red)]/0 group-hover:bg-[var(--red)]/10'}`} />
-                      {/* Play icon — slides over text after 1s */}
-                      <motion.svg
-                        width="16" height="16" viewBox="0 0 24 24"
-                        fill={isEntering ? 'white' : 'var(--red)'}
-                        className="relative z-10"
-                        animate={isEntering ? { x: [0, 0, 60], transition: { times: [0, 0.4, 1], duration: 1.5, ease: 'easeInOut' } } : {}}
-                      >
-                        <path d="M8 5v14l11-7z"/>
-                      </motion.svg>
-                      {/* Text — gets wiped by the icon sliding over */}
-                      <span className={`font-clash text-sm tracking-[0.3em] font-bold relative z-10 transition-all duration-1000 ease-out overflow-hidden ${
-                        isEntering ? 'text-white' : 'text-[var(--red)]'
-                      }`}>
-                        <motion.span
-                          className="inline-block"
-                          animate={isEntering ? { clipPath: ['inset(0 0 0 0)', 'inset(0 0 0 0)', 'inset(0 0 0 100%)'], transition: { times: [0, 0.4, 1], duration: 1.5, ease: 'easeInOut' } } : {}}
-                        >
-                          {isEntering ? 'ENTERING' : 'PLAY'}
-                        </motion.span>
-                      </span>
-                    </motion.button>
-                    {!isEntering && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6, duration: 0.5 }}
-                        className="flex items-center gap-2 mt-5"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-                        <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">Better with headphones</span>
-                      </motion.div>
-                    )}
-                  </>
-                  )}
-                </AnimatePresence>
+                <GreetingCycle progress={loadingProgress} />
 
                 {/* Bottom: percentage + progress bar */}
                 <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
-                  <div className="font-bebas text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
-                    {readyToEnter ? 'READY' : `${Math.floor(loadingProgress)}%`}
+                  <div className="font-clash font-light text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
+                    {Math.floor(loadingProgress)}<span className="text-[var(--red)] text-[0.4em]">%</span>
                   </div>
                   <div className="w-full h-[1px] bg-[var(--border)] relative">
                     <div

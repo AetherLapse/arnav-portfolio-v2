@@ -17,9 +17,10 @@ export default function TubesBackground() {
 
         appRef.current = TubesCursor(canvasRef.current, {
           tubes: {
+            count: 12,
             colors: ["#FF0000", "#8B0000", "#CC0000"],
             lights: {
-              intensity: 150,
+              intensity: 60,
               colors: ["#FF0000", "#FF3333", "#990000", "#FF6666"]
             }
           }
@@ -38,7 +39,7 @@ export default function TubesBackground() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ touchAction: 'none', opacity: loaded ? 1 : 0, transition: 'opacity 1s ease' }}
+      style={{ touchAction: 'none', opacity: loaded ? 0.6 : 0, transition: 'opacity 1s ease' }}
     />
   );
 }
