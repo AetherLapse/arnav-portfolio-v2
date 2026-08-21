@@ -2295,13 +2295,23 @@ export default function App() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="fixed top-0 left-0 right-0 z-[150] flex justify-center pt-3"
           >
-            <div className={`h-12 md:h-14 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative transition-all duration-500 ease-out ${
-              navIsContracted
-                ? 'w-[240px] md:w-[260px] rounded-full bg-black/85'
-                : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-xl bg-black/60'
-            }`}>
-              {/* Expanded state content */}
-              <div className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div
+              className={`backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden ${
+                navMenuOpen
+                  ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-2xl bg-black/92'
+                  : navIsContracted
+                    ? 'w-[240px] md:w-[260px] rounded-full bg-black/85'
+                    : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-xl bg-black/60'
+              }`}
+              style={{
+                height: navMenuOpen ? '80vh' : '3.5rem',
+                transition: navMenuOpen
+                  ? 'width 350ms ease-out, height 450ms ease-out 300ms, border-radius 350ms ease-out, background-color 350ms ease-out'
+                  : 'width 400ms ease-out, height 300ms ease-out, border-radius 400ms ease-out, background-color 400ms ease-out'
+              }}
+            >
+              {/* Expanded bar content (on hero) */}
+              <div className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
                 <div className="flex items-center gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
@@ -2310,37 +2320,81 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Contracted state content */}
-              <div className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button onClick={() => setNavMenuOpen(!navMenuOpen)} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
-                  <div className={`w-4 h-px bg-white transition-all duration-300 ${navMenuOpen ? 'rotate-45 translate-y-[3px]' : ''}`} />
-                  <div className={`w-4 h-px bg-white transition-all duration-300 ${navMenuOpen ? '-rotate-45 -translate-y-[2px]' : ''}`} />
+              {/* Contracted pill content */}
+              <div className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
+                <button onClick={() => setNavMenuOpen(true)} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
+                  <div className="w-4 h-px bg-white" />
+                  <div className="w-4 h-px bg-white" />
                 </button>
                 <span className="font-supertalls text-sm text-white">A.</span>
                 <a href="#section-contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
                   <div className="w-2 h-2 rounded-full bg-[var(--red)]" />
                 </a>
               </div>
-            </div>
 
-            {/* Dropdown menu */}
-            <AnimatePresence>
-              {navMenuOpen && navIsContracted && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.25 }}
-                  className="absolute top-16 left-1/2 -translate-x-1/2 w-[220px] md:w-[260px] bg-black/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl py-4 px-6 flex flex-col gap-3 shadow-[0_16px_48px_rgba(0,0,0,0.8)]"
-                >
-                  <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">ABOUT</button>
-                  <button onClick={() => navigateWithTransition('#section-works')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">WORK</button>
-                  <button onClick={() => navigateWithTransition('#section-posts')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">POSTS</button>
-                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none py-1 text-left">CONTACT</button>
-                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[10px] tracking-widest text-center text-[var(--bg)] bg-[var(--red)] px-4 py-2 rounded-full hover:bg-white transition-all cursor-none mt-2 w-full">HIRE ME</button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Full-screen menu overlay content */}
+              <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 delay-200 ${navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                {/* Top bar */}
+                <div className="flex items-center justify-between px-6 md:px-10 h-14 flex-shrink-0">
+                  <button onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                  <img src="/assets/photos/hornet.png" alt="Logo" className="w-8 h-8" />
+                  <a href="#section-contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
+                  </a>
+                </div>
+
+                {/* Menu body */}
+                <div className="flex-1 flex flex-col md:flex-row px-6 md:px-10 py-8 overflow-hidden">
+                  {/* Left: Navigation */}
+                  <div className="flex-1 flex flex-col justify-center">
+                    <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase mb-8">NAVIGATION</span>
+                    <div className="flex flex-col gap-4">
+                      {[
+                        { num: '01', label: 'Projects', href: '#section-works' },
+                        { num: '02', label: 'Contact', href: '#section-contact' },
+                        { num: '03', label: 'About', href: '#section-intro' },
+                      ].map(item => (
+                        <button
+                          key={item.num}
+                          onClick={() => { setNavMenuOpen(false); setTimeout(() => navigateWithTransition(item.href), 500); }}
+                          className="flex items-center gap-6 group cursor-none text-left"
+                        >
+                          <span className="font-clash text-xs text-[var(--muted)]">{item.num}</span>
+                          <span className="font-clash font-bold text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-auto pt-8 flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                      <span className="font-clash text-xs text-[var(--muted)]">Available for projects</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Info */}
+                  <div className="hidden md:flex flex-col justify-between items-end text-right py-4">
+                    <div>
+                      <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-2">LET'S TALK</span>
+                      <a href="mailto:thearnavrai666@gmail.com" className="font-clash text-sm text-white hover:text-[var(--red)] transition-colors cursor-none">thearnavrai666@gmail.com</a>
+                    </div>
+                    <div>
+                      <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-3">SOCIALS</span>
+                      <div className="flex gap-4">
+                        <a href="https://youtube.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">YouTube</a>
+                        <a href="https://instagram.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Instagram</a>
+                        <a href="https://discord.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Discord</a>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-2">BASED IN</span>
+                      <span className="font-clash text-sm text-white font-bold">India</span>
+                      <span className="font-clash text-xs text-[var(--muted)] block">Available Worldwide</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.nav>
         )}
 
