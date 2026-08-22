@@ -14,3 +14,33 @@
 [  828689ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
 [  946003ms] [WARNING] No available adapters. @ http://localhost:5174/:0
 [  946004ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1232429ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1232431ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1276619ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1276619ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1347990ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1347990ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1550909ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1550910ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1569031ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1569032ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1591647ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1591647ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1617052ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1617052ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1656006ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1656006ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1792619ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1792652ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1919771ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 1919802ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 1919989ms] [WARNING] WARNING: Too many active WebGL contexts. Oldest context will be lost. @ https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js:10
+[ 1925214ms] [ERROR] THREE.WebGPURenderer: WebGL Device Lost:
+
+Message: Unknown reason @ http://localhost:5174/@vite/client:509
+[ 2065918ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[ 2065920ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[ 2066095ms] [WARNING] WARNING: Too many active WebGL contexts. Oldest context will be lost. @ https://cdn.jsdelivr.net/npm/threejs-components@0.0.19/build/cursors/tubes1.min.js:10
+[ 2070786ms] [ERROR] THREE.WebGPURenderer: WebGL Device Lost:
+
+Message: Unknown reason @ http://localhost:5174/@vite/client:509

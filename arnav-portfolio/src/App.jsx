@@ -419,9 +419,8 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
         const ease = t * t * (3 - 2 * t);
         el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
         if (colorWave) {
-          const hue = (i * 25 + now * 0.05) % 360;
-          el.style.color = ease > 0.1 ? `hsl(${hue}, 80%, 65%)` : '';
-          el.style.textShadow = ease > 0.3 ? `0 0 ${Math.round(ease * 20)}px hsl(${hue}, 80%, 50%)` : 'none';
+          el.style.color = ease > 0.1 ? `rgba(255, ${Math.round(ease * 40)}, ${Math.round(ease * 20)}, ${0.5 + ease * 0.5})` : '';
+          el.style.textShadow = ease > 0.3 ? `0 0 ${Math.round(ease * 20)}px rgba(255, 0, 0, ${ease * 0.8})` : 'none';
           el.style.filter = ease > 0.2 ? `blur(${(0.5 - ease * 0.5).toFixed(1)}px)` : '';
         }
       }
@@ -2388,6 +2387,20 @@ export default function App() {
 
   // Nav state: scroll-driven morph from bar to pill
   const [navMenuOpen, setNavMenuOpen] = useState(false);
+  const [contactFormOpen, setContactFormOpen] = useState(false);
+  const [contactFormVisible, setContactFormVisible] = useState(false);
+
+  const openContactForm = () => {
+    setPageTransition(true);
+    transitionTarget.current = null;
+    setTimeout(() => setContactFormVisible(true), 800);
+  };
+
+  const closeContactForm = () => {
+    setPageTransition(true);
+    transitionTarget.current = null;
+    setTimeout(() => setContactFormVisible(false), 800);
+  };
   const [pageTransition, setPageTransition] = useState(false);
   const transitionTarget = useRef(null);
 
@@ -3265,61 +3278,21 @@ export default function App() {
                  CHANNEL OPEN
                </div>
                
-               {/* Typography */}
-               <div className="relative mb-16 text-center flex flex-col items-center">
-                 <h2 className="font-supertalls text-[clamp(60px,12vw,140px)] leading-none text-[var(--black)] m-0 fx-glitch" data-text="GET IN TOUCH">
-                   GET IN TOUCH
-                 </h2>
-               </div>
 
-               {/* Dossier Contact Details */}
-               <div className="w-full md:w-auto border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-8 md:p-12 flex flex-col md:flex-row gap-12 md:gap-24 transition-all duration-500 hover:border-[var(--red)]/40 relative overflow-hidden group">
+               {/* GET IN TOUCH CTA */}
+               <button
+                 onClick={openContactForm}
+                 className="border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 relative overflow-hidden group cursor-none"
+               >
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-                  
-                  <div className="flex flex-col gap-8 justify-center">
-                      {/* Phone */}
-                      <div className="flex flex-col gap-2">
-                         <span className="font-clash text-[9px] tracking-widest text-[var(--muted)] uppercase">// Secure_Line [Phone]</span>
-                         <div className="flex items-center gap-3">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                            <a href="tel:+919027373226" className="font-clash text-sm md:text-lg text-[var(--black)] hover:text-[var(--red)] transition-colors cursor-none border-b border-[var(--border)] hover:border-[var(--red)] pb-1">
-                              +91 9027373226
-                            </a>
-                         </div>
-                      </div>
-                      
-                      {/* Email */}
-                      <div className="flex flex-col gap-2">
-                         <span className="font-clash text-[9px] tracking-widest text-[var(--muted)] uppercase">// Direct_Comms [Email]</span>
-                         <div className="flex items-center gap-3">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                            <a href="mailto:thearnavrai666@gmail.com" className="font-clash text-sm md:text-lg text-[var(--black)] hover:text-[var(--red)] transition-colors cursor-none border-b border-[var(--border)] hover:border-[var(--red)] pb-1">
-                              thearnavrai666@gmail.com
-                            </a>
-                         </div>
-                      </div>
+                  <div className="w-14 h-14 bg-[var(--red)] rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 group-hover:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
-
-                  <div className="flex flex-col justify-center items-center border-t md:border-t-0 md:border-l border-[var(--border)] pt-8 md:pt-0 md:pl-12">
-                      <span className="font-clash text-[9px] tracking-widest text-[var(--red)] uppercase mb-6 drop-shadow-[0_0_8px_rgba(255,0,0,0.8)] animate-pulse">
-                        ▼ INITIATE_LINK
-                      </span>
-                      
-                      <a 
-                        href="https://linktr.ee/thearnavrai" 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="flex flex-col items-center gap-4 group/link cursor-none"
-                      >
-                        <div className="w-16 h-16 bg-[var(--red)] rounded-[1rem] flex items-center justify-center transform group-hover/link:scale-110 group-hover/link:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)] relative">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="19.07" y2="4.93"></line></svg>
-                        </div>
-                        <span className="font-clash text-xs border-b border-[var(--black)] pb-0.5 text-[var(--black)] group-hover/link:text-[var(--red)] group-hover/link:border-[var(--red)] transition-colors">
-                          My social accounts.
-                        </span>
-                      </a>
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)] group-hover:text-[var(--red)] transition-colors">GET IN TOUCH</span>
+                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">// INITIATE_CONTACT</span>
                   </div>
-               </div>
+               </button>
             </ParticleFlyer>
 
             {/* Absolute bottom details */}
@@ -3337,11 +3310,6 @@ export default function App() {
               END_OF_FILE
             </div>
 
-            {/* THE SIGNATURE — Hornet brand mark */}
-            <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-70 pointer-events-none">
-              <img src="/assets/photos/hornet.png" alt="Hornet" className="w-16 md:w-20 brightness-150" />
-              <span>#stAycReative</span>
-            </div>
           </section>
 
           {/* ================= #stAyCreative FULL PAGE ================= */}
@@ -3377,6 +3345,81 @@ export default function App() {
             />
           )}
         </AnimatePresence>
+
+        {/* ================= CONTACT FORM POPUP ================= */}
+        {contactFormVisible && (
+          <motion.div
+            key="contact-form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-[200] flex"
+          >
+            <div className="absolute inset-0 bg-[#0D0D0D]" />
+
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-10 h-14 z-20 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--red)] font-clash text-[10px] tracking-widest">✦</span>
+                <span className="font-clash text-[11px] tracking-widest text-[var(--red)] uppercase">ARNAV RAI</span>
+              </div>
+              <button onClick={() => closeContactForm()} className="flex items-center gap-2 cursor-none group">
+                <span className="font-clash text-[11px] tracking-widest text-[var(--muted)] group-hover:text-white transition-colors">CLOSE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* Content: two columns */}
+            <div className="relative z-10 w-full h-full flex flex-col md:flex-row pt-14">
+              {/* Left: CTA text */}
+              <div className="w-full md:w-[45%] flex flex-col justify-center px-8 md:px-16 py-12 bg-[#111]/50">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-[var(--red)] font-clash text-[10px] tracking-widest">✦</span>
+                  <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--red)] uppercase">START A PROJECT</span>
+                </div>
+                <h2 className="font-supertalls text-[clamp(48px,8vw,100px)] leading-[0.9] text-white mb-2">
+                  START<br/><span className="text-[var(--red)]">HERE.</span>
+                </h2>
+                <p className="font-clash text-sm text-[var(--muted)] mt-6 max-w-[280px] leading-relaxed">
+                  Tell me about your project and budget, and I'll get back to you within 24-48 hours.
+                </p>
+              </div>
+
+              {/* Right: Form */}
+              <div className="w-full md:w-[55%] flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto">
+                <form className="flex flex-col gap-6 max-w-[500px]" onSubmit={(e) => { e.preventDefault(); closeContactForm(); }}>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">FULL NAME <span className="text-[var(--red)]">*</span></label>
+                    <input type="text" required placeholder="Your name" className="bg-transparent border-b border-white/20 py-3 font-clash text-sm text-white placeholder:text-white/30 focus:border-[var(--red)] focus:outline-none transition-colors cursor-none" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">EMAIL ADDRESS <span className="text-[var(--red)]">*</span></label>
+                    <input type="email" required placeholder="your@email.com" className="bg-transparent border-b border-white/20 py-3 font-clash text-sm text-white placeholder:text-white/30 focus:border-[var(--red)] focus:outline-none transition-colors cursor-none" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">PHONE NUMBER</label>
+                    <input type="tel" placeholder="+91 98765 43210" className="bg-transparent border-b border-white/20 py-3 font-clash text-sm text-white placeholder:text-white/30 focus:border-[var(--red)] focus:outline-none transition-colors cursor-none" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">PROJECT TYPE <span className="text-[var(--red)]">*</span></label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {['VIDEO EDITING', 'MOTION GRAPHICS', 'BRAND IDENTITY', 'THUMBNAIL', 'OTHER'].map(type => (
+                        <label key={type} className="cursor-none">
+                          <input type="radio" name="projectType" value={type} className="hidden peer" />
+                          <span className="font-clash text-[10px] tracking-widest px-4 py-2 border border-white/20 text-[var(--muted)] peer-checked:border-[var(--red)] peer-checked:text-[var(--red)] hover:border-white/40 transition-colors">
+                            {type}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" className="mt-6 w-full py-4 border border-[var(--red)] font-clash font-bold text-xs tracking-[0.3em] text-white hover:bg-[var(--red)] hover:text-[var(--bg)] transition-all cursor-none flex items-center justify-center gap-3">
+                    SEND INQUIRY <span>→</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* ================= PAGE TRANSITION ================= */}
         <PageTransition active={pageTransition} onMidpoint={handleTransitionMidpoint} />
