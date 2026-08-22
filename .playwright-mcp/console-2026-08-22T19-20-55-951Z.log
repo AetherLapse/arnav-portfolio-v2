@@ -1,0 +1,13 @@
+[    4352ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=90c6483f:14336
+[    8446ms] ReferenceError: pinRef is not defined
+    at initGSAP (http://localhost:5174/src/App.jsx:3144:32)
+[    8447ms] ReferenceError: pinRef is not defined
+    at initGSAP (http://localhost:5174/src/App.jsx:3144:32)
+[   13307ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[   13310ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[   16361ms] [WARNING] [.WebGL-0x11cc00f87a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://localhost:5174/:0
+[   18045ms] [WARNING] [.WebGL-0x11cc00f87a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://localhost:5174/:0
+[   19942ms] [WARNING] [.WebGL-0x11cc00f87a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://localhost:5174/:0
+[   21683ms] [WARNING] [.WebGL-0x11cc00f87a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) @ http://localhost:5174/:0
+[  112218ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  112218ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509

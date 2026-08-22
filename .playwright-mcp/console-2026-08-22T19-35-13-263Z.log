@@ -1,0 +1,5 @@
+[    4634ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=90c6483f:14336
+[   13507ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[   13507ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  124740ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  124740ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509

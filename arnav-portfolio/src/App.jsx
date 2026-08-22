@@ -391,7 +391,7 @@ const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   </motion.div>
 );
 
-const BreathingText = ({ text, className = '' }) => {
+const BreathingText = ({ text, className = '', colorWave = false }) => {
   const charsRef = useRef([]);
   const containerRef = useRef(null);
 
@@ -418,12 +418,18 @@ const BreathingText = ({ text, className = '' }) => {
         const t = Math.max(0, 1 - dist / width);
         const ease = t * t * (3 - 2 * t);
         el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
+        if (colorWave) {
+          const hue = (i * 25 + now * 0.05) % 360;
+          el.style.color = ease > 0.1 ? `hsl(${hue}, 80%, 65%)` : '';
+          el.style.textShadow = ease > 0.3 ? `0 0 ${Math.round(ease * 20)}px hsl(${hue}, 80%, 50%)` : 'none';
+          el.style.filter = ease > 0.2 ? `blur(${(0.5 - ease * 0.5).toFixed(1)}px)` : '';
+        }
       }
       raf = requestAnimationFrame(animate);
     };
     raf = requestAnimationFrame(animate);
     return () => { cancelAnimationFrame(raf); observer.disconnect(); };
-  }, []);
+  }, [colorWave]);
 
   const lines = text.split('\n');
   let charIndex = 0;
@@ -1437,53 +1443,244 @@ const DinoRunner = () => {
 // ================= HERO SCREEN ISOLATED COMPONENTS =================
 
 const QuoteReveal = () => {
-  const containerRef = useRef(null);
-  const textRef = useRef(null);
-  const hasPlayedWoosh = useRef(false);
+  const sectionRef = useRef(null);
+  const fullText = 'MY TOOLS ARE DIGITAL MY LIMITS ARE NOT';
+  const accentWords = ['DIGITAL', 'NOT'];
+
+  const [visibleChars, setVisibleChars] = useState(0);
+  const [chrome, setChrome] = useState(0);
+  const [tilt, setTilt] = useState({ x: 4, y: -3 });
+
   const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
+    target: sectionRef,
+    offset: ["start start", "end end"]
   });
 
-  const smoothProgress = useSpring(scrollYProgress, { damping: 50, stiffness: 300, mass: 0.5 });
+  useMotionValueEvent(scrollYProgress, "change", (p) => {
+    const tiltProgress = Math.min(p / 0.2, 1);
+    setTilt({ x: 4 * (1 - tiltProgress), y: -3 * (1 - tiltProgress) });
+    let c = 0;
+    if (p < 0.1) c = 0;
+    else if (p < 0.25) c = (p - 0.1) / 0.15;
+    else if (p < 0.75) c = 1;
+    else if (p < 0.9) c = 1 - (p - 0.75) / 0.15;
+    else c = 0;
+    setChrome(c);
+    const charP = Math.max(0, Math.min((p - 0.15) / 0.65, 1));
+    setVisibleChars(Math.floor(charP * fullText.length));
+  });
 
-  const prevProgress = useRef(0);
+  const isTyping = visibleChars > 0 && visibleChars < fullText.length;
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !hasPlayedWoosh.current) {
-        hasPlayedWoosh.current = true;
-      }
-    }, { threshold: 0.1 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const el = textRef.current;
-    if (!el) return;
-    return smoothProgress.on('change', (v) => {
-      const velocity = (v - prevProgress.current) * 1000;
-      prevProgress.current = v;
-      const skew = Math.max(-15, Math.min(15, velocity * -8));
-      const scaleX = 1 + Math.min(Math.abs(velocity) * 2, 0.15);
-      el.style.transform = `translate3d(${80 - v * 200}%, 0, 0) skewX(${skew}deg) scaleX(${scaleX})`;
+  const renderText = () => {
+    if (visibleChars === 0) return null;
+    const words = fullText.split(' ');
+    let charCount = 0;
+    return words.map((word, i) => {
+      const wordStart = charCount;
+      charCount += word.length + 1;
+      if (wordStart >= visibleChars) return null;
+      const visibleWord = word.slice(0, Math.max(0, visibleChars - wordStart));
+      if (!visibleWord) return null;
+      const isAccent = accentWords.includes(word);
+      return (
+        <span key={i}>
+          <span className={isAccent ? 'italic text-[var(--red)]' : 'text-white'}>{visibleWord}</span>
+          {charCount - 1 <= visibleChars && i < words.length - 1 && ' '}
+        </span>
+      );
     });
-  }, [smoothProgress]);
+  };
 
   return (
-    <div ref={containerRef} className="relative z-10">
-      <div className="w-full flex items-center justify-center overflow-hidden">
-        <div className="w-full bg-[var(--red)] overflow-hidden py-24 md:py-32">
-          <p
+    <div ref={sectionRef} className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
+      <div className="sticky top-0 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+        <div
+          className="relative w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
+          style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
+        >
+          {/* Counter */}
+          <div className="mb-6" style={{ opacity: chrome }}>
+            <span className="text-[var(--red)] font-clash text-xs tracking-widest">01</span>
+          </div>
+
+          {/* Selection box wrapper */}
+          <div className="relative inline-block">
+            {/* Chrome */}
+            <div style={{ opacity: chrome }} className="pointer-events-none">
+              <div className="absolute inset-0 border border-[var(--red)]/60" />
+              <div className="absolute -top-2 -left-2 w-2 h-2 bg-[var(--red)]" />
+              <div className="absolute -top-2 -right-2 w-2 h-2 bg-[var(--red)]" />
+              <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[var(--red)]" />
+              <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-[var(--red)]" />
+              <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
+                <span className="text-[9px] font-clash font-bold text-black tracking-wider">p / Statement 01</span>
+              </div>
+              <div className="absolute -bottom-8 right-0 flex items-center gap-1">
+                <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
+                  content → <span className="text-[var(--red)]">editing{isTyping && <span className="animate-pulse">...</span>}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* The text */}
+            <h2 className="font-clash font-light text-[clamp(24px,4.5vw,56px)] leading-snug py-4 px-2 min-h-[3em]">
+              {renderText()}
+              {isTyping && <span className="text-[var(--red)] animate-pulse">|</span>}
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const QuoteReveal_REPLACED = () => {
+  const sectionRef = useRef(null);
+  const textRef = useRef(null);
+  const cursorRef = useRef(null);
+  const selectionRef = useRef(null);
+  const [triggered, setTriggered] = useState(false);
+  const [typedText, setTypedText] = useState('');
+  const [showChrome, setShowChrome] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tiltDone, setTiltDone] = useState(false);
+
+  const fullText = 'MY TOOLS ARE DIGITAL MY LIMITS ARE NOT';
+  const accentWords = ['DIGITAL', 'NOT'];
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !triggered) {
+        setTriggered(true);
+        observer.unobserve(el);
+      }
+    }, { threshold: 0.45 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [triggered]);
+
+  useEffect(() => {
+    if (!triggered) return;
+
+    // Phase 1: Remove tilt
+    setTimeout(() => setTiltDone(true), 100);
+
+    // Phase 2: Show inspector tooltip
+    setTimeout(() => setShowTooltip(true), 600);
+    setTimeout(() => setShowTooltip(false), 1200);
+
+    // Phase 3: Show selection chrome + typewriter
+    setTimeout(() => setShowChrome(true), 1400);
+
+    let i = 0;
+    const typeInterval = setInterval(() => {
+      i++;
+      if (i <= fullText.length) {
+        setTypedText(fullText.slice(0, i));
+      } else {
+        clearInterval(typeInterval);
+        // Phase 4: Fade out chrome
+        setTimeout(() => setShowChrome(false), 600);
+      }
+    }, 40);
+
+    // Cursor drift
+    const cursor = cursorRef.current;
+    if (cursor) {
+      let t = 0;
+      const drift = () => {
+        t += 0.008;
+        const x = 60 + Math.sin(t * 0.7) * 30 + Math.sin(t * 1.3) * 15;
+        const y = 40 + Math.cos(t * 0.5) * 20 + Math.sin(t * 0.9) * 10;
+        cursor.style.transform = `translate(${x}%, ${y}%)`;
+        requestAnimationFrame(drift);
+      };
+      requestAnimationFrame(drift);
+    }
+
+    return () => clearInterval(typeInterval);
+  }, [triggered]);
+
+  const renderText = () => {
+    if (!typedText) return <span className="opacity-0">|</span>;
+    const words = typedText.split(' ');
+    return words.map((word, i) => {
+      const isAccent = accentWords.includes(word);
+      return (
+        <span key={i}>
+          <span className={isAccent ? 'italic text-[var(--red)]' : 'text-white'}>{word}</span>
+          {i < words.length - 1 && ' '}
+        </span>
+      );
+    });
+  };
+
+  return (
+    <div
+      ref={sectionRef}
+      className="relative z-10 w-full min-h-[70vh] flex items-center justify-center overflow-hidden bg-[#0A0A0A] py-20 md:py-32"
+      style={{
+        perspective: '1200px',
+      }}
+    >
+      {/* 3D tilt wrapper */}
+      <div
+        className="relative w-full max-w-[90rem] mx-auto px-6 md:px-16 transition-transform duration-700 ease-out"
+        style={{
+          transform: tiltDone ? 'rotateX(0deg) rotateY(0deg)' : 'rotateX(4deg) rotateY(-3deg)',
+        }}
+      >
+        {/* Inspector tooltip */}
+        <div className={`absolute top-8 left-8 flex items-center gap-2 transition-opacity duration-300 ${showTooltip ? 'opacity-100' : 'opacity-0'}`}>
+          <span className="bg-[#2A2A2A] border border-white/10 px-2 py-0.5 rounded text-[10px] font-clash text-[var(--muted)]">span / Counter</span>
+          <span className="bg-[#1a1a1a] border border-[var(--red)]/30 px-2 py-0.5 rounded text-[10px] font-clash text-[var(--red)]">margin-bottom → 36px</span>
+        </div>
+
+        {/* Selection box */}
+        <div ref={selectionRef} className={`relative inline-block transition-opacity duration-400 ${showChrome ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Corner handles */}
+          {showChrome && (
+            <>
+              <div className="absolute -top-2 -left-2 w-2 h-2 bg-[var(--red)] border border-[var(--red)]" />
+              <div className="absolute -top-2 -right-2 w-2 h-2 bg-[var(--red)] border border-[var(--red)]" />
+              <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[var(--red)] border border-[var(--red)]" />
+              <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-[var(--red)] border border-[var(--red)]" />
+              {/* Selection border */}
+              <div className="absolute inset-0 border border-[var(--red)]/60 pointer-events-none" />
+              {/* Element label */}
+              <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
+                <span className="text-[9px] font-clash font-bold text-black tracking-wider">p / Statement 01</span>
+              </div>
+              {/* Tooltip below */}
+              <div className="absolute -bottom-8 left-0 flex items-center gap-1">
+                <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
+                  content → <span className="text-[var(--red)]">editing<span className="animate-pulse">...</span></span>
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* The actual heading text */}
+          <h2
             ref={textRef}
-            className="font-supertalls text-[clamp(50px,12vw,180px)] leading-none whitespace-nowrap text-[var(--bg)] will-change-transform"
-            style={{ transform: 'translate3d(100%, 0, 0)' }}
+            className="font-supertalls text-[clamp(28px,6vw,80px)] leading-tight"
           >
-            MY TOOLS ARE DIGITAL MY LIMITS ARE NOT
-          </p>
+            {triggered ? renderText() : <span className="opacity-0">{fullText}</span>}
+            {showChrome && <span className="animate-pulse text-[var(--red)]">|</span>}
+          </h2>
+        </div>
+
+        {/* Fake "You" cursor */}
+        <div ref={cursorRef} className="absolute top-0 left-0 pointer-events-none z-50" style={{ transform: 'translate(60%, 40%)' }}>
+          <div className="flex items-start gap-1">
+            <svg width="12" height="16" viewBox="0 0 12 16" fill="white" className="drop-shadow-md">
+              <path d="M0 0L12 9L5 9L7 16L4 16L2 9L0 12Z"/>
+            </svg>
+            <span className="bg-[var(--red)] text-black text-[9px] font-clash font-bold px-1.5 py-0.5 rounded-sm mt-2 shadow-md">You</span>
+          </div>
         </div>
       </div>
     </div>
@@ -2169,8 +2366,8 @@ export default function App() {
   // Initialize cursor physics values globally at the top level of the component
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const wellX = useSpring(cursorX, { damping: 28, stiffness: 200, mass: 0.2 });
-  const wellY = useSpring(cursorY, { damping: 28, stiffness: 200, mass: 0.2 });
+  const wellX = useSpring(cursorX, { damping: 12, stiffness: 400, mass: 0.1 });
+  const wellY = useSpring(cursorY, { damping: 12, stiffness: 400, mass: 0.1 });
 
   // Native window scroll tracker
   const { scrollYProgress, scrollY } = useScroll();
@@ -2265,16 +2462,25 @@ export default function App() {
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
 
+  const [cursorOnLink, setCursorOnLink] = useState(false);
+
   useEffect(() => {
     let lastHoverTime = 0;
-    const handleHover = (e) => {
-      const now = Date.now();
-      if (now - lastHoverTime < 150) return;
-      const el = e.target.closest('a, button, [role="button"], .group');
-      if (el) { lastHoverTime = now; SFX.hover(); }
+    const handleOver = (e) => {
+      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
+      if (el) {
+        setCursorOnLink(true);
+        const now = Date.now();
+        if (now - lastHoverTime > 150) { lastHoverTime = now; SFX.hover(); }
+      }
     };
-    document.addEventListener('mouseenter', handleHover, true);
-    return () => document.removeEventListener('mouseenter', handleHover, true);
+    const handleOut = (e) => {
+      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
+      if (el) setCursorOnLink(false);
+    };
+    document.addEventListener('mouseover', handleOver);
+    document.addEventListener('mouseout', handleOut);
+    return () => { document.removeEventListener('mouseover', handleOver); document.removeEventListener('mouseout', handleOut); };
   }, []);
 
   if (!isMounted) return null;
@@ -2300,7 +2506,7 @@ export default function App() {
                 navMenuOpen
                   ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-2xl bg-black/92'
                   : navIsContracted
-                    ? 'w-[240px] md:w-[260px] rounded-full bg-black/85'
+                    ? 'w-[240px] md:w-[260px] rounded-lg bg-black/85'
                     : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-xl bg-black/60'
               }`}
               style={{
@@ -2497,12 +2703,10 @@ export default function App() {
           {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
-          <div className="md:sticky md:top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[11] overflow-hidden">
-            <QuoteReveal />
-          </div>
+          <QuoteReveal />
 
           {/* ABOUT SECTION */}
-          <section id="section-intro" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[12]">
+          <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
             <Suspense fallback={null}><LightRays raysOrigin="top-left" raysColor="#FF0000" raysSpeed={0.6} lightSpread={1.4} rayLength={1.5} mouseInfluence={0.08} noiseAmount={0.01} distortion={0.03} className="opacity-30" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
@@ -2683,13 +2887,13 @@ export default function App() {
           </section>
 
           {/* ================= EXPERIENCE + CAREER (CARD) ================= */}
-          <div className="md:sticky md:top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[13] overflow-hidden">
+          <div className="w-full bg-[#050505] overflow-hidden">
             <ExperienceStrip />
             <CareerTimeline />
           </div>
 
           {/* ================= WORKED WITH SECTION ================= */}
-          <section id="section-worked-with" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[14] overflow-hidden">
+          <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="top-right" raysColor="#FF0000" raysSpeed={0.8} lightSpread={1.2} rayLength={1.8} mouseInfluence={0.12} noiseAmount={0.02} distortion={0.04} className="opacity-25" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
@@ -2801,7 +3005,7 @@ export default function App() {
 
 
           {/* EVIDENCE BOARD SECTION */}
-          <section id="section-works" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[15] overflow-hidden">
+          <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#FF0000" raysSpeed={0.5} lightSpread={1.6} rayLength={2.0} mouseInfluence={0.06} noiseAmount={0.015} distortion={0.02} className="opacity-20" /></Suspense>
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
@@ -2900,7 +3104,7 @@ export default function App() {
 
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
-          <section id="section-posts" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[16] overflow-hidden">
+          <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -3038,17 +3242,17 @@ export default function App() {
 
 
           {/* ================= TOOLKIT (CARD) ================= */}
-          <div className="md:sticky md:top-0 w-full bg-[#050505] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[17] overflow-hidden">
+          <div className="w-full bg-[#050505] overflow-hidden">
             <ToolkitSection />
           </div>
 
           {/* ================= DINO GAME (CARD) ================= */}
-          <div className="md:sticky md:top-0 w-full bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[18] overflow-hidden">
+          <div className="w-full bg-[var(--bg)] overflow-hidden">
             <DinoRunner />
           </div>
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="md:sticky md:top-0 relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.8)] z-[19] pb-12 overflow-hidden">
+          <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
@@ -3137,6 +3341,17 @@ export default function App() {
             <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 font-clash text-[10px] tracking-widest text-[var(--red)] opacity-70 pointer-events-none">
               <img src="/assets/photos/hornet.png" alt="Hornet" className="w-16 md:w-20 brightness-150" />
               <span>#stAycReative</span>
+            </div>
+          </section>
+
+          {/* ================= #stAyCreative FULL PAGE ================= */}
+          <section className="relative w-full h-screen flex items-center justify-center bg-[var(--bg)] overflow-hidden">
+            <div className="w-full text-center px-4">
+              <BreathingText
+                text="#stAyCreative"
+                colorWave={true}
+                className="font-clash text-[clamp(48px,12vw,180px)] leading-none tracking-tight text-white block"
+              />
             </div>
           </section>
 
@@ -3280,17 +3495,22 @@ export default function App() {
 
         {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
         <motion.div
-          className="fixed top-0 left-0 z-[9998] pointer-events-none rounded-full border border-[var(--red)] w-8 h-8"
+          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-all duration-200 ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
           style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
-          transition={{ duration: 0.2 }}
         />
 
-        {/* INNER CURSOR (SQUARE) */}
+        {/* INNER CURSOR */}
         <motion.div
           className="fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center"
           style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
         >
-          <div className="w-1.5 h-1.5 bg-[var(--black)] shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+          {cursorOnLink ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17L17 7M17 7H7M17 7V17" />
+            </svg>
+          ) : (
+            <div className="w-1.5 h-1.5 bg-[var(--black)] shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+          )}
         </motion.div>
       </div>
     </CursorContext.Provider>

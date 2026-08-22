@@ -1,0 +1,16 @@
+[    1879ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=90c6483f:14336
+[    2200ms] [WARNING] Please ensure that the container has a non-static position, like 'relative', 'fixed', or 'absolute' to ensure scroll offset is calculated correctly. @ http://localhost:5174/@vite/client:509
+[   10694ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[   10694ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  265873ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  265874ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  426020ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  426021ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  451006ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  451009ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  808608ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  808609ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  828689ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  828689ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
+[  946003ms] [WARNING] No available adapters. @ http://localhost:5174/:0
+[  946004ms] [WARNING] THREE.WebGPURenderer: WebGPU is not available, running under WebGL2 backend. @ http://localhost:5174/@vite/client:509
