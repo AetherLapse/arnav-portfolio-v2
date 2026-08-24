@@ -419,9 +419,9 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
         const ease = t * t * (3 - 2 * t);
         el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
         if (colorWave) {
-          el.style.color = ease > 0.1 ? `rgba(255, ${Math.round(ease * 40)}, ${Math.round(ease * 20)}, ${0.5 + ease * 0.5})` : '';
-          el.style.textShadow = ease > 0.3 ? `0 0 ${Math.round(ease * 20)}px rgba(255, 0, 0, ${ease * 0.8})` : 'none';
-          el.style.filter = ease > 0.2 ? `blur(${(0.5 - ease * 0.5).toFixed(1)}px)` : '';
+          const opacity = ease * 0.9;
+          el.style.color = `rgba(255, ${Math.round(30 + ease * 30)}, ${Math.round(ease * 15)}, ${0.3 + opacity * 0.7})`;
+          el.style.textShadow = `0 0 ${Math.round(ease * 25)}px rgba(255, 0, 0, ${ease * 0.6})`;
         }
       }
       raf = requestAnimationFrame(animate);
@@ -1854,7 +1854,7 @@ const HeroBackground = ({ hasLoaded }) => {
           animate={hasLoaded ? { opacity: 1 } : {}}
           transition={{ delay: 0.6, duration: 0.8 }}
         >
-          Creative. Technical. Limitless.
+          <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5">Creative</span>. <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5">Technical</span>. <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5">Limitless</span>.
         </motion.p>
       </div>
     </div>
@@ -1907,16 +1907,15 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
 
 
       <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-24 right-6 md:bottom-16 md:right-12 border border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-sm p-4 flex items-center gap-4 transition-opacity duration-300 ${hudClass}`}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-        </svg>
+        <div className="w-10 h-10 rounded-lg border border-green-500/50 flex items-center justify-center relative">
+          <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+          <div className="absolute inset-0 rounded-lg border border-green-500/30 animate-ping opacity-30" />
+        </div>
         <div className="flex flex-col font-clash">
-          <span className="text-[8px] text-[var(--muted)] tracking-widest">INTERACTIVE_MODE</span>
-          <span className="text-[12px] text-[var(--red)] font-bold tracking-widest">PREMIUM EDIT</span>
+          <span className="text-[8px] text-[var(--muted)] tracking-widest">STATUS</span>
+          <span className="text-[12px] text-green-400 font-bold tracking-widest">AVAILABLE</span>
           <span className="text-[8px] text-[var(--muted)] tracking-widest flex items-center gap-1 mt-1">
-            <span className="w-1 h-1 rounded-full bg-[var(--red)]" /> AVAILABLE
+            <span className="w-1 h-1 rounded-full bg-green-500" /> FOR PROJECTS
           </span>
         </div>
       </ParticleFlyer>
@@ -3295,25 +3294,48 @@ export default function App() {
                </button>
             </ParticleFlyer>
 
-            {/* Absolute bottom details */}
-            <div className="absolute bottom-32 md:bottom-36 left-1/2 -translate-x-1/2 font-clash text-[10px] tracking-widest text-[var(--muted)] flex gap-1.5 items-center whitespace-nowrap">
-              <span>Country of origin:</span>
-              <span className="text-white font-bold flex gap-[1px]">
-                <span className="text-[#138808]">I</span>
-                <span className="text-white">n</span>
-                <span className="text-[#FF9933]">dia</span>
-              </span>
-            </div>
+            {/* Footer */}
+            <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border)] px-6 md:px-12 py-10">
+              <div className="max-w-[90rem] mx-auto flex flex-col md:flex-row gap-10 md:gap-0 justify-between">
+                {/* Left: Brand */}
+                <div className="flex flex-col gap-3 max-w-[300px]">
+                  <div className="flex items-center gap-3">
+                    <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
+                    <span className="font-clash font-bold text-sm text-white">Arnav Rai</span>
+                  </div>
+                  <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">A creative artist crafting digital experiences that merge art with functionality.</p>
+                </div>
 
-            <div className="absolute bottom-32 md:bottom-36 right-6 md:right-12 font-clash text-[10px] tracking-widest text-[var(--muted)] text-right">
-              SYS: <span className="text-[var(--red)] font-bold animate-pulse">OFFLINE</span><br/>
-              END_OF_FILE
+                {/* Center: Sitemap */}
+                <div className="flex flex-col gap-2">
+                  <span className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase mb-2">SITEMAP</span>
+                  <a href="#section-hero" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Home</a>
+                  <a href="#section-intro" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">About</a>
+                  <a href="#section-works" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Projects</a>
+                  <a href="#section-contact" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Contact</a>
+                </div>
+
+                {/* Right: Socials */}
+                <div className="flex flex-col gap-3">
+                  <span className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase mb-2">SOCIALS</span>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="https://www.behance.net/arnavrai1" target="_blank" rel="noreferrer" className="font-clash text-[10px] tracking-widest px-3 py-1.5 border border-[var(--border)] text-[var(--muted)] hover:border-[var(--red)] hover:text-white transition-colors cursor-none">Behance</a>
+                    <a href="https://www.linkedin.com/in/arnav-rai-645517267" target="_blank" rel="noreferrer" className="font-clash text-[10px] tracking-widest px-3 py-1.5 border border-[var(--border)] text-[var(--muted)] hover:border-[var(--red)] hover:text-white transition-colors cursor-none">LinkedIn</a>
+                    <a href="https://www.instagram.com/thearnavrai" target="_blank" rel="noreferrer" className="font-clash text-[10px] tracking-widest px-3 py-1.5 border border-[var(--border)] text-[var(--muted)] hover:border-[var(--red)] hover:text-white transition-colors cursor-none">Instagram</a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Copyright */}
+              <div className="max-w-[90rem] mx-auto mt-8 pt-6 border-t border-[var(--border)]">
+                <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">© 2026 Arnav Rai. All rights reserved.</span>
+              </div>
             </div>
 
           </section>
 
           {/* ================= #stAyCreative FULL PAGE ================= */}
-          <section className="relative w-full h-screen flex items-center justify-center bg-[var(--bg)] overflow-hidden">
+          <section className="relative w-full flex items-center justify-center bg-[var(--bg)] overflow-hidden" style={{ height: '100vh' }}>
             <div className="w-full text-center px-4">
               <BreathingText
                 text="#stAyCreative"
