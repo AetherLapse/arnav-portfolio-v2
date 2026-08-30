@@ -70,7 +70,8 @@ const GLOBAL_STYLES = `
   .font-clash { font-family: 'Unbounded', sans-serif; }
   
   /* New Supertalls Utility Class */
-  .font-supertalls { font-family: 'Supertalls'; }
+  .font-dragon { font-family: 'Supertalls'; }
+  .font-dragon { font-family: 'Dragon', sans-serif; }
 
   /* Pure White Text */
   .cinematic-text {
@@ -119,6 +120,25 @@ const GLOBAL_STYLES = `
   section {
     content-visibility: auto;
     contain-intrinsic-size: auto 900px;
+  }
+
+  .btn-fill {
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .btn-fill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    z-index: -1;
+  }
+  .btn-fill:hover::before {
+    transform: scaleX(1);
   }
 
   @keyframes spin-forward { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -265,8 +285,11 @@ const SFX = (() => {
 
   return {
     hover: () => play('/assets/sounds/expand.mp3', 0.15),
-    click: () => play('/assets/sounds/click.mp3', 0.2),
+    click: () => play('/assets/sounds/Click.mp3', 0.25),
     scroll: () => play('/assets/sounds/scroll.mp3', 0.08),
+    navOpen: () => play('/assets/sounds/Navigation Bar OPEN.wav', 0.3),
+    formSubmit: () => play('/assets/sounds/Form Submit Done or OKAY.mp3', 0.35),
+    error: () => play('/assets/sounds/Error 2.mp3', 0.25),
     spaceEnter: () => {
       if (unlocked) play('/assets/sounds/entry.mp3', 0.4);
       else pendingEntry = true;
@@ -394,6 +417,7 @@ const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
 const BreathingText = ({ text, className = '', colorWave = false }) => {
   const charsRef = useRef([]);
   const containerRef = useRef(null);
+  const hoveredCharRef = useRef(-1);
 
   useEffect(() => {
     let raf;
@@ -411,6 +435,8 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
       if (!running) return;
       const totalChars = charsRef.current.length;
       const pos = (now * speed) % (totalChars + width * 2);
+      const hIdx = hoveredCharRef.current;
+
       for (let i = 0; i < totalChars; i++) {
         const el = charsRef.current[i];
         if (!el) continue;
@@ -418,10 +444,31 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
         const t = Math.max(0, 1 - dist / width);
         const ease = t * t * (3 - 2 * t);
         el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
+
+        if (hIdx >= 0) {
+          const hDist = Math.abs(i - hIdx);
+          const hRadius = 3;
+          if (hDist <= hRadius) {
+            const hEase = 1 - hDist / hRadius;
+            const jY = Math.sin(now * 0.012 + i * 1.7) * hEase * 6;
+            const jR = Math.sin(now * 0.009 + i * 2.3) * hEase * 4;
+            el.style.transform = `translateY(${jY}px) rotate(${jR}deg)`;
+            if (colorWave) {
+              el.style.textShadow = `0 0 ${Math.round(hEase * 35)}px rgba(255, 0, 0, ${hEase * 0.9})`;
+            }
+          } else {
+            el.style.transform = '';
+          }
+        } else {
+          el.style.transform = '';
+        }
+
         if (colorWave) {
           const opacity = ease * 0.9;
           el.style.color = `rgba(255, ${Math.round(30 + ease * 30)}, ${Math.round(ease * 15)}, ${0.3 + opacity * 0.7})`;
-          el.style.textShadow = `0 0 ${Math.round(ease * 25)}px rgba(255, 0, 0, ${ease * 0.6})`;
+          if (hIdx < 0 || Math.abs(i - hIdx) > 3) {
+            el.style.textShadow = `0 0 ${Math.round(ease * 25)}px rgba(255, 0, 0, ${ease * 0.6})`;
+          }
         }
       }
       raf = requestAnimationFrame(animate);
@@ -434,14 +481,14 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
   let charIndex = 0;
 
   return (
-    <span ref={containerRef} className={`tracking-[0.05em] ${className}`}>
+    <span ref={containerRef} className={`tracking-[0.05em] ${className}`} onMouseLeave={() => { hoveredCharRef.current = -1; }}>
       {lines.map((line, li) => (
         <span key={li} className="block">
           {line.split('').map((char) => {
             const idx = charIndex++;
             if (char === ' ') return <span key={idx} className="inline-block w-[0.3em]">&nbsp;</span>;
             return (
-              <span key={idx} ref={el => { charsRef.current[idx] = el; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
+              <span key={idx} ref={el => { charsRef.current[idx] = el; }} onMouseEnter={() => { hoveredCharRef.current = idx; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
                 {char}
               </span>
             );
@@ -579,6 +626,20 @@ const WaveformDivider = () => {
     </div>
   );
 };
+
+const FileIcon = ({ name, ext, color, rotate = '0deg', className = '' }) => (
+  <div className={`pointer-events-none select-none flex flex-col items-center gap-1 opacity-[0.12] ${className}`} style={{ transform: `rotate(${rotate})` }}>
+    <div className="relative w-10 h-12 md:w-12 md:h-14">
+      {/* File shape */}
+      <svg viewBox="0 0 40 48" className="w-full h-full">
+        <path d="M4 0h22l10 10v34a4 4 0 01-4 4H4a4 4 0 01-4-4V4a4 4 0 014-4z" fill="#1A1A1A" stroke={color} strokeWidth="0.5" opacity="0.6" />
+        <path d="M26 0v6a4 4 0 004 4h6" fill="none" stroke={color} strokeWidth="0.5" opacity="0.4" />
+        <text x="20" y="30" textAnchor="middle" fill={color} fontSize="8" fontFamily="Unbounded" fontWeight="700" opacity="0.9">{ext}</text>
+      </svg>
+    </div>
+    <span className="font-clash text-[6px] md:text-[7px] text-white/40 truncate max-w-[80px]">{name}</span>
+  </div>
+);
 
 const RenderBar = ({ label = "RENDERING SEQUENCE" }) => (
   <div className="w-full px-4 md:px-8 py-4 flex items-center gap-4 select-none">
@@ -801,10 +862,10 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
 
       {/* Nav arrows */}
-      <button onClick={onPrev} className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+      <button onClick={onPrev} className="btn-fill absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <button onClick={onNext} className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+      <button onClick={onNext} className="btn-fill absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
       </button>
 
@@ -1148,7 +1209,7 @@ const CareerTimeline = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
               CAREER
             </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -1210,7 +1271,7 @@ const ToolkitSection = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
               MY TOOLKIT
             </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -1665,7 +1726,7 @@ const QuoteReveal_REPLACED = () => {
           {/* The actual heading text */}
           <h2
             ref={textRef}
-            className="font-supertalls text-[clamp(28px,6vw,80px)] leading-tight"
+            className="font-dragon text-[clamp(28px,6vw,80px)] leading-tight"
           >
             {triggered ? renderText() : <span className="opacity-0">{fullText}</span>}
             {showChrome && <span className="animate-pulse text-[var(--red)]">|</span>}
@@ -2064,7 +2125,7 @@ const ScrollFX = () => {
 
   useEffect(() => {
     // Big section titles only — exclude the scrolling marquee (bg-colored class)
-    const titles = Array.from(document.querySelectorAll('h2.font-supertalls'))
+    const titles = Array.from(document.querySelectorAll('h2.font-dragon'))
       .filter((t) => !t.className.includes('text-[var(--bg)]'))
       .slice(0, 12);
     titlesRef.current = titles;
@@ -2505,6 +2566,7 @@ export default function App() {
         {/* Film grain noise overlay */}
         <div className="noise-overlay fixed inset-0 pointer-events-none z-[9000]" />
 
+
         {/* ================= MORPHING NAVBAR ================= */}
         {hasLoaded && (
           <motion.nav
@@ -2514,12 +2576,12 @@ export default function App() {
             className="fixed top-0 left-0 right-0 z-[150] flex justify-center pt-3"
           >
             <div
-              className={`backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden ${
+              className={`backdrop-blur-xl border border-[var(--red)]/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden ${
                 navMenuOpen
-                  ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-2xl bg-black/92'
+                  ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none bg-black/92'
                   : navIsContracted
-                    ? 'w-[240px] md:w-[260px] rounded-lg bg-black/85'
-                    : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-xl bg-black/60'
+                    ? 'w-[240px] md:w-[260px] rounded-none bg-black/85'
+                    : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none bg-black/60'
               }`}
               style={{
                 height: navMenuOpen ? '80vh' : '3.5rem',
@@ -2540,11 +2602,11 @@ export default function App() {
 
               {/* Contracted pill content */}
               <div className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
-                <button onClick={() => setNavMenuOpen(true)} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
+                <button onClick={() => { setNavMenuOpen(true); SFX.navOpen(); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
                   <div className="w-4 h-px bg-white" />
                   <div className="w-4 h-px bg-white" />
                 </button>
-                <span className="font-supertalls text-sm text-white">A.</span>
+                <span className="font-dragon text-sm text-white">A.</span>
                 <a href="#section-contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
                   <div className="w-2 h-2 rounded-full bg-[var(--red)]" />
                 </a>
@@ -2599,9 +2661,9 @@ export default function App() {
                     <div>
                       <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-3">SOCIALS</span>
                       <div className="flex gap-4">
-                        <a href="https://youtube.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">YouTube</a>
-                        <a href="https://instagram.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Instagram</a>
-                        <a href="https://discord.com" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Discord</a>
+                        <a href="https://www.behance.net/arnavrai1" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Behance</a>
+                        <a href="https://www.linkedin.com/in/arnav-rai-645517267" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">LinkedIn</a>
+                        <a href="https://www.instagram.com/thearnavrai" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Instagram</a>
                       </div>
                     </div>
                     <div>
@@ -2720,6 +2782,8 @@ export default function App() {
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
             <Suspense fallback={null}><LightRays raysOrigin="top-left" raysColor="#FF0000" raysSpeed={0.6} lightSpread={1.4} rayLength={1.5} mouseInfluence={0.08} noiseAmount={0.01} distortion={0.03} className="opacity-30" /></Suspense>
+            <FileIcon name="profile_v3.psd" ext="PSD" color="#31A8FF" rotate="-6deg" className="absolute top-12 right-8 hidden md:flex" />
+            <FileIcon name="resume_2026.pdf" ext="PDF" color="#FF3333" rotate="4deg" className="absolute bottom-20 right-16 hidden md:flex" />
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -2732,7 +2796,7 @@ export default function App() {
 
               <ParticleFlyer delay={0.1} className="mb-6 md:mb-8">
                 <motion.h2 
-                  className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
+                  className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
                   style={{ marginBottom: '-0.15em' }}
                 >
                   ABOUT
@@ -2906,12 +2970,14 @@ export default function App() {
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
+            <FileIcon name="client_brief.docx" ext="DOC" color="#4285F4" rotate="3deg" className="absolute top-16 left-6 hidden md:flex" />
+            <FileIcon name="invoice_0847.xlsx" ext="XLS" color="#34A853" rotate="-5deg" className="absolute bottom-24 right-10 hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-right" raysColor="#FF0000" raysSpeed={0.8} lightSpread={1.2} rayLength={1.8} mouseInfluence={0.12} noiseAmount={0.02} distortion={0.04} className="opacity-25" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
                     WORKED WITH
                   </motion.h2>
                 </ParticleFlyer>
@@ -2958,7 +3024,7 @@ export default function App() {
                         {/* Details */}
                         <div className="absolute bottom-4 left-4 flex flex-col z-20 pointer-events-none">
                           <span className="font-clash text-[8px] text-[var(--red)] tracking-widest uppercase mb-1">ID: {brand.id}</span>
-                          <span className="font-supertalls text-2xl md:text-3xl text-[var(--black)] leading-none">{brand.name}</span>
+                          <span className="font-dragon text-2xl md:text-3xl text-[var(--black)] leading-none">{brand.name}</span>
                         </div>
                       </div>
                     </ParticleFlyer>
@@ -3004,7 +3070,7 @@ export default function App() {
                         {/* Details */}
                         <div className="absolute bottom-4 left-4 flex flex-col z-20 pointer-events-none">
                           <span className="font-clash text-[8px] text-[var(--red)] tracking-widest uppercase mb-1">ID: {creator.id}</span>
-                          <span className="font-supertalls text-2xl md:text-3xl text-[var(--black)] leading-none">{creator.name}</span>
+                          <span className="font-dragon text-2xl md:text-3xl text-[var(--black)] leading-none">{creator.name}</span>
                         </div>
                       </div>
                     </ParticleFlyer>
@@ -3018,12 +3084,15 @@ export default function App() {
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] overflow-hidden">
+            <FileIcon name="REEL_final_v3.mp4" ext="MP4" color="#FF0000" rotate="-3deg" className="absolute top-20 right-12 hidden md:flex" />
+            <FileIcon name="color_LUT_03.cube" ext="LUT" color="#9b59b6" rotate="5deg" className="absolute bottom-16 left-8 hidden md:flex" />
+            <FileIcon name="DSC_8847.ARW" ext="RAW" color="#e67e22" rotate="-7deg" className="absolute top-1/2 left-4 hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#FF0000" raysSpeed={0.5} lightSpread={1.6} rayLength={2.0} mouseInfluence={0.06} noiseAmount={0.015} distortion={0.02} className="opacity-20" /></Suspense>
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
                     EVIDENCE BOARD
                   </motion.h2>
                 </ParticleFlyer>
@@ -3031,8 +3100,8 @@ export default function App() {
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
                   {/* Functional Navigation Arrows */}
                   <div className="hidden md:flex gap-2 mb-1">
-                    <button onClick={() => handleArrowScroll(-1)} className="w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm transition-colors text-[var(--muted)] hover:text-[var(--red)] hover:border-[var(--red)] cursor-none">&lt;</button>
-                    <button onClick={() => handleArrowScroll(1)} className="w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm transition-colors text-[var(--muted)] hover:text-[var(--red)] hover:border-[var(--red)] cursor-none">&gt;</button>
+                    <button onClick={() => handleArrowScroll(-1)} className="btn-fill w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm transition-colors text-[var(--muted)] hover:text-white hover:border-[var(--red)] cursor-none">&lt;</button>
+                    <button onClick={() => handleArrowScroll(1)} className="btn-fill w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm transition-colors text-[var(--muted)] hover:text-white hover:border-[var(--red)] cursor-none">&gt;</button>
                   </div>
                   
                   {/* Right Meta Data */}
@@ -3102,7 +3171,7 @@ export default function App() {
                          {/* Title Area */}
                          <div className="flex flex-col gap-1 px-1">
                            <span className="font-clash text-[10px] text-[var(--red)] tracking-widest">EVIDENCE #{work.id}</span>
-                           <span className="font-supertalls text-3xl md:text-4xl text-[var(--black)] tracking-wide">{work.title}</span>
+                           <span className="font-dragon text-3xl md:text-4xl text-[var(--black)] tracking-wide">{work.title}</span>
                          </div>
 
                        </div>
@@ -3117,11 +3186,13 @@ export default function App() {
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
+            <FileIcon name="thumbnail_v2.png" ext="PNG" color="#FF6633" rotate="4deg" className="absolute top-14 left-10 hidden md:flex" />
+            <FileIcon name="caption_draft.srt" ext="SRT" color="#888888" rotate="-4deg" className="absolute bottom-20 right-8 hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-supertalls text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
                     POSTS SHOWCASE
                   </motion.h2>
                 </ParticleFlyer>
@@ -3209,7 +3280,7 @@ export default function App() {
                         {/* Details */}
                         <div className="absolute bottom-4 left-4 right-4 flex flex-col z-20 pointer-events-none">
                           <span className="font-clash text-[8px] text-[var(--red)] tracking-widest uppercase mb-1">{post.subtitle}</span>
-                          <span className="font-supertalls text-2xl md:text-3xl text-[var(--black)] leading-none">{post.title}</span>
+                          <span className="font-dragon text-2xl md:text-3xl text-[var(--black)] leading-none">{post.title}</span>
                         </div>
 
                         {/* ID badge */}
@@ -3240,13 +3311,13 @@ export default function App() {
 
             {/* Navigation */}
             <div className="flex justify-center items-center mt-6 gap-6">
-              <button onClick={() => setActivePostIndex(prev => (prev - 1 + POSTS_DATA.length) % POSTS_DATA.length)} className="w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+              <button onClick={() => setActivePostIndex(prev => (prev - 1 + POSTS_DATA.length) % POSTS_DATA.length)} className="btn-fill w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
               <div className="font-clash text-[9px] tracking-widest text-[var(--muted)] flex items-center gap-4">
                 <span>{activePostIndex + 1} / {POSTS_DATA.length}</span>
               </div>
-              <button onClick={() => setActivePostIndex(prev => (prev + 1) % POSTS_DATA.length)} className="w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+              <button onClick={() => setActivePostIndex(prev => (prev + 1) % POSTS_DATA.length)} className="btn-fill w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
               </button>
             </div>
@@ -3265,6 +3336,8 @@ export default function App() {
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
+            <FileIcon name="motion_comp.aep" ext="AEP" color="#9999FF" rotate="-5deg" className="absolute top-24 left-6 hidden md:flex" />
+            <FileIcon name="brand_logo.ai" ext="AI" color="#FF9A00" rotate="6deg" className="absolute top-32 right-10 hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
@@ -3281,15 +3354,14 @@ export default function App() {
                {/* GET IN TOUCH CTA */}
                <button
                  onClick={openContactForm}
-                 className="border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 relative overflow-hidden group cursor-none"
+                 className="btn-fill border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
                >
-                  <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--red)] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
-                  <div className="w-14 h-14 bg-[var(--red)] rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 group-hover:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+                  <div className="relative z-10 w-14 h-14 bg-[var(--red)] group-hover:bg-white rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 group-hover:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)] group-hover:text-[var(--red)] transition-colors">GET IN TOUCH</span>
-                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">// INITIATE_CONTACT</span>
+                  <div className="relative z-10 flex flex-col items-start gap-1">
+                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)] group-hover:text-white transition-colors">GET IN TOUCH</span>
+                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)] group-hover:text-white/70 transition-colors">// INITIATE_CONTACT</span>
                   </div>
                </button>
             </ParticleFlyer>
@@ -3335,12 +3407,12 @@ export default function App() {
           </section>
 
           {/* ================= #stAyCreative FULL PAGE ================= */}
-          <section className="relative w-full flex items-center justify-center bg-[var(--bg)] overflow-hidden" style={{ height: '100vh' }}>
-            <div className="w-full text-center px-4">
+          <section className="relative w-full flex items-center justify-center bg-[var(--bg)] overflow-hidden py-24 md:py-32">
+            <div className="w-full text-center">
               <BreathingText
-                text="#stAyCreative"
+                text="#stAycReative"
                 colorWave={true}
-                className="font-clash text-[clamp(48px,12vw,180px)] leading-none tracking-tight text-white block"
+                className="font-dragon text-[26vw] leading-none tracking-tight text-white block whitespace-nowrap"
               />
             </div>
           </section>
@@ -3398,7 +3470,7 @@ export default function App() {
                   <span className="text-[var(--red)] font-clash text-[10px] tracking-widest">✦</span>
                   <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--red)] uppercase">START A PROJECT</span>
                 </div>
-                <h2 className="font-supertalls text-[clamp(48px,8vw,100px)] leading-[0.9] text-white mb-2">
+                <h2 className="font-dragon text-[clamp(48px,8vw,100px)] leading-[0.9] text-white mb-2">
                   START<br/><span className="text-[var(--red)]">HERE.</span>
                 </h2>
                 <p className="font-clash text-sm text-[var(--muted)] mt-6 max-w-[280px] leading-relaxed">
@@ -3408,7 +3480,7 @@ export default function App() {
 
               {/* Right: Form */}
               <div className="w-full md:w-[55%] flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto">
-                <form className="flex flex-col gap-6 max-w-[500px]" onSubmit={(e) => { e.preventDefault(); closeContactForm(); }}>
+                <form className="flex flex-col gap-6 max-w-[500px]" onSubmit={(e) => { e.preventDefault(); SFX.formSubmit(); closeContactForm(); }}>
                   <div className="flex flex-col gap-1">
                     <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">FULL NAME <span className="text-[var(--red)]">*</span></label>
                     <input type="text" required placeholder="Your name" className="bg-transparent border-b border-white/20 py-3 font-clash text-sm text-white placeholder:text-white/30 focus:border-[var(--red)] focus:outline-none transition-colors cursor-none" />
@@ -3434,7 +3506,7 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                  <button type="submit" className="mt-6 w-full py-4 border border-[var(--red)] font-clash font-bold text-xs tracking-[0.3em] text-white hover:bg-[var(--red)] hover:text-[var(--bg)] transition-all cursor-none flex items-center justify-center gap-3">
+                  <button type="submit" className="btn-fill mt-6 w-full py-4 border border-[var(--red)] font-clash font-bold text-xs tracking-[0.3em] text-white hover:text-[var(--bg)] transition-colors cursor-none flex items-center justify-center gap-3">
                     SEND INQUIRY <span>→</span>
                   </button>
                 </form>
