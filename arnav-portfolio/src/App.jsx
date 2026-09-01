@@ -599,37 +599,24 @@ const WaveformDivider = () => {
 };
 
 const FileIcon = ({ name, label, color, rotate = '0deg', depth = 1, className = '' }) => {
-  const { cursorX, cursorY } = useContext(CursorContext);
   const elRef = useRef(null);
   const bars = 18;
 
   useEffect(() => {
-    if (!cursorX || !cursorY || !elRef.current) return;
     const el = elRef.current;
-    const factor = depth * -0.02;
-    let raf;
-    let visible = true;
+    if (!el) return;
+    const speed = depth * 0.15;
 
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      if (visible) raf = requestAnimationFrame(update);
-    }, { rootMargin: '100px' });
-    observer.observe(el);
-
-    const update = () => {
-      if (!visible) return;
-      const cx = cursorX.get();
-      const cy = cursorY.get();
-      const vw = window.innerWidth / 2;
-      const vh = window.innerHeight / 2;
-      const dx = (cx - vw) * factor;
-      const dy = (cy - vh) * factor;
-      el.style.transform = `rotate(${rotate}) translate(${dx}px, ${dy}px)`;
-      raf = requestAnimationFrame(update);
+    const onScroll = () => {
+      const rect = el.parentElement.getBoundingClientRect();
+      const offset = -rect.top * speed;
+      el.style.transform = `rotate(${rotate}) translateY(${offset}px)`;
     };
-    raf = requestAnimationFrame(update);
-    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
-  }, [cursorX, cursorY, rotate, depth]);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [rotate, depth]);
 
   return (
     <div ref={elRef} className={`pointer-events-none select-none opacity-40 ${className}`} style={{ transform: `rotate(${rotate})` }}>
