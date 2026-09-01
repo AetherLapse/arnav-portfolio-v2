@@ -414,10 +414,9 @@ const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   </motion.div>
 );
 
-const BreathingText = ({ text, className = '', colorWave = false }) => {
+const BreathingText = ({ text, className = '' }) => {
   const charsRef = useRef([]);
   const containerRef = useRef(null);
-  const hoveredCharRef = useRef(-1);
 
   useEffect(() => {
     let raf;
@@ -435,8 +434,6 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
       if (!running) return;
       const totalChars = charsRef.current.length;
       const pos = (now * speed) % (totalChars + width * 2);
-      const hIdx = hoveredCharRef.current;
-
       for (let i = 0; i < totalChars; i++) {
         const el = charsRef.current[i];
         if (!el) continue;
@@ -444,51 +441,25 @@ const BreathingText = ({ text, className = '', colorWave = false }) => {
         const t = Math.max(0, 1 - dist / width);
         const ease = t * t * (3 - 2 * t);
         el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
-
-        if (hIdx >= 0) {
-          const hDist = Math.abs(i - hIdx);
-          const hRadius = 3;
-          if (hDist <= hRadius) {
-            const hEase = 1 - hDist / hRadius;
-            const jY = Math.sin(now * 0.012 + i * 1.7) * hEase * 6;
-            const jR = Math.sin(now * 0.009 + i * 2.3) * hEase * 4;
-            el.style.transform = `translateY(${jY}px) rotate(${jR}deg)`;
-            if (colorWave) {
-              el.style.textShadow = `0 0 ${Math.round(hEase * 35)}px rgba(255, 0, 0, ${hEase * 0.9})`;
-            }
-          } else {
-            el.style.transform = '';
-          }
-        } else {
-          el.style.transform = '';
-        }
-
-        if (colorWave) {
-          const opacity = ease * 0.9;
-          el.style.color = `rgba(255, ${Math.round(30 + ease * 30)}, ${Math.round(ease * 15)}, ${0.3 + opacity * 0.7})`;
-          if (hIdx < 0 || Math.abs(i - hIdx) > 3) {
-            el.style.textShadow = `0 0 ${Math.round(ease * 25)}px rgba(255, 0, 0, ${ease * 0.6})`;
-          }
-        }
       }
       raf = requestAnimationFrame(animate);
     };
     raf = requestAnimationFrame(animate);
     return () => { cancelAnimationFrame(raf); observer.disconnect(); };
-  }, [colorWave]);
+  }, []);
 
   const lines = text.split('\n');
   let charIndex = 0;
 
   return (
-    <span ref={containerRef} className={`tracking-[0.05em] ${className}`} onMouseLeave={() => { hoveredCharRef.current = -1; }}>
+    <span ref={containerRef} className={`tracking-[0.05em] ${className}`}>
       {lines.map((line, li) => (
         <span key={li} className="block">
           {line.split('').map((char) => {
             const idx = charIndex++;
             if (char === ' ') return <span key={idx} className="inline-block w-[0.3em]">&nbsp;</span>;
             return (
-              <span key={idx} ref={el => { charsRef.current[idx] = el; }} onMouseEnter={() => { hoveredCharRef.current = idx; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
+              <span key={idx} ref={el => { charsRef.current[idx] = el; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
                 {char}
               </span>
             );
@@ -627,19 +598,58 @@ const WaveformDivider = () => {
   );
 };
 
-const FileIcon = ({ name, ext, color, rotate = '0deg', className = '' }) => (
-  <div className={`pointer-events-none select-none flex flex-col items-center gap-1 opacity-[0.12] ${className}`} style={{ transform: `rotate(${rotate})` }}>
-    <div className="relative w-10 h-12 md:w-12 md:h-14">
-      {/* File shape */}
-      <svg viewBox="0 0 40 48" className="w-full h-full">
-        <path d="M4 0h22l10 10v34a4 4 0 01-4 4H4a4 4 0 01-4-4V4a4 4 0 014-4z" fill="#1A1A1A" stroke={color} strokeWidth="0.5" opacity="0.6" />
-        <path d="M26 0v6a4 4 0 004 4h6" fill="none" stroke={color} strokeWidth="0.5" opacity="0.4" />
-        <text x="20" y="30" textAnchor="middle" fill={color} fontSize="8" fontFamily="Unbounded" fontWeight="700" opacity="0.9">{ext}</text>
-      </svg>
+const FileIcon = ({ name, label, color, rotate = '0deg', depth = 1, className = '' }) => {
+  const { cursorX, cursorY } = useContext(CursorContext);
+  const elRef = useRef(null);
+  const bars = 18;
+
+  useEffect(() => {
+    if (!cursorX || !cursorY || !elRef.current) return;
+    const el = elRef.current;
+    const factor = depth * -0.02;
+    let raf;
+    let visible = true;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible) raf = requestAnimationFrame(update);
+    }, { rootMargin: '100px' });
+    observer.observe(el);
+
+    const update = () => {
+      if (!visible) return;
+      const cx = cursorX.get();
+      const cy = cursorY.get();
+      const vw = window.innerWidth / 2;
+      const vh = window.innerHeight / 2;
+      const dx = (cx - vw) * factor;
+      const dy = (cy - vh) * factor;
+      el.style.transform = `rotate(${rotate}) translate(${dx}px, ${dy}px)`;
+      raf = requestAnimationFrame(update);
+    };
+    raf = requestAnimationFrame(update);
+    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
+  }, [cursorX, cursorY, rotate, depth]);
+
+  return (
+    <div ref={elRef} className={`pointer-events-none select-none opacity-40 ${className}`} style={{ transform: `rotate(${rotate})` }}>
+      {/* Waveform clip block */}
+      <div className="relative rounded-md overflow-hidden backdrop-blur-sm" style={{ background: `${color}40`, border: `1px solid ${color}60` }}>
+        <div className="flex items-center gap-0.5 px-2 py-2">
+          {/* Waveform bars */}
+          <svg width={bars * 4} height="28" className="flex-shrink-0">
+            {Array.from({ length: bars }).map((_, i) => {
+              const h = 4 + Math.abs(Math.sin(i * 0.8 + 1.2)) * 18 + Math.sin(i * 1.5) * 6;
+              return <rect key={i} x={i * 4} y={14 - h / 2} width="2.5" height={h} rx="1" fill={color} opacity={0.7 + Math.sin(i * 0.5) * 0.3} />;
+            })}
+          </svg>
+          {/* Filename inside block */}
+          <span className="font-clash text-[6px] md:text-[7px] text-white/50 ml-1.5 whitespace-nowrap">{name}</span>
+        </div>
+      </div>
     </div>
-    <span className="font-clash text-[6px] md:text-[7px] text-white/40 truncate max-w-[80px]">{name}</span>
-  </div>
-);
+  );
+};
 
 const RenderBar = ({ label = "RENDERING SEQUENCE" }) => (
   <div className="w-full px-4 md:px-8 py-4 flex items-center gap-4 select-none">
@@ -1595,6 +1605,61 @@ const QuoteReveal = () => {
   );
 };
 
+const StayCreativeSection = () => {
+  const sectionRef = useRef(null);
+
+  const innerRef = useRef(null);
+
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      el.style.setProperty('--sx', `${e.clientX - rect.left}px`);
+      el.style.setProperty('--sy', `${e.clientY - rect.top}px`);
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative w-full flex items-center justify-center overflow-visible"
+    >
+      <div ref={innerRef} className="w-full text-center relative" style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
+        {/* Base layer: dull red */}
+        <BreathingText
+          text="#stAycReative"
+          className="font-dragon text-[26vw] leading-none tracking-tight text-[#3a0000] block whitespace-nowrap"
+        />
+        {/* Red circle outline around cursor */}
+        <div
+          className="absolute pointer-events-none rounded-full border-2 border-[var(--red)]"
+          style={{
+            width: '200px', height: '200px',
+            left: 'var(--sx)', top: 'var(--sy)',
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+        {/* Reveal layer: white, hard-edge mask */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            maskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
+          }}
+        >
+          <BreathingText
+            text="#stAycReative"
+            className="font-dragon text-[26vw] leading-none tracking-tight text-white block whitespace-nowrap"
+          />
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const QuoteReveal_REPLACED = () => {
   const sectionRef = useRef(null);
   const textRef = useRef(null);
@@ -2425,8 +2490,8 @@ export default function App() {
   // Initialize cursor physics values globally at the top level of the component
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const wellX = useSpring(cursorX, { damping: 12, stiffness: 400, mass: 0.1 });
-  const wellY = useSpring(cursorY, { damping: 12, stiffness: 400, mass: 0.1 });
+  const wellX = useSpring(cursorX, { damping: 20, stiffness: 800, mass: 0.05 });
+  const wellY = useSpring(cursorY, { damping: 20, stiffness: 800, mass: 0.05 });
 
   // Native window scroll tracker
   const { scrollYProgress, scrollY } = useScroll();
@@ -2782,8 +2847,8 @@ export default function App() {
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
             <Suspense fallback={null}><LightRays raysOrigin="top-left" raysColor="#FF0000" raysSpeed={0.6} lightSpread={1.4} rayLength={1.5} mouseInfluence={0.08} noiseAmount={0.01} distortion={0.03} className="opacity-30" /></Suspense>
-            <FileIcon name="profile_v3.psd" ext="PSD" color="#31A8FF" rotate="-6deg" className="absolute top-12 right-8 hidden md:flex" />
-            <FileIcon name="resume_2026.pdf" ext="PDF" color="#FF3333" rotate="4deg" className="absolute bottom-20 right-16 hidden md:flex" />
+            <FileIcon name="whoosh.wav" label="pitch shifter" color="#31A8FF" rotate="-6deg" depth={1.5} className="absolute top-[8%] right-[5%] hidden md:flex" />
+            <FileIcon name="riser.wav" label="speed 150%" color="#FF3333" rotate="4deg" depth={0.8} className="absolute bottom-[15%] left-[12%] hidden md:flex" />
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -2970,8 +3035,8 @@ export default function App() {
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
-            <FileIcon name="client_brief.docx" ext="DOC" color="#4285F4" rotate="3deg" className="absolute top-16 left-6 hidden md:flex" />
-            <FileIcon name="invoice_0847.xlsx" ext="XLS" color="#34A853" rotate="-5deg" className="absolute bottom-24 right-10 hidden md:flex" />
+            <FileIcon name="ambience.mp3" label="reverb" color="#4285F4" rotate="3deg" depth={1.2} className="absolute top-[35%] right-[3%] hidden md:flex" />
+            <FileIcon name="bass_hit.wav" label="compressor" color="#34A853" rotate="-5deg" depth={0.6} className="absolute bottom-[8%] left-[4%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-right" raysColor="#FF0000" raysSpeed={0.8} lightSpread={1.2} rayLength={1.8} mouseInfluence={0.12} noiseAmount={0.02} distortion={0.04} className="opacity-25" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
@@ -3084,9 +3149,9 @@ export default function App() {
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] overflow-hidden">
-            <FileIcon name="REEL_final_v3.mp4" ext="MP4" color="#FF0000" rotate="-3deg" className="absolute top-20 right-12 hidden md:flex" />
-            <FileIcon name="color_LUT_03.cube" ext="LUT" color="#9b59b6" rotate="5deg" className="absolute bottom-16 left-8 hidden md:flex" />
-            <FileIcon name="DSC_8847.ARW" ext="RAW" color="#e67e22" rotate="-7deg" className="absolute top-1/2 left-4 hidden md:flex" />
+            <FileIcon name="swoosh.wav" label="pitch shifter" color="#FF0000" rotate="-3deg" depth={1.8} className="absolute top-[12%] left-[2%] hidden md:flex" />
+            <FileIcon name="impact.wav" label="reverb" color="#9b59b6" rotate="5deg" depth={0.5} className="absolute bottom-[25%] right-[7%] hidden md:flex" />
+            <FileIcon name="buildup.wav" label="speed 200%" color="#e67e22" rotate="-7deg" depth={1.4} className="absolute top-[60%] right-[15%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#FF0000" raysSpeed={0.5} lightSpread={1.6} rayLength={2.0} mouseInfluence={0.06} noiseAmount={0.015} distortion={0.02} className="opacity-20" /></Suspense>
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
@@ -3186,8 +3251,8 @@ export default function App() {
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
-            <FileIcon name="thumbnail_v2.png" ext="PNG" color="#FF6633" rotate="4deg" className="absolute top-14 left-10 hidden md:flex" />
-            <FileIcon name="caption_draft.srt" ext="SRT" color="#888888" rotate="-4deg" className="absolute bottom-20 right-8 hidden md:flex" />
+            <FileIcon name="transition.wav" label="EQ boost" color="#FF6633" rotate="4deg" depth={1.0} className="absolute top-[20%] right-[10%] hidden md:flex" />
+            <FileIcon name="stinger.wav" label="delay" color="#888888" rotate="-4deg" depth={0.7} className="absolute bottom-[12%] left-[8%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -3336,8 +3401,8 @@ export default function App() {
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
-            <FileIcon name="motion_comp.aep" ext="AEP" color="#9999FF" rotate="-5deg" className="absolute top-24 left-6 hidden md:flex" />
-            <FileIcon name="brand_logo.ai" ext="AI" color="#FF9A00" rotate="6deg" className="absolute top-32 right-10 hidden md:flex" />
+            <FileIcon name="drone.wav" label="reverb" color="#9999FF" rotate="-5deg" depth={1.3} className="absolute top-[45%] right-[4%] hidden md:flex" />
+            <FileIcon name="click.wav" label="normalize" color="#FF9A00" rotate="6deg" depth={0.9} className="absolute top-[15%] left-[6%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
@@ -3406,16 +3471,11 @@ export default function App() {
 
           </section>
 
-          {/* ================= #stAyCreative FULL PAGE ================= */}
-          <section className="relative w-full flex items-center justify-center bg-[var(--bg)] overflow-hidden py-24 md:py-32">
-            <div className="w-full text-center">
-              <BreathingText
-                text="#stAycReative"
-                colorWave={true}
-                className="font-dragon text-[26vw] leading-none tracking-tight text-white block whitespace-nowrap"
-              />
-            </div>
-          </section>
+          {/* Giant #stAycReative at very bottom */}
+          <div className="w-full bg-[var(--bg)] py-16 md:py-24">
+            <StayCreativeSection />
+          </div>
+
 
 
         </div>{/* End continuous scroll container wrapper */}
@@ -3632,7 +3692,7 @@ export default function App() {
 
         {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
         <motion.div
-          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-all duration-200 ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
+          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
           style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
         />
 
