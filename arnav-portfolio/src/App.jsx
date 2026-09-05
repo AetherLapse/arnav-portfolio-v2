@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVe
 
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
+import AudioWaveCard from './AudioWaveCard';
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -598,40 +599,46 @@ const WaveformDivider = () => {
   );
 };
 
-const FileIcon = ({ name, label, color, rotate = '0deg', depth = 1, className = '' }) => {
+const FileIcon = ({ name, label, color, depth = 1, className = '' }) => {
   const elRef = useRef(null);
-  const bars = 18;
 
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
     const speed = depth * 0.15;
-
     const onScroll = () => {
       const rect = el.parentElement.getBoundingClientRect();
       const offset = -rect.top * speed;
-      el.style.transform = `rotate(${rotate}) translateY(${offset}px)`;
+      el.style.transform = `translateY(${offset}px)`;
     };
-
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, [rotate, depth]);
+  }, [depth]);
+
+  const seed = name.length * 7 + (label || '').length * 13;
 
   return (
-    <div ref={elRef} className={`pointer-events-none select-none opacity-40 ${className}`} style={{ transform: `rotate(${rotate})` }}>
-      {/* Waveform clip block */}
-      <div className="relative rounded-md overflow-hidden backdrop-blur-sm" style={{ background: `${color}40`, border: `1px solid ${color}60` }}>
-        <div className="flex items-center gap-0.5 px-2 py-2">
-          {/* Waveform bars */}
-          <svg width={bars * 4} height="28" className="flex-shrink-0">
-            {Array.from({ length: bars }).map((_, i) => {
-              const h = 4 + Math.abs(Math.sin(i * 0.8 + 1.2)) * 18 + Math.sin(i * 1.5) * 6;
-              return <rect key={i} x={i * 4} y={14 - h / 2} width="2.5" height={h} rx="1" fill={color} opacity={0.7 + Math.sin(i * 0.5) * 0.3} />;
+    <div ref={elRef} className={`pointer-events-none select-none ${className}`}>
+      {/* Frosted glass waveform block */}
+      <div
+        className="relative rounded-xl overflow-hidden backdrop-blur-md"
+        style={{ background: `${color}25`, border: `1px solid ${color}30`, boxShadow: `0 8px 32px ${color}15` }}
+      >
+        <div className="flex items-center px-3 py-2.5 gap-2">
+          <span className="font-clash text-[7px] md:text-[8px] text-white/60 whitespace-nowrap">{name}</span>
+          {/* Waveform — scratchy/scribble style like reference */}
+          <svg width="80" height="28" viewBox="0 0 80 28" className="flex-shrink-0">
+            {Array.from({ length: 3 }).map((_, layer) => {
+              const pts = Array.from({ length: 30 }).map((_, i) => {
+                const x = (i / 29) * 80;
+                const s = seed + layer * 17;
+                const y = 14 + (Math.sin(i * 1.3 + s) * 8 + Math.sin(i * 3.1 + s * 0.5) * 5 + Math.sin(i * 5.7 + s * 0.3) * 3) * (layer === 0 ? 1 : 0.7);
+                return `${x},${y}`;
+              }).join(' ');
+              return <polyline key={layer} points={pts} fill="none" stroke={color} strokeWidth={layer === 0 ? '2' : '1.5'} opacity={layer === 0 ? 0.9 : 0.4} strokeLinecap="round" strokeLinejoin="round" />;
             })}
           </svg>
-          {/* Filename inside block */}
-          <span className="font-clash text-[6px] md:text-[7px] text-white/50 ml-1.5 whitespace-nowrap">{name}</span>
         </div>
       </div>
     </div>
@@ -1619,15 +1626,6 @@ const StayCreativeSection = () => {
         <BreathingText
           text="#stAycReative"
           className="font-dragon text-[26vw] leading-none tracking-tight text-[#3a0000] block whitespace-nowrap"
-        />
-        {/* Red circle outline around cursor */}
-        <div
-          className="absolute pointer-events-none rounded-full border-2 border-[var(--red)]"
-          style={{
-            width: '200px', height: '200px',
-            left: 'var(--sx)', top: 'var(--sy)',
-            transform: 'translate(-50%, -50%)',
-          }}
         />
         {/* Reveal layer: white, hard-edge mask */}
         <div
@@ -2826,6 +2824,15 @@ export default function App() {
         {/* ================= CONTINUOUS SCROLL CONTENT (STACKING CARDS) ================= */}
         <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
 
+          {/* Floating audio wave cards layer */}
+          <div className="absolute inset-0 pointer-events-none z-[200] hidden md:block">
+            <AudioWaveCard name="whoosh.wav" variant="orange" type="whoosh" thumbnail className="absolute top-[5%] right-[3%]" />
+            <AudioWaveCard name="ambience.mp3" variant="cyan" type="bass" className="absolute top-[22%] left-[2%]" />
+            <AudioWaveCard name="swoosh.wav" variant="red" type="riser" thumbnail className="absolute top-[42%] right-[4%]" />
+            <AudioWaveCard name="transition.wav" variant="green" type="whoosh" thumbnail className="absolute top-[62%] left-[3%]" />
+            <AudioWaveCard name="drone.wav" variant="purple" type="bass" className="absolute top-[82%] right-[2%]" />
+          </div>
+
           {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
@@ -2834,8 +2841,6 @@ export default function App() {
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
             <Suspense fallback={null}><LightRays raysOrigin="top-left" raysColor="#FF0000" raysSpeed={0.6} lightSpread={1.4} rayLength={1.5} mouseInfluence={0.08} noiseAmount={0.01} distortion={0.03} className="opacity-30" /></Suspense>
-            <FileIcon name="whoosh.wav" label="pitch shifter" color="#31A8FF" rotate="-6deg" depth={1.5} className="absolute top-[8%] right-[5%] hidden md:flex" />
-            <FileIcon name="riser.wav" label="speed 150%" color="#FF3333" rotate="4deg" depth={0.8} className="absolute bottom-[15%] left-[12%] hidden md:flex" />
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-2 sm:pl-6 md:pl-10 lg:pl-[5%]">
               
               {/* Top absolute metadata */}
@@ -3022,8 +3027,6 @@ export default function App() {
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
-            <FileIcon name="ambience.mp3" label="reverb" color="#4285F4" rotate="3deg" depth={1.2} className="absolute top-[35%] right-[3%] hidden md:flex" />
-            <FileIcon name="bass_hit.wav" label="compressor" color="#34A853" rotate="-5deg" depth={0.6} className="absolute bottom-[8%] left-[4%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-right" raysColor="#FF0000" raysSpeed={0.8} lightSpread={1.2} rayLength={1.8} mouseInfluence={0.12} noiseAmount={0.02} distortion={0.04} className="opacity-25" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               
@@ -3136,9 +3139,6 @@ export default function App() {
 
           {/* EVIDENCE BOARD SECTION */}
           <section id="section-works" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[#050505] overflow-hidden">
-            <FileIcon name="swoosh.wav" label="pitch shifter" color="#FF0000" rotate="-3deg" depth={1.8} className="absolute top-[12%] left-[2%] hidden md:flex" />
-            <FileIcon name="impact.wav" label="reverb" color="#9b59b6" rotate="5deg" depth={0.5} className="absolute bottom-[25%] right-[7%] hidden md:flex" />
-            <FileIcon name="buildup.wav" label="speed 200%" color="#e67e22" rotate="-7deg" depth={1.4} className="absolute top-[60%] right-[15%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="top-center" raysColor="#FF0000" raysSpeed={0.5} lightSpread={1.6} rayLength={2.0} mouseInfluence={0.06} noiseAmount={0.015} distortion={0.02} className="opacity-20" /></Suspense>
             {/* Header Container */}
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
@@ -3238,8 +3238,6 @@ export default function App() {
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
-            <FileIcon name="transition.wav" label="EQ boost" color="#FF6633" rotate="4deg" depth={1.0} className="absolute top-[20%] right-[10%] hidden md:flex" />
-            <FileIcon name="stinger.wav" label="delay" color="#888888" rotate="-4deg" depth={0.7} className="absolute bottom-[12%] left-[8%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
@@ -3388,8 +3386,6 @@ export default function App() {
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
-            <FileIcon name="drone.wav" label="reverb" color="#9999FF" rotate="-5deg" depth={1.3} className="absolute top-[45%] right-[4%] hidden md:flex" />
-            <FileIcon name="click.wav" label="normalize" color="#FF9A00" rotate="6deg" depth={0.9} className="absolute top-[15%] left-[6%] hidden md:flex" />
             <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
             {/* Premiere Pro Timeline Background */}
             <PremiereTimeline />
