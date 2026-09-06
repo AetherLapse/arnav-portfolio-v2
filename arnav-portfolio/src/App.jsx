@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVe
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
 import AudioWaveCard from './AudioWaveCard';
+import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -1213,9 +1214,7 @@ const CareerTimeline = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
-              CAREER
-            </motion.h2>
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">CAREER</TextRoll>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
               <span>ENTRIES_LOGGED: <span className="text-[var(--red)]">03</span></span>
@@ -1275,9 +1274,7 @@ const ToolkitSection = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0">
-              MY TOOLKIT
-            </motion.h2>
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">MY TOOLKIT</TextRoll>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>ARSENAL: <span className="text-[var(--red)]">LOADED</span></span>
               <span>SOFTWARE_COUNT: <span className="text-[var(--red)]">{toolkitData.length}</span></span>
@@ -1623,10 +1620,9 @@ const StayCreativeSection = () => {
     >
       <div ref={innerRef} className="w-full text-center relative" style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
         {/* Base layer: dull red */}
-        <BreathingText
-          text="#stAycReative"
-          className="font-dragon text-[26vw] leading-none tracking-tight text-[#3a0000] block whitespace-nowrap"
-        />
+        <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-[#3a0000] whitespace-nowrap">
+          #stAycReative
+        </TextRoll>
         {/* Reveal layer: white, hard-edge mask */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -1635,10 +1631,9 @@ const StayCreativeSection = () => {
             WebkitMaskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
           }}
         >
-          <BreathingText
-            text="#stAycReative"
-            className="font-dragon text-[26vw] leading-none tracking-tight text-white block whitespace-nowrap"
-          />
+          <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-white whitespace-nowrap">
+            #stAycReative
+          </TextRoll>
         </div>
       </div>
     </section>
@@ -2826,11 +2821,11 @@ export default function App() {
 
           {/* Floating audio wave cards layer */}
           <div className="absolute inset-0 pointer-events-none z-[200] hidden md:block">
-            <AudioWaveCard name="whoosh.wav" variant="orange" type="whoosh" thumbnail className="absolute top-[5%] right-[3%]" />
-            <AudioWaveCard name="ambience.mp3" variant="cyan" type="bass" className="absolute top-[22%] left-[2%]" />
-            <AudioWaveCard name="swoosh.wav" variant="red" type="riser" thumbnail className="absolute top-[42%] right-[4%]" />
-            <AudioWaveCard name="transition.wav" variant="green" type="whoosh" thumbnail className="absolute top-[62%] left-[3%]" />
-            <AudioWaveCard name="drone.wav" variant="purple" type="bass" className="absolute top-[82%] right-[2%]" />
+            <AudioWaveCard name="whoosh.wav" variant="orange" type="whoosh" thumbnail className="absolute top-[8%] right-[5%]" />
+            <AudioWaveCard name="ambience.mp3" variant="cyan" type="bass" className="absolute top-[28%] left-[4%]" />
+            <AudioWaveCard name="swoosh.wav" variant="red" type="riser" thumbnail className="absolute top-[48%] right-[6%]" />
+            <AudioWaveCard name="transition.wav" variant="green" type="whoosh" thumbnail className="absolute top-[68%] left-[5%]" />
+            <AudioWaveCard name="drone.wav" variant="purple" type="bass" className="absolute top-[88%] right-[4%]" />
           </div>
 
           {/* CurvedThread disabled for stacking card layout */}
@@ -2856,7 +2851,7 @@ export default function App() {
                   className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
                   style={{ marginBottom: '-0.15em' }}
                 >
-                  ABOUT
+                  <TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">ABOUT</TextRoll>
                 </motion.h2>
               </ParticleFlyer>
 
@@ -3032,9 +3027,7 @@ export default function App() {
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
-                    WORKED WITH
-                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">WORKED WITH</TextRoll>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -3144,9 +3137,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
-                    EVIDENCE BOARD
-                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">EVIDENCE BOARD</TextRoll>                  </motion.h2>
                 </ParticleFlyer>
 
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
@@ -3242,9 +3233,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0">
-                    POSTS SHOWCASE
-                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">POSTS SHOWCASE</TextRoll>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2}>
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">

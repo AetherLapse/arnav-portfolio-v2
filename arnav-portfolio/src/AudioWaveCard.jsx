@@ -45,7 +45,6 @@ export default function AudioWaveCard({ name = "whoosh.wav", variant = "orange",
     <div
       className={`pointer-events-none select-none hidden md:block ${className}`}
       style={{
-        position: 'relative',
         width: '240px',
         height: '68px',
         borderRadius: '14px',
