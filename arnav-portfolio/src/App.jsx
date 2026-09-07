@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef, useContext, lazy, Suspense } from 'react';
 import DinoGame from './DinoGame';
+import Preloader from './Preloader';
+import WorksPage from './pages/WorksPage';
+import { X } from 'lucide-react';
+import PageLink from './components/PageLink';
+import { EVIDENCE_DATA, EVIDENCE_SECTORS } from './data/projects';
+import { usePageNavigation } from './hooks/usePageNavigation';
+import { useHeroActivity } from './hooks/useHeroActivity';
+import { usePointerSpotlight } from './hooks/usePointerSpotlight';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent } from 'framer-motion';
 
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
-import AudioWaveCard from './AudioWaveCard';
+import AudioWaveBand from './components/AudioWaveBand';
 import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 
 const GLOBAL_STYLES = `
@@ -22,6 +30,40 @@ const GLOBAL_STYLES = `
     --border: rgba(255,255,255,0.12); 
     --white: #1A1A1A;       
   }
+
+  #section-hero:focus { outline: none; }
+
+  /* One frosted surface shared by every navbar state. */
+  .nav-glass {
+    --muted: #bcb8b8;
+    background-color: rgba(10, 10, 10, 0.44);
+    background-image: linear-gradient(120deg, rgba(255,255,255,0.12), rgba(255,255,255,0.025) 45%, rgba(255,0,0,0.035));
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(255, 80, 80, 0.32);
+    border-top-color: rgba(255, 220, 220, 0.38);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.045), 0 12px 32px rgba(0,0,0,0.32);
+  }
+
+  .nav-glass[data-state="collapsed"] { background-color: rgba(10,10,10,0.5); }
+  .nav-glass[data-state="menu"] { background-color: rgba(10,10,10,0.64); }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .nav-glass[data-state] { background-color: #171313; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .nav-glass[data-state] {
+      background-color: #171313;
+      background-image: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  #section-hero.hero-paused *,
+  #section-hero.hero-paused *::before,
+  #section-hero.hero-paused *::after { animation-play-state: paused !important; }
 
   /* Aggressively hide all scrollbars globally */
   ::-webkit-scrollbar {
@@ -158,7 +200,7 @@ const SHUTTER_STAGGER = 35;
 const SHUTTER_HOLD = 90;
 const SHUTTER_EASE = 'cubic-bezier(0.83, 0, 0.17, 1)';
 
-const PageTransition = ({ active, onMidpoint }) => {
+const PageTransition = ({ active, onMidpoint, onComplete }) => {
   const shutterRef = useRef(null);
   const bricksRef = useRef([]);
   const builtRef = useRef(false);
@@ -214,41 +256,68 @@ const PageTransition = ({ active, onMidpoint }) => {
   }, []);
 
   const onMidpointRef = useRef(onMidpoint);
-  onMidpointRef.current = onMidpoint;
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onMidpointRef.current = onMidpoint;
+    onCompleteRef.current = onComplete;
+  }, [onMidpoint, onComplete]);
 
   useEffect(() => {
     if (!active || !bricksRef.current.length) return;
     const bricks = bricksRef.current;
-    const maxDelay = Math.max(...bricks.map(b => b.delay));
+    bricks.forEach(brick => { brick.el.style.transition = 'none'; });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const maxDelay = Math.max(...bricks.map(brick => brick.delay));
+    let cancelled = false;
+    let animations = [];
+    let holdTimer;
 
-    // Cover
-    bricks.forEach(b => {
-      b.el.style.transition = `transform ${SHUTTER_DURATION}ms ${SHUTTER_EASE} ${b.delay}ms`;
-      b.el.style.transform = 'scaleY(1)';
-    });
+    const play = async covering => {
+      const from = covering ? 'scaleY(0)' : 'scaleY(1)';
+      const to = covering ? 'scaleY(1)' : 'scaleY(0)';
+      if (!reduceMotion) {
+        animations = bricks.map(brick => brick.el.animate(
+          [{ transform: from }, { transform: to }],
+          { duration: SHUTTER_DURATION, delay: Math.max(0, covering ? brick.delay : maxDelay - brick.delay), easing: SHUTTER_EASE, fill: 'forwards' }
+        ));
+        await Promise.all(animations.map(animation => animation.finished));
+      }
+      if (cancelled) return;
+      bricks.forEach(brick => { brick.el.style.transform = to; });
+      animations.forEach(animation => animation.cancel());
+      animations = [];
+    };
 
-    const totalCover = SHUTTER_DURATION + maxDelay;
-
-    // Midpoint: swap content while hidden
-    const midTimer = setTimeout(() => {
-      onMidpointRef.current && onMidpointRef.current();
-    }, totalCover);
-
-    // Reveal: reverse from opposite corner
-    const revealTimer = setTimeout(() => {
-      bricks.forEach(b => {
-        const reverseDelay = maxDelay - b.delay;
-        b.el.style.transition = `transform ${SHUTTER_DURATION}ms ${SHUTTER_EASE} ${reverseDelay}ms`;
-        b.el.style.transform = 'scaleY(0)';
-      });
-    }, totalCover + SHUTTER_HOLD);
-
-    return () => { clearTimeout(midTimer); clearTimeout(revealTimer); };
+    const transition = async () => {
+      try {
+        await play(true);
+        if (cancelled) return;
+        onMidpointRef.current?.();
+        await new Promise(resolve => { holdTimer = setTimeout(resolve, reduceMotion ? 0 : SHUTTER_HOLD); });
+        if (cancelled) return;
+        await play(false);
+        if (!cancelled) onCompleteRef.current?.();
+      } catch (error) {
+        if (!cancelled) {
+          bricks.forEach(brick => { brick.el.style.transform = 'scaleY(0)'; });
+          console.error('Page transition failed:', error);
+          onCompleteRef.current?.();
+        }
+      }
+    };
+    transition();
+    return () => {
+      cancelled = true;
+      clearTimeout(holdTimer);
+      animations.forEach(animation => animation.cancel());
+    };
   }, [active]);
 
   return (
     <div
       ref={shutterRef}
+      aria-hidden="true"
+      data-page-transition={active ? 'active' : 'idle'}
       className="fixed inset-0 z-[250] overflow-hidden"
       style={{ pointerEvents: active ? 'auto' : 'none' }}
     />
@@ -416,39 +485,34 @@ const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
   </motion.div>
 );
 
-const BreathingText = ({ text, className = '' }) => {
+const BreathingText = ({ text, className = '', active }) => {
   const charsRef = useRef([]);
   const containerRef = useRef(null);
 
   useEffect(() => {
-    let raf;
-    let running = false;
-    const speed = 0.003;
-    const width = 3;
-
-    const observer = new IntersectionObserver(([entry]) => {
-      running = entry.isIntersecting;
-      if (running) raf = requestAnimationFrame(animate);
-    }, { rootMargin: '100px' });
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    const animate = (now) => {
-      if (!running) return;
-      const totalChars = charsRef.current.length;
-      const pos = (now * speed) % (totalChars + width * 2);
-      for (let i = 0; i < totalChars; i++) {
-        const el = charsRef.current[i];
-        if (!el) continue;
-        const dist = Math.abs(i - pos + width);
-        const t = Math.max(0, 1 - dist / width);
-        const ease = t * t * (3 - 2 * t);
-        el.style.fontVariationSettings = `'wght' ${300 + Math.round(ease * 500)}`;
+    if (!active) return;
+    let frame;
+    let lastUpdate = 0;
+    const lastWeights = [];
+    const animate = now => {
+      if (now - lastUpdate >= 1000 / 30) {
+        lastUpdate = now - ((now - lastUpdate) % (1000 / 30));
+        const pos = (now * 0.003) % (charsRef.current.length + 6);
+        charsRef.current.forEach((el, index) => {
+          if (!el) return;
+          const t = Math.max(0, 1 - Math.abs(index - pos + 3) / 3);
+          const weight = 300 + Math.round((t * t * (3 - 2 * t) * 500) / 5) * 5;
+          if (weight !== lastWeights[index]) {
+            el.style.fontVariationSettings = `'wght' ${weight}`;
+            lastWeights[index] = weight;
+          }
+        });
       }
-      raf = requestAnimationFrame(animate);
+      frame = requestAnimationFrame(animate);
     };
-    raf = requestAnimationFrame(animate);
-    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
-  }, []);
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [active]);
 
   const lines = text.split('\n');
   let charIndex = 0;
@@ -508,50 +572,6 @@ const ScrambleText = ({ children, delay = 0 }) => {
     return () => { clearTimeout(startTimeout); clearInterval(interval); };
   }, [children, delay]);
   return <span className="text-[var(--black)] font-bold">{text}</span>;
-};
-
-// --- MULTILINGUAL GREETING CYCLE (Windows OOBE style) ---
-const greetings = ['Hi', 'Hello', 'Hola', 'Bonjour', 'नमस्ते', 'Ciao', 'こんにちは', 'مرحبا'];
-const welcomeMessages = ['आपका स्वागत है', 'Welcome'];
-
-const GreetingCycle = ({ progress }) => {
-  const [index, setIndex] = useState(0);
-  const [welcomeIndex, setWelcomeIndex] = useState(0);
-  const isWelcome = progress >= 75;
-
-  useEffect(() => {
-    if (isWelcome) return;
-    const interval = setInterval(() => {
-      setIndex(prev => (prev + 1) % greetings.length);
-    }, 600);
-    return () => clearInterval(interval);
-  }, [isWelcome]);
-
-  useEffect(() => {
-    if (!isWelcome) return;
-    setWelcomeIndex(0);
-    const timeout = setTimeout(() => setWelcomeIndex(1), 1000);
-    return () => clearTimeout(timeout);
-  }, [isWelcome]);
-
-  const currentText = isWelcome ? welcomeMessages[welcomeIndex] : greetings[index];
-
-  return (
-    <div className="flex flex-col items-center justify-center h-[120px] overflow-hidden px-4">
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={currentText}
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut', exit: { duration: 0.1 } }}
-          className="font-clash font-light text-[clamp(40px,8vw,80px)] text-[var(--black)] leading-none"
-        >
-          {currentText}
-        </motion.span>
-      </AnimatePresence>
-    </div>
-  );
 };
 
 // --- RUNNING TIMECODE ---
@@ -839,8 +859,18 @@ const SpotlightCard = ({ children, className = "" }) => {
 };
 
 const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
+  const dialogRef = useRef(null);
   useEffect(() => {
+    const previousFocus = document.activeElement;
+    dialogRef.current?.querySelector('button')?.focus();
     const handleKey = (e) => {
+      if (e.key === 'Tab') {
+        const focusable = [...dialogRef.current.querySelectorAll('button, a[href]')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowRight') onNext();
       if (e.key === 'ArrowLeft') onPrev();
@@ -850,6 +880,7 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
     return () => {
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = '';
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
   }, [onClose, onNext, onPrev]);
 
@@ -857,6 +888,10 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
 
   return (
     <motion.div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${item.title} project details`}
       className="fixed inset-0 z-[300] flex items-center justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -866,11 +901,14 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onClose} />
 
+      <button onClick={onClose} aria-label="Close project" className="absolute top-4 right-4 md:right-8 z-50 p-3 bg-[#0A0A0A] border border-[var(--border)] text-white hover:border-[var(--red)] focus-visible:outline-2">
+        <X size={20} aria-hidden="true" />
+      </button>
       {/* Nav arrows */}
-      <button onClick={onPrev} className="btn-fill absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+      <button aria-label="Previous project" onClick={onPrev} className="btn-fill absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <button onClick={onNext} className="btn-fill absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
+      <button aria-label="Next project" onClick={onNext} className="btn-fill absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-10 h-10 flex items-center justify-center border border-[var(--border)] hover:border-[var(--red)] transition-colors cursor-none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
       </button>
 
@@ -929,9 +967,11 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
           </div>
 
           {/* Access button */}
-          <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto font-clash text-xs tracking-widest text-center py-3 border border-[var(--border)] hover:border-[var(--red)] hover:text-[var(--red)] transition-all cursor-none uppercase">
-            ACCESS PROJECT
-          </a>
+          {item.link && item.link !== '#' ? (
+            <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto font-clash text-xs tracking-widest text-center py-3 border border-[var(--border)] hover:border-[var(--red)] hover:text-[var(--red)] transition-all cursor-none uppercase">ACCESS PROJECT</a>
+          ) : (
+            <p className="mt-auto font-clash text-xs text-[var(--muted)]">Full project coming soon.</p>
+          )}
         </div>
 
         {/* Right panel — Visuals & Description */}
@@ -1601,17 +1641,7 @@ const StayCreativeSection = () => {
 
   const innerRef = useRef(null);
 
-  useEffect(() => {
-    const el = innerRef.current;
-    if (!el) return;
-    const onMove = (e) => {
-      const rect = el.getBoundingClientRect();
-      el.style.setProperty('--sx', `${e.clientX - rect.left}px`);
-      el.style.setProperty('--sy', `${e.clientY - rect.top}px`);
-    };
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  usePointerSpotlight(innerRef, '--sx', '--sy');
 
   return (
     <section
@@ -1792,16 +1822,17 @@ const QuoteReveal_REPLACED = () => {
   );
 };
 
-const InteractiveDotGrid = () => {
+const InteractiveDotGrid = ({ active }) => {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: -1000, y: -1000 });
 
   useEffect(() => {
-    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return;
+    if (!active || !window.matchMedia('(pointer: fine)').matches) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     let raf = 0;
     let visible = true;
     const gap = 24;
@@ -1815,9 +1846,9 @@ const InteractiveDotGrid = () => {
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      schedule();
     };
-    resize();
-    window.addEventListener('resize', resize);
+
 
     // Draw ONE frame only — dots are static except near the cursor, so a
     // continuous rAF loop would redraw 660+ arcs 60x/sec for zero change.
@@ -1829,6 +1860,8 @@ const InteractiveDotGrid = () => {
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
 
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
+      ctx.beginPath();
       for (let x = gap; x < w; x += gap) {
         for (let y = gap; y < h; y += gap) {
           const dx = x - mx;
@@ -1844,18 +1877,21 @@ const InteractiveDotGrid = () => {
             py += (dy / dist) * force;
           }
 
-          ctx.beginPath();
+          ctx.moveTo(px + dotSize, py);
           ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
-          ctx.fill();
+
         }
       }
+      ctx.fill();
     };
 
     const schedule = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => { raf = 0; draw(); });
     };
+
+    resize();
+    window.addEventListener('resize', resize);
 
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
@@ -1864,6 +1900,7 @@ const InteractiveDotGrid = () => {
     observer.observe(canvas);
 
     const onMove = (e) => {
+      if (!visible) return;
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       schedule();
@@ -1876,7 +1913,7 @@ const InteractiveDotGrid = () => {
       window.removeEventListener('mousemove', onMove);
       observer.disconnect();
     };
-  }, []);
+  }, [active]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 };
@@ -1914,24 +1951,14 @@ const ShowreelVideo = () => {
   );
 };
 
-const HeroBackground = ({ hasLoaded }) => {
+const HeroBackground = ({ hasLoaded, active }) => {
   const textContainerRef = useRef(null);
 
-  useEffect(() => {
-    const container = textContainerRef.current;
-    if (!container) return;
-    const onMove = (e) => {
-      const rect = container.getBoundingClientRect();
-      container.style.setProperty('--mx', `${e.clientX - rect.left}px`);
-      container.style.setProperty('--my', `${e.clientY - rect.top}px`);
-    };
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  usePointerSpotlight(textContainerRef, '--mx', '--my', active);
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <InteractiveDotGrid />
+      <InteractiveDotGrid active={active} />
       <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
         <motion.div
           ref={textContainerRef}
@@ -1951,7 +1978,7 @@ const HeroBackground = ({ hasLoaded }) => {
             letterSpacing: '0.02em',
           }}
         >
-          <BreathingText text={"ARNAV\nRAI"} className="[&>span:nth-child(2)]:mt-2 md:[&>span:nth-child(2)]:mt-4" />
+          <BreathingText active={active} text={"ARNAV\nRAI"} className="[&>span:nth-child(2)]:mt-2 md:[&>span:nth-child(2)]:mt-4" />
         </motion.div>
         <motion.p
           className="font-clash text-[var(--muted)] tracking-[0.3em] uppercase mt-4 md:mt-6"
@@ -1967,7 +1994,16 @@ const HeroBackground = ({ hasLoaded }) => {
   );
 };
 
-const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
+const HERO_TITLES = [{ left: 'MOTION', right: 'DESIGNER' }, { left: 'VIDEO', right: 'EDITOR' }];
+
+const HeroForeground = ({ isBase, hasLoaded, active }) => {
+  const [titleIndex, setTitleIndex] = useState(0);
+  const titles = HERO_TITLES;
+  useEffect(() => {
+    if (!active) return;
+    const interval = setInterval(() => setTitleIndex(index => (index + 1) % HERO_TITLES.length), 5000);
+    return () => clearInterval(interval);
+  }, [active]);
   const hudClass = isBase ? "opacity-[0.15] saturate-0" : "opacity-100";
 
   return (
@@ -1975,7 +2011,7 @@ const HeroForeground = ({ isBase, hasLoaded, titleIndex, titles }) => {
       <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-12 left-6 md:top-8 md:left-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1 transition-opacity duration-300 ${hudClass}`}>
         <span>CAM_04 [REC]</span>
         <span className="text-[var(--red)] flex items-center gap-2">
-          <motion.div animate={!isBase ? { opacity: [1, 0, 1] } : {}} transition={{ repeat: Infinity, duration: 2 }} className="w-3 h-3 rounded-full bg-[var(--red)]" />
+          <motion.div animate={!isBase && active ? { opacity: [1, 0, 1] } : { opacity: 1 }} transition={{ repeat: Infinity, duration: 2 }} className="w-3 h-3 rounded-full bg-[var(--red)]" />
           SIGNAL__STRONG
         </span>
       </ParticleFlyer>
@@ -2379,29 +2415,6 @@ const CREATORS_DATA = [
   { id: "C_04", name: "Creator Four", dp: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop", yt: "https://youtube.com", ig: "https://instagram.com" }
 ];
 
-const EVIDENCE_SECTORS = [
-  { id: "KINETIC_CUTS", label: "// KINETIC_CUTS [VIDEO EDITING]" },
-  { id: "GRID_ARCHIVES", label: "// GRID_ARCHIVES [SOCIAL GRIDS]" },
-  { id: "CONTENT_DEPLOYMENTS", label: "// CONTENT_DEPLOYMENTS [SOCIAL POSTS]" },
-  { id: "BRAND_IDENTITIES", label: "// BRAND_IDENTITIES [LOGO FOLIO]" }
-];
-
-const EVIDENCE_DATA = [
-  // Video Editing
-  // TODO: swap these in for Arnav's REAL project names, images, and links
-  { id: "01", sector: "KINETIC_CUTS", title: "Ophelia", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop", year: "March 2025", context: "Commercial", client: "Ophelia Studios", time: "5 days", tags: ["Color Grading", "Motion Graphics"], stacks: ["Premiere Pro", "After Effects"], desc: "A high-contrast cinematic commercial edit blending surreal visuals with precise color grading. The client wanted an ethereal mood that pulled viewers into a dreamlike narrative.", link: "#" },
-  { id: "02", sector: "KINETIC_CUTS", title: "Launch Reel", img: "https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800&auto=format&fit=crop", year: "January 2025", context: "Professional", client: "Visible Gain", time: "3 days", tags: ["Video Editing", "Sound Design"], stacks: ["Premiere Pro", "Audition"], desc: "Fast-paced brand reel for a lifestyle brand launch. Integrated kinetic typography with product shots to maximize retention in the first 3 seconds.", link: "#" },
-  { id: "03", sector: "KINETIC_CUTS", title: "2026 Greet", img: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop", year: "December 2025", context: "Personal", client: "Self-Initiated", time: "2 days", tags: ["Motion Graphics", "Typography"], stacks: ["After Effects", "Illustrator"], desc: "A personal new year greeting animation exploring glitch aesthetics and bold type treatments. Shared across social media to celebrate the creative community.", link: "#" },
-  { id: "04", sector: "KINETIC_CUTS", title: "Ciao", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop", year: "November 2024", context: "Freelance", client: "Indie Artist", time: "4 days", tags: ["Music Video", "VFX"], stacks: ["Premiere Pro", "After Effects", "Blender"], desc: "Lyric video for an indie artist combining 3D environments with hand-drawn frame-by-frame animation overlays. Delivered across 3 aspect ratios for multi-platform release.", link: "#" },
-  // Social Grids
-  { id: "05", sector: "GRID_ARCHIVES", title: "H.A.N.D.S. Grid", img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=800&auto=format&fit=crop", year: "February 2025", context: "Professional", client: "Promotion4u", time: "2 days", tags: ["Grid Design", "Brand Identity"], stacks: ["Photoshop", "Illustrator"], desc: "A cohesive 9-post Instagram grid design for a wellness brand. Each tile works independently while forming a larger visual narrative when viewed together.", link: "#" },
-  { id: "06", sector: "GRID_ARCHIVES", title: "Apogée Sequence", img: "https://images.unsplash.com/photo-1600132806370-bf17e65e942f?q=80&w=800&auto=format&fit=crop", year: "October 2024", context: "Freelance", client: "Apogée Fashion", time: "3 days", tags: ["Social Media", "Photography"], stacks: ["Photoshop", "Lightroom"], desc: "Carousel sequence for a fashion brand's seasonal drop. Designed to maximize swipe-through rate with progressive reveal storytelling.", link: "#" },
-  // Social Posts
-  { id: "07", sector: "CONTENT_DEPLOYMENTS", title: "Cyberpunk Campaign", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=800&auto=format&fit=crop", year: "September 2024", context: "Freelance", client: "Tech Influencer", time: "1 day", tags: ["Social Content", "Graphic Design"], stacks: ["Photoshop", "AI Tools"], desc: "Cyberpunk-themed content series for a tech influencer's product review campaign. Neon-heavy palette with HUD-style overlays.", link: "#" },
-  // Logos
-  { id: "08", sector: "BRAND_IDENTITIES", title: "Nexus Logomark", img: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=800&auto=format&fit=crop", year: "August 2024", context: "Professional", client: "Nexus Gaming", time: "5 days", tags: ["Logo Design", "Brand Identity"], stacks: ["Illustrator", "Photoshop"], desc: "Minimal logomark for a gaming community. Explored geometric forms that convey both connection and competition. Delivered brand guide with usage rules.", link: "#" },
-];
-
 const POSTS_DATA = [
   { id: "P01", title: "Neon Drift", subtitle: "Motion Poster", img: "https://images.unsplash.com/photo-1614854262318-831574f15f1f?q=80&w=800&auto=format&fit=crop" },
   { id: "P02", title: "Kyoto Nights", subtitle: "Social Campaign", img: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?q=80&w=800&auto=format&fit=crop" },
@@ -2412,14 +2425,145 @@ const POSTS_DATA = [
   { id: "P07", title: "Catalyst", subtitle: "Reel Cover", img: "https://images.unsplash.com/photo-1614850523011-8f49ffc73908?q=80&w=800&auto=format&fit=crop" },
 ];
 
+// Keep navigation and cursor state changes out of the hero subtree.
+const HeroSection = React.memo(function HeroSection({ hasLoaded, hasEntered }) {
+  const heroRef = useRef(null);
+  const active = useHeroActivity(heroRef, hasEntered);
+  return (
+    <section ref={heroRef} id="section-hero" className={`sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-hidden ${active ? '' : 'hero-paused'}`}>
+
+      {/* 3D TUBES BACKGROUND (z-0) */}
+      <div className="absolute inset-0 z-0">
+        <Suspense fallback={null}>
+          {hasEntered && <TubesBackground active={active} />}
+        </Suspense>
+      </div>
+
+      {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <HeroBackground hasLoaded={hasLoaded} active={active} />
+      </div>
+
+      {/* GALAXY LAYER (z-95) - rendered once for performance */}
+      <div className="absolute top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
+        <OrbitalRing
+          radius={320}
+          duration={35}
+          reverse={false}
+          items={[
+            { label: "Adobe Photoshop", icon: <AdobeIcon text="Ps"/> },
+            { label: "Adobe After Effects", icon: <AdobeIcon text="Ae"/> },
+            { label: "Adobe Premiere Pro", icon: <AdobeIcon text="Pr"/> },
+            { label: "Adobe Illustrator", icon: <AdobeIcon text="Ai"/> },
+            { label: "Lightroom", icon: <AdobeIcon text="Lr"/> }
+          ]}
+        />
+        <OrbitalRing
+          radius={210}
+          duration={25}
+          reverse={true}
+          items={[
+            { label: "Blender", icon: <img src="/assets/photos/blender logo.png" alt="Blender" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+            { label: "Kling", icon: <img src="/assets/photos/kling logo.png" alt="Kling" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
+            { label: "Higgsfield", icon: <img src="/assets/photos/higgsfield logo.png" alt="Higgsfield" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> }
+          ]}
+        />
+      </div>
+
+      {/* PORTRAIT LAYER (z-90) */}
+      <motion.div
+        initial={{ x: "-50%", y: 100, opacity: 0 }}
+        animate={{ x: "-50%", y: hasLoaded ? 0 : 100, opacity: hasLoaded ? 1 : 0, filter: hasLoaded ? "blur(0px)" : "blur(20px)", scale: hasLoaded ? 1 : 0.9 }}
+        transition={{ delay: hasLoaded ? 0.8 : 0, duration: 1, ease: "easeOut" }}
+        className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
+        style={{ minHeight: '60vh' }}
+      >
+        <div id="fx-portrait" className="relative w-full">
+          <motion.img
+            src="/assets/photos/DSC00747-01.webp"
+            alt="Arnav Rai"
+            className="relative w-full h-auto min-h-[60vh] object-bottom"
+            style={{ objectFit: 'cover', filter: 'drop-shadow(0 0 20px rgba(255,0,0,0.1)) drop-shadow(0 0 40px rgba(255,0,0,0.05))' }}
+
+          />
+        </div>
+      </motion.div>
+
+      {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
+      <div className="absolute inset-0 z-[100] pointer-events-none">
+        <HeroForeground isBase={false} hasLoaded={hasLoaded} active={active} />
+      </div>
+
+      {/* EDITING HUD CHIPS (z-110) — the editor's touch */}
+      <div className="absolute bottom-6 left-6 z-[110] pointer-events-none flex flex-col items-start gap-2">
+        <div className="edit-chip"><span className="rec-dot" /> REC <span className="opacity-60">00:01:23:07</span></div>
+        <div className="edit-chip"><span className="wave"><i style={{ height: '8px' }} /><i style={{ height: '13px' }} /><i style={{ height: '6px' }} /><i style={{ height: '11px' }} /><i style={{ height: '9px' }} /><i style={{ height: '13px' }} /><i style={{ height: '7px' }} /></span> <span className="opacity-60">LUT_04</span></div>
+        <div className="edit-chip"><span className="scrubber" /> <span className="opacity-60">✂ HORNET_CUT</span></div>
+      </div>
+    </section>
+  );
+});
+
+const CursorOverlay = () => {
+  const { cursorX, cursorY } = useContext(CursorContext);
+  const wellX = useSpring(cursorX, { damping: 20, stiffness: 800, mass: 0.05 });
+  const wellY = useSpring(cursorY, { damping: 20, stiffness: 800, mass: 0.05 });
+  const [cursorOnLink, setCursorOnLink] = useState(false);
+
+  useEffect(() => {
+    let lastHoverTime = 0;
+    const handleOver = (e) => {
+      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
+      if (el) {
+        setCursorOnLink(true);
+        const now = Date.now();
+        if (now - lastHoverTime > 150) { lastHoverTime = now; SFX.hover(); }
+      }
+    };
+    const handleOut = (e) => {
+      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
+      if (el) setCursorOnLink(false);
+    };
+    document.addEventListener('mouseover', handleOver);
+    document.addEventListener('mouseout', handleOut);
+    return () => { document.removeEventListener('mouseover', handleOver); document.removeEventListener('mouseout', handleOut); };
+  }, []);
+  return (
+    <>
+      {/* Dynamic Target Coordinates attached to cursor */}
+      <div className="hidden md:block"><TrackedCoordinates /></div>
+
+      {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
+      <motion.div
+        className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none hidden md:block ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
+        style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
+      />
+
+      {/* INNER CURSOR */}
+      <motion.div
+        className="fixed top-0 left-0 z-[9999] pointer-events-none hidden md:flex items-center justify-center"
+        style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
+      >
+        {cursorOnLink ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17" />
+          </svg>
+        ) : (
+          <div className="w-1.5 h-1.5 bg-[var(--black)] shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+        )}
+      </motion.div>
+    </>
+  );
+};
+
 export default function App() {
   const [isMounted, setIsMounted] = useState(false);
+  const navigation = usePageNavigation(isMounted);
+  const isWorksPage = navigation.location.pathname === '/works';
 
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [hasEntered, setHasEntered] = useState(false);
 
-  const [titleIndex, setTitleIndex] = useState(0);
-  const titles = useMemo(() => [{ left: "MOTION", right: "DESIGNER" }, { left: "VIDEO", right: "EDITOR" }], []);
 
   const [navVisible, setNavVisible] = useState(false);
   
@@ -2458,7 +2602,7 @@ export default function App() {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [filteredEvidence]); // Re-bind if content changes
+  }, [filteredEvidence, isWorksPage]); // Re-bind if content changes
 
   const handleArrowScroll = (direction) => {
     if (carouselRef.current) {
@@ -2470,8 +2614,7 @@ export default function App() {
   // Initialize cursor physics values globally at the top level of the component
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const wellX = useSpring(cursorX, { damping: 20, stiffness: 800, mass: 0.05 });
-  const wellY = useSpring(cursorY, { damping: 20, stiffness: 800, mass: 0.05 });
+  const cursorContext = useMemo(() => ({ cursorX, cursorY }), [cursorX, cursorY]);
 
   // Native window scroll tracker
   const { scrollYProgress, scrollY } = useScroll();
@@ -2492,41 +2635,15 @@ export default function App() {
 
   // Nav state: scroll-driven morph from bar to pill
   const [navMenuOpen, setNavMenuOpen] = useState(false);
-  const [contactFormOpen, setContactFormOpen] = useState(false);
   const [contactFormVisible, setContactFormVisible] = useState(false);
 
-  const openContactForm = () => {
-    setPageTransition(true);
-    transitionTarget.current = null;
-    setTimeout(() => setContactFormVisible(true), 800);
-  };
-
-  const closeContactForm = () => {
-    setPageTransition(true);
-    transitionTarget.current = null;
-    setTimeout(() => setContactFormVisible(false), 800);
-  };
-  const [pageTransition, setPageTransition] = useState(false);
-  const transitionTarget = useRef(null);
-
-  const navigateWithTransition = (href) => {
-    transitionTarget.current = href;
-    setPageTransition(true);
+  const openContactForm = () => navigation.runTransition(() => setContactFormVisible(true));
+  const closeContactForm = () => navigation.runTransition(() => setContactFormVisible(false));
+  const navigateWithTransition = href => {
     setNavMenuOpen(false);
+    navigation.navigate(href);
   };
 
-  const handleTransitionMidpoint = () => {
-    if (transitionTarget.current) {
-      const el = document.querySelector(transitionTarget.current);
-      if (el) el.scrollIntoView({ behavior: 'instant' });
-    }
-  };
-
-  useEffect(() => {
-    if (!pageTransition) return;
-    const timer = setTimeout(() => setPageTransition(false), 2500);
-    return () => clearTimeout(timer);
-  }, [pageTransition]);
   const navProgress = useTransform(scrollY, [0, window.innerHeight * 0.7], [0, 1]);
   const navProgressClamped = useTransform(navProgress, v => Math.min(Math.max(v, 0), 1));
   const [navIsContracted, setNavIsContracted] = useState(false);
@@ -2539,39 +2656,10 @@ export default function App() {
   });
 
 
-  useEffect(() => {
-    if (!hasLoaded) return;
-    const interval = setInterval(() => setTitleIndex(prev => (prev + 1) % titles.length), 5000);
-    return () => clearInterval(interval);
-  }, [hasLoaded, titles.length]);
+
 
   useEffect(() => {
     setIsMounted(true);
-    document.body.classList.add('loading');
-
-    const duration = 7500;
-    const start = performance.now();
-    let animId;
-
-    const tick = () => {
-      const elapsed = performance.now() - start;
-      const progress = Math.min((elapsed / duration) * 100, 100);
-      setLoadingProgress(progress);
-      if (progress < 100) {
-        animId = requestAnimationFrame(tick);
-      }
-    };
-    animId = requestAnimationFrame(tick);
-
-    const finishTimer = setTimeout(() => {
-      setHasLoaded(true);
-      document.body.classList.remove('loading');
-    }, duration + 400);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      clearTimeout(finishTimer);
-    };
   }, []);
 
   useEffect(() => {
@@ -2580,31 +2668,11 @@ export default function App() {
     return () => { window.removeEventListener('mousemove', move); };
   }, [cursorX, cursorY]);
 
-  const [cursorOnLink, setCursorOnLink] = useState(false);
-
-  useEffect(() => {
-    let lastHoverTime = 0;
-    const handleOver = (e) => {
-      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
-      if (el) {
-        setCursorOnLink(true);
-        const now = Date.now();
-        if (now - lastHoverTime > 150) { lastHoverTime = now; SFX.hover(); }
-      }
-    };
-    const handleOut = (e) => {
-      const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
-      if (el) setCursorOnLink(false);
-    };
-    document.addEventListener('mouseover', handleOver);
-    document.addEventListener('mouseout', handleOut);
-    return () => { document.removeEventListener('mouseover', handleOver); document.removeEventListener('mouseout', handleOut); };
-  }, []);
 
   if (!isMounted) return null;
 
   return (
-    <CursorContext.Provider value={{ cursorX, cursorY }}>
+    <CursorContext.Provider value={cursorContext}>
       <div className="relative w-full min-h-screen bg-[var(--bg)] font-clash text-[var(--black)] selection:bg-[var(--red)] selection:text-[var(--bg)]">
         <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
 
@@ -2621,12 +2689,13 @@ export default function App() {
             className="fixed top-0 left-0 right-0 z-[150] flex justify-center pt-3"
           >
             <div
-              className={`backdrop-blur-xl border border-[var(--red)]/40 shadow-[0_8px_32px_rgba(0,0,0,0.6)] relative overflow-hidden ${
+              data-state={navMenuOpen ? 'menu' : navIsContracted ? 'collapsed' : 'expanded'}
+              className={`nav-glass relative overflow-hidden ${
                 navMenuOpen
-                  ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none bg-black/92'
+                  ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none'
                   : navIsContracted
-                    ? 'w-[240px] md:w-[260px] rounded-none bg-black/85'
-                    : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none bg-black/60'
+                    ? 'w-[240px] md:w-[260px] rounded-none'
+                    : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none'
               }`}
               style={{
                 height: navMenuOpen ? '80vh' : '3.5rem',
@@ -2636,38 +2705,38 @@ export default function App() {
               }}
             >
               {/* Expanded bar content (on hero) */}
-              <div className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
-                <div className="flex items-center gap-8">
+              <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home"><img src="/assets/photos/hornet.png" alt="" className="w-7 h-7" /></PageLink>
+                <div className="flex items-center gap-4 md:gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
-                  <button onClick={() => navigateWithTransition('#section-works')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">WORKS</button>
+                  <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[11px] tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
                   <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
                 </div>
               </div>
 
               {/* Contracted pill content */}
-              <div className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
-                <button onClick={() => { setNavMenuOpen(true); SFX.navOpen(); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
+              <div inert={!navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
+                <button aria-label="Open navigation" onClick={() => { setNavMenuOpen(true); SFX.navOpen(); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
                   <div className="w-4 h-px bg-white" />
                   <div className="w-4 h-px bg-white" />
                 </button>
-                <span className="font-dragon text-sm text-white">A.</span>
-                <a href="#section-contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="font-dragon text-sm text-white">A.</PageLink>
+                <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
                   <div className="w-2 h-2 rounded-full bg-[var(--red)]" />
-                </a>
+                </PageLink>
               </div>
 
               {/* Full-screen menu overlay content */}
-              <div className={`absolute inset-0 flex flex-col transition-opacity duration-300 delay-200 ${navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <div inert={!navMenuOpen} className={`absolute inset-0 flex flex-col transition-opacity duration-300 delay-200 ${navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {/* Top bar */}
                 <div className="flex items-center justify-between px-6 md:px-10 h-14 flex-shrink-0">
-                  <button onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
+                  <button aria-label="Close navigation" onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   </button>
                   <img src="/assets/photos/hornet.png" alt="Logo" className="w-8 h-8" />
-                  <a href="#section-contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
+                  <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
                     <div className="w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
-                  </a>
+                  </PageLink>
                 </div>
 
                 {/* Menu body */}
@@ -2677,18 +2746,19 @@ export default function App() {
                     <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase mb-8">NAVIGATION</span>
                     <div className="flex flex-col gap-4">
                       {[
-                        { num: '01', label: 'Projects', href: '#section-works' },
+                        { num: '01', label: 'Works', href: '/works' },
                         { num: '02', label: 'Contact', href: '#section-contact' },
                         { num: '03', label: 'About', href: '#section-intro' },
                       ].map(item => (
-                        <button
+                        <PageLink
                           key={item.num}
-                          onClick={() => { setNavMenuOpen(false); setTimeout(() => navigateWithTransition(item.href), 500); }}
+                          href={item.href.startsWith('#') ? `/${item.href}` : item.href}
+                          navigate={navigateWithTransition}
                           className="flex items-center gap-6 group cursor-none text-left"
                         >
                           <span className="font-clash text-xs text-[var(--muted)]">{item.num}</span>
                           <span className="font-clash font-bold text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
-                        </button>
+                        </PageLink>
                       ))}
                     </div>
                     <div className="mt-auto pt-8 flex items-center gap-2">
@@ -2723,6 +2793,10 @@ export default function App() {
           </motion.nav>
         )}
 
+        {isWorksPage ? (
+          <WorksPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} onContact={openContactForm} />
+        ) : (
+          <>
         {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
         <ScrollFX />
 
@@ -2736,79 +2810,7 @@ export default function App() {
         <div className="relative z-10">
 
         {/* ================= HERO SECTION ================= */}
-        <section id="section-hero" className="sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-hidden">
-
-          {/* 3D TUBES BACKGROUND (z-0) */}
-          <div className="absolute inset-0 z-0">
-            <Suspense fallback={null}>
-              {hasLoaded && <TubesBackground />}
-            </Suspense>
-          </div>
-
-          {/* BACKGROUND LAYER (z-10): Main Typography with self-contained spotlight */}
-          <div className="absolute inset-0 z-10 pointer-events-none">
-            <HeroBackground hasLoaded={hasLoaded} />
-          </div>
-
-          {/* GALAXY LAYER (z-95) - rendered once for performance */}
-          <div className="absolute top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
-            <OrbitalRing
-              radius={320}
-              duration={35}
-              reverse={false}
-              items={[
-                { label: "Adobe Photoshop", icon: <AdobeIcon text="Ps"/> },
-                { label: "Adobe After Effects", icon: <AdobeIcon text="Ae"/> },
-                { label: "Adobe Premiere Pro", icon: <AdobeIcon text="Pr"/> },
-                { label: "Adobe Illustrator", icon: <AdobeIcon text="Ai"/> },
-                { label: "Lightroom", icon: <AdobeIcon text="Lr"/> }
-              ]}
-            />
-            <OrbitalRing
-              radius={210}
-              duration={25}
-              reverse={true}
-              items={[
-                { label: "Blender", icon: <img src="/assets/photos/blender logo.png" alt="Blender" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
-                { label: "Kling", icon: <img src="/assets/photos/kling logo.png" alt="Kling" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> },
-                { label: "Higgsfield", icon: <img src="/assets/photos/higgsfield logo.png" alt="Higgsfield" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" /> }
-              ]}
-            />
-          </div>
-
-          {/* PORTRAIT LAYER (z-90) */}
-          <motion.div
-            initial={{ x: "-50%", y: 100, opacity: 0 }}
-            animate={{ x: "-50%", y: hasLoaded ? 0 : 100, opacity: hasLoaded ? 1 : 0, filter: hasLoaded ? "blur(0px)" : "blur(20px)", scale: hasLoaded ? 1 : 0.9 }}
-            transition={{ delay: hasLoaded ? 0.8 : 0, duration: 1, ease: "easeOut" }}
-            className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
-            style={{ minHeight: '60vh' }}
-          >
-            <div id="fx-portrait" className="relative w-full">
-              <motion.img
-                src="/assets/photos/DSC00747-01.webp"
-                alt="Arnav Rai"
-                className="relative w-full h-auto min-h-[60vh] object-bottom"
-                style={{ objectFit: 'cover' }}
-                initial={{ filter: 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
-                animate={{ filter: hasLoaded ? 'drop-shadow(0 0 20px rgba(255,0,0,0.1)) drop-shadow(0 0 40px rgba(255,0,0,0.05))' : 'drop-shadow(0 0 0px rgba(255,0,0,0))' }}
-                transition={{ delay: hasLoaded ? 2 : 0, duration: 1.5, ease: "easeOut" }}
-              />
-            </div>
-          </motion.div>
-
-          {/* FOREGROUND LAYER (z-100): HUD Elements & Subtitles */}
-          <div className="absolute inset-0 z-[100] pointer-events-none">
-            <HeroForeground isBase={false} hasLoaded={hasLoaded} titleIndex={titleIndex} titles={titles} />
-          </div>
-
-          {/* EDITING HUD CHIPS (z-110) — the editor's touch */}
-          <div className="absolute bottom-6 left-6 z-[110] pointer-events-none flex flex-col items-start gap-2">
-            <div className="edit-chip"><span className="rec-dot" /> REC <span className="opacity-60">00:01:23:07</span></div>
-            <div className="edit-chip"><span className="wave"><i style={{ height: '8px' }} /><i style={{ height: '13px' }} /><i style={{ height: '6px' }} /><i style={{ height: '11px' }} /><i style={{ height: '9px' }} /><i style={{ height: '13px' }} /><i style={{ height: '7px' }} /></span> <span className="opacity-60">LUT_04</span></div>
-            <div className="edit-chip"><span className="scrubber" /> <span className="opacity-60">✂ HORNET_CUT</span></div>
-          </div>
-        </section>
+        <HeroSection hasLoaded={hasLoaded} hasEntered={hasEntered} />
 
           {/* SHOWREEL VIDEO — the card that slides up over the pinned hero (flat edges = true stack) */}
           <section className="relative w-full z-20 bg-[#0A0A0A] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
@@ -2819,19 +2821,12 @@ export default function App() {
         {/* ================= CONTINUOUS SCROLL CONTENT (STACKING CARDS) ================= */}
         <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
 
-          {/* Floating audio wave cards layer */}
-          <div className="absolute inset-0 pointer-events-none z-[200] hidden md:block overflow-hidden">
-            <AudioWaveCard name="titles.png" variant="orange" type="whoosh" textLeft className="absolute top-[6%] -right-[60px]" />
-            <AudioWaveCard name="background.jpeg" variant="cyan" type="bass" className="absolute top-[24%] -left-[80px]" />
-            <AudioWaveCard name="reel_final_v3.mp4" variant="red" type="riser" className="absolute top-[42%] right-[8%]" />
-            <AudioWaveCard name="color_grade.cube" variant="green" type="whoosh" className="absolute top-[58%] -left-[50px]" />
-            <AudioWaveCard name="showreel_comp.aep" variant="purple" type="bass" textLeft className="absolute top-[76%] -right-[70px]" />
-          </div>
-
           {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
+
+          <AudioWaveBand placement="intro" />
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
@@ -3019,6 +3014,8 @@ export default function App() {
             <ExperienceStrip />
             <CareerTimeline />
           </div>
+
+          <AudioWaveBand placement="collaborators" />
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
@@ -3228,6 +3225,7 @@ export default function App() {
 
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
+          <AudioWaveBand placement="posts" />
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
@@ -3368,6 +3366,8 @@ export default function App() {
             <ToolkitSection />
           </div>
 
+          <AudioWaveBand placement="playground" />
+
           {/* ================= DINO GAME (CARD) ================= */}
           <div className="w-full bg-[var(--bg)] overflow-hidden">
             <DinoRunner />
@@ -3420,7 +3420,7 @@ export default function App() {
                   <span className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase mb-2">SITEMAP</span>
                   <a href="#section-hero" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Home</a>
                   <a href="#section-intro" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">About</a>
-                  <a href="#section-works" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Projects</a>
+                  <PageLink href="/works" navigate={navigateWithTransition} className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Works</PageLink>
                   <a href="#section-contact" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Contact</a>
                 </div>
 
@@ -3451,6 +3451,9 @@ export default function App() {
 
 
         </div>{/* End continuous scroll container wrapper */}
+
+          </>
+        )}
 
         {/* ================= CASE STUDY MODAL ================= */}
         <AnimatePresence>
@@ -3548,77 +3551,15 @@ export default function App() {
         )}
 
         {/* ================= PAGE TRANSITION ================= */}
-        <PageTransition active={pageTransition} onMidpoint={handleTransitionMidpoint} />
+        <PageTransition active={navigation.active} onMidpoint={() => navigation.onMidpoint(() => {
+          setCaseStudyItem(null);
+          setContactFormVisible(false);
+        })} onComplete={navigation.onComplete} />
 
         {/* ================= PRELOADER ================= */}
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={() => setHasEntered(true)}>
           {!hasLoaded && (
-            <motion.div
-              key="preloader"
-              className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]"
-              style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,0,0,0.04) 0%, transparent 60%)' }}
-              initial={{ y: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
-              exit={{ y: '-100%', boxShadow: '0 20px 40px rgba(255,0,0,0.3), 0 10px 20px rgba(0,0,0,0.8)' }}
-              transition={{
-                duration: 1.1,
-                ease: [0.76, 0, 0.24, 1],
-                delay: 0.15,
-              }}
-            >
-              {/* Liquid curtain — manndamani-exact: wavy bottom edge dips ~150px below the
-                  viewport (control at +300px-equivalent) and flattens (1.7s, delay .3) while
-                  the whole overlay slides up (1.1s, delay .15). The overlay keeps its bg;
-                  the SVG's wave extends past the container box (overflow visible) so the page
-                  shows through the wave valleys. */}
-              <motion.svg
-                className="absolute left-0 top-0 w-full h-[118%] pointer-events-none"
-                viewBox="0 0 100 118"
-                preserveAspectRatio="none"
-                style={{ zIndex: 5 }}
-              >
-                <motion.path
-                  fill="#050505"
-                  initial={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
-                  animate={{ d: "M0 0 H100 V100 Q50 133 0 100 Z" }}
-                  exit={{ d: "M0 0 H100 V100 Q50 100 0 100 Z" }}
-                  transition={{ duration: 1.7, ease: [0.76, 0, 0.24, 1], delay: 0.3 }}
-                />
-              </motion.svg>
-
-              {/* Bottom edge glow that intensifies on exit */}
-              <motion.div
-                className="absolute bottom-0 left-0 right-0 h-px z-30 pointer-events-none"
-                initial={{ opacity: 0, boxShadow: '0 0 0px rgba(255,0,0,0)' }}
-                exit={{ opacity: 1, boxShadow: '0 0 15px 4px rgba(255,0,0,0.5), 0 0 30px 8px rgba(255,0,0,0.2)' }}
-                transition={{ duration: 0.8, delay: 0.3, ease: 'easeIn' }}
-                style={{ background: 'var(--red)' }}
-              />
-
-              {/* PRELOADER CONTENT */}
-              <motion.div
-                exit={{ opacity: 0, y: -40 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center"
-              >
-                {/* Multilingual greeting — Windows OOBE style */}
-                <GreetingCycle progress={loadingProgress} />
-
-                {/* Bottom: percentage + progress bar */}
-                <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
-                  <div className="font-clash font-light text-[clamp(60px,10vw,140px)] leading-none text-[var(--black)]">
-                    {Math.floor(loadingProgress)}<span className="text-[var(--red)] text-[0.4em]">%</span>
-                  </div>
-                  <div className="w-full h-[1px] bg-[var(--border)] relative">
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center"
-                      style={{ left: `${loadingProgress}%` }}
-                    >
-                      <div className="absolute right-[50%] h-[2px] w-[100px] origin-right" style={{ background: "linear-gradient(to right, transparent, var(--red))", boxShadow: '0 0 10px rgba(255,0,0,0.8)' }} />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
+            <Preloader key="preloader" onComplete={setHasLoaded} />
           )}
         </AnimatePresence>
 
@@ -3659,28 +3600,7 @@ export default function App() {
           </motion.div>
         </motion.div>
 
-        {/* Dynamic Target Coordinates attached to cursor */}
-        {hasLoaded && <div className="hidden md:block"><TrackedCoordinates /></div>}
-
-        {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
-        <motion.div
-          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none hidden md:block ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
-          style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
-        />
-
-        {/* INNER CURSOR */}
-        <motion.div
-          className="fixed top-0 left-0 z-[9999] pointer-events-none hidden md:flex items-center justify-center"
-          style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
-        >
-          {cursorOnLink ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7 17L17 7M17 7H7M17 7V17" />
-            </svg>
-          ) : (
-            <div className="w-1.5 h-1.5 bg-[var(--black)] shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
-          )}
-        </motion.div>
+        {hasLoaded && <CursorOverlay />}
       </div>
     </CursorContext.Provider>
   );

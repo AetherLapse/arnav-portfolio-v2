@@ -187,7 +187,7 @@ export default function LightRays({
   }, [isVisible, raysOrigin, raysColor, raysSpeed, lightSpread, rayLength, pulsating, fadeDistance, followMouse, mouseInfluence, noiseAmount, distortion]);
 
   useEffect(() => {
-    if (!followMouse) return;
+    if (!followMouse || !isVisible) return;
     const handleMove = (e) => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -195,7 +195,7 @@ export default function LightRays({
     };
     window.addEventListener('mousemove', handleMove);
     return () => window.removeEventListener('mousemove', handleMove);
-  }, [followMouse]);
+  }, [followMouse, isVisible]);
 
   return <div ref={containerRef} className={`absolute inset-0 w-full h-full pointer-events-none overflow-hidden ${className}`} />;
 }
