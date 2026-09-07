@@ -49,7 +49,7 @@ const GLOBAL_STYLES = `
     overflow: hidden;
   }
 
-  * { cursor: none !important; }
+  @media (min-width: 768px) { * { cursor: none !important; } }
 
   /* Target and completely hide the Unicorn Studio watermark/badge */
   a[href*="unicorn.studio"], 
@@ -1620,7 +1620,7 @@ const StayCreativeSection = () => {
     >
       <div ref={innerRef} className="w-full text-center relative" style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
         {/* Base layer: dull red */}
-        <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-[#3a0000] whitespace-nowrap">
+        <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-[#6a1010] whitespace-nowrap">
           #stAycReative
         </TextRoll>
         {/* Reveal layer: white, hard-edge mask */}
@@ -2820,12 +2820,12 @@ export default function App() {
         <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
 
           {/* Floating audio wave cards layer */}
-          <div className="absolute inset-0 pointer-events-none z-[200] hidden md:block">
-            <AudioWaveCard name="whoosh.wav" variant="orange" type="whoosh" thumbnail className="absolute top-[8%] right-[5%]" />
-            <AudioWaveCard name="ambience.mp3" variant="cyan" type="bass" className="absolute top-[28%] left-[4%]" />
-            <AudioWaveCard name="swoosh.wav" variant="red" type="riser" thumbnail className="absolute top-[48%] right-[6%]" />
-            <AudioWaveCard name="transition.wav" variant="green" type="whoosh" thumbnail className="absolute top-[68%] left-[5%]" />
-            <AudioWaveCard name="drone.wav" variant="purple" type="bass" className="absolute top-[88%] right-[4%]" />
+          <div className="absolute inset-0 pointer-events-none z-[200] hidden md:block overflow-hidden">
+            <AudioWaveCard name="titles.png" variant="orange" type="whoosh" textLeft className="absolute top-[6%] -right-[60px]" />
+            <AudioWaveCard name="background.jpeg" variant="cyan" type="bass" className="absolute top-[24%] -left-[80px]" />
+            <AudioWaveCard name="reel_final_v3.mp4" variant="red" type="riser" className="absolute top-[42%] right-[8%]" />
+            <AudioWaveCard name="color_grade.cube" variant="green" type="whoosh" className="absolute top-[58%] -left-[50px]" />
+            <AudioWaveCard name="showreel_comp.aep" variant="purple" type="bass" textLeft className="absolute top-[76%] -right-[70px]" />
           </div>
 
           {/* CurvedThread disabled for stacking card layout */}
@@ -3660,17 +3660,17 @@ export default function App() {
         </motion.div>
 
         {/* Dynamic Target Coordinates attached to cursor */}
-        {hasLoaded && <TrackedCoordinates />}
+        {hasLoaded && <div className="hidden md:block"><TrackedCoordinates /></div>}
 
         {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
         <motion.div
-          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
+          className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none hidden md:block ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
           style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
         />
 
         {/* INNER CURSOR */}
         <motion.div
-          className="fixed top-0 left-0 z-[9999] pointer-events-none flex items-center justify-center"
+          className="fixed top-0 left-0 z-[9999] pointer-events-none hidden md:flex items-center justify-center"
           style={{ x: cursorX, y: cursorY, translateX: '-50%', translateY: '-50%' }}
         >
           {cursorOnLink ? (

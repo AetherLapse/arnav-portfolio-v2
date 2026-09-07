@@ -39,7 +39,7 @@ export default function TubesBackground() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ touchAction: 'none', opacity: loaded ? 0.6 : 0, transition: 'opacity 1s ease' }}
+      style={{ touchAction: 'auto', pointerEvents: 'none', opacity: loaded ? 0.6 : 0, transition: 'opacity 1s ease' }}
     />
   );
 }
