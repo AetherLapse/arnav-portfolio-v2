@@ -12,7 +12,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVe
 
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
-import AudioWaveBand from './components/AudioWaveBand';
+import AudioWaveScatter from './components/AudioWaveScatter';
 import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 
 const GLOBAL_STYLES = `
@@ -1405,6 +1405,7 @@ const PremiereTimeline = () => {
 
   return (
     <div
+      data-audio-decoration=""
       className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden opacity-[0.12]"
       style={{ transform: 'rotate(-8deg) scale(1.4)', transformOrigin: 'center center' }}
     >
@@ -1594,7 +1595,7 @@ const QuoteReveal = () => {
   };
 
   return (
-    <div ref={sectionRef} className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
+    <div ref={sectionRef} data-audio-obstacle="" className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
       <div className="sticky top-0 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
         <div
           className="relative w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
@@ -1646,11 +1647,12 @@ const StayCreativeSection = () => {
   return (
     <section
       ref={sectionRef}
+      data-stay-creative=""
       className="relative w-full flex items-center justify-center overflow-visible"
     >
       <div ref={innerRef} className="w-full text-center relative" style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
         {/* Base layer: dull red */}
-        <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-[#6a1010] whitespace-nowrap">
+        <TextRoll className="font-dragon text-[30vw] leading-none tracking-tight text-[#6a1010] whitespace-nowrap">
           #stAycReative
         </TextRoll>
         {/* Reveal layer: white, hard-edge mask */}
@@ -1661,7 +1663,7 @@ const StayCreativeSection = () => {
             WebkitMaskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
           }}
         >
-          <TextRoll className="font-dragon text-[26vw] leading-none tracking-tight text-white whitespace-nowrap">
+          <TextRoll className="font-dragon text-[30vw] leading-none tracking-tight text-white whitespace-nowrap">
             #stAycReative
           </TextRoll>
         </div>
@@ -2820,13 +2822,13 @@ export default function App() {
 
         {/* ================= CONTINUOUS SCROLL CONTENT (STACKING CARDS) ================= */}
         <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
+          <AudioWaveScatter enabled={hasEntered} />
 
           {/* CurvedThread disabled for stacking card layout */}
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
 
-          <AudioWaveBand placement="intro" />
 
           {/* ABOUT SECTION */}
           <section id="section-intro" className="relative w-full min-h-screen flex flex-col justify-center px-4 md:px-8 py-32 bg-[var(--bg)]">
@@ -3015,7 +3017,6 @@ export default function App() {
             <CareerTimeline />
           </div>
 
-          <AudioWaveBand placement="collaborators" />
 
           {/* ================= WORKED WITH SECTION ================= */}
           <section id="section-worked-with" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
@@ -3225,7 +3226,6 @@ export default function App() {
 
 
           {/* ================= POSTS SHOWCASE (3D COVER FLOW) ================= */}
-          <AudioWaveBand placement="posts" />
           <section id="section-posts" className="relative w-full min-h-screen flex flex-col justify-center py-24 bg-[var(--bg)] overflow-hidden">
             <Suspense fallback={null}><LightRays raysOrigin="bottom-right" raysColor="#FF0000" raysSpeed={0.7} lightSpread={1.0} rayLength={1.6} mouseInfluence={0.1} noiseAmount={0.02} distortion={0.05} className="opacity-20" /></Suspense>
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
@@ -3243,7 +3243,7 @@ export default function App() {
             </div>
 
             {/* 3D Cover Flow Container */}
-            <div className="relative w-full flex items-center justify-center overflow-hidden" style={{ perspective: '1200px', height: '500px' }}>
+            <div data-audio-obstacle="" className="relative w-full flex items-center justify-center overflow-hidden" style={{ perspective: '1200px', height: '500px' }}>
               <motion.div
                 className="relative w-full h-full flex items-center justify-center cursor-none"
                 style={{ transformStyle: 'preserve-3d' }}
@@ -3366,7 +3366,6 @@ export default function App() {
             <ToolkitSection />
           </div>
 
-          <AudioWaveBand placement="playground" />
 
           {/* ================= DINO GAME (CARD) ================= */}
           <div className="w-full bg-[var(--bg)] overflow-hidden">
@@ -3404,7 +3403,7 @@ export default function App() {
             </ParticleFlyer>
 
             {/* Footer */}
-            <div className="absolute bottom-0 left-0 right-0 border-t border-[var(--border)] px-6 md:px-12 py-10">
+            <div data-audio-layout="" className="absolute bottom-0 left-0 right-0 border-t border-[var(--border)] px-6 md:px-12 py-10">
               <div className="max-w-[90rem] mx-auto flex flex-col md:flex-row gap-10 md:gap-0 justify-between">
                 {/* Left: Brand */}
                 <div className="flex flex-col gap-3 max-w-[300px]">
@@ -3444,7 +3443,7 @@ export default function App() {
           </section>
 
           {/* Giant #stAycReative at very bottom */}
-          <div className="w-full bg-[var(--bg)] py-16 md:py-24">
+          <div data-audio-region="creative" className="w-full bg-[var(--bg)] py-16 md:py-24">
             <StayCreativeSection />
           </div>
 

@@ -1,5 +1,5 @@
-import { memo, useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { memo } from 'react';
+import './AudioWaveCard.css';
 
 const VARIANTS = {
   purple: 'linear-gradient(90deg, rgba(82,17,118,0.5), rgba(154,42,179,0.4))',
@@ -43,48 +43,35 @@ function DenseWaveform({ type = 'whoosh', bars = 220, height = 56, color = 'rgba
   );
 }
 
-const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant = "orange", type = "whoosh", textLeft = false, className = "", depth = 90 }) {
-  const anchorRef = useRef(null);
-  const reducedMotion = useReducedMotion();
-  // Measure the stationary anchor so the animated card never feeds back into
-  // its own scroll progress. Motion values update without React renders.
-  const { scrollYProgress } = useScroll({
-    target: anchorRef,
-    offset: ['start end', 'end start'],
-  });
-  const offsetY = useTransform(scrollYProgress, [0, 1], [-depth, depth]);
-  const y = useSpring(offsetY, { stiffness: 140, damping: 30, mass: 0.5 });
-
+const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant = "orange", type = "whoosh", textLeft = false, className = "", width = 240, height = 68, left, top, edge, region }) {
   return (
     <div
-      ref={anchorRef}
       data-file-card={name}
+      data-edge={edge}
+      data-card-region={region}
       aria-hidden="true"
       className={`pointer-events-none select-none hidden md:block ${className}`}
-      style={{ width: '240px', height: '68px' }}
+      style={{ width, height, left, top }}
     >
-      <motion.div
-        style={{
-          y: reducedMotion ? 0 : y,
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          borderRadius: '14px',
-          overflow: 'hidden',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          background: VARIANTS[variant] || VARIANTS.orange,
-        }}
-      >
-        <DenseWaveform type={type} />
+        <div className="audio-wave-surface pointer-events-auto" style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            borderRadius: '14px',
+            overflow: 'hidden',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            background: VARIANTS[variant] || VARIANTS.orange,
+          }}
+        >
+          <DenseWaveform type={type} />
 
-        <span className="font-clash" style={{
-          position: 'absolute', top: '8px', zIndex: 4,
-          ...(textLeft ? { left: '10px' } : { right: '10px' }),
-          color: 'rgba(255,255,255,0.7)', fontSize: '10px', textShadow: '0 1px 3px rgba(0,0,0,0.25)',
-        }}>{name}</span>
-      </motion.div>
+          <span className="font-clash" style={{
+            position: 'absolute', top: '8px', zIndex: 4,
+            ...(textLeft ? { left: '10px' } : { right: '10px' }),
+            color: 'rgba(255,255,255,0.7)', fontSize: '10px', textShadow: '0 1px 3px rgba(0,0,0,0.25)',
+          }}>{name}</span>
+        </div>
     </div>
   );
 });

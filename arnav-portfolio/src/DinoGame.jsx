@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const SPRITE_DATA = {
   "1x-obstacle-large": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAyCAMAAACJUtIoAAAACVBMVEX////39/dTU1OabbyfAAAAAXRSTlMAQObYZgAAAXhJREFUeF7t2NGqAjEMANGM///RlwvaYQndULuFPJgHUYaEI6IPhgNAOA8HZ+3U6384F5y1U6YzAZTWG+dZamnFEstBFtCKJZSHWMADLJ18z+JqpQeLdKoDC8siC5iFCQs4znIxB5B1t6F3lQWkL4N0JsF+u6GXJdbI+FKW+yWr3lhgCZ2VSag3Nlk/FnRkIRbasLCO0oulikMsvmGpeiGLZ1jOMgtIP5bODivYYUXEIVbwFCt4khVssRgsgidZwQaLd2A8m7MYLGTl4KeQQs2y4kMAMGGlmQViDIb5O6xZnnLD485dIBzqDSE1yyFdL4Iqu4XJqUUWl/NVAFSZq1P6a5aqbAUM2epQbBioWflUBABiUyhYyZoCBev8XyMAObDNOhOAfiyxmHU0YNlldGAphGjFCjA3YkUn1o/1Y3EkZFZ5isCC6NUgwDBn1RuXH96doNfAhDXfsIyJ2AnolcCVhay0kcYbW0HvCO8OwIcJ3GzkORpkFuUP/1Ec8FW1qJkAAAAASUVORK5CYII=",
@@ -26,7 +26,6 @@ const AUDIO_DATA = {
 const DinoGame = () => {
   const containerRef = useRef(null);
   const runnerRef = useRef(null);
-  const cleanupRef = useRef(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -73,7 +72,7 @@ const DinoGame = () => {
     this.containerEl = null;
     this.detailsButton = this.outerContainerEl.querySelector('#details-button');
     this.config = opt_config || Runner.config;
-    this.dimensions = Runner.defaultDimensions;
+    this.dimensions = {...Runner.defaultDimensions};
     this.canvas = null;
     this.canvasCtx = null;
     this.tRex = null;
@@ -99,6 +98,21 @@ const DinoGame = () => {
     // Images.
     this.images = {};
     this.imagesLoaded = 0;
+    this.suspended = false;
+    this.windowBlurred = false;
+    this.boundResize = this.debounceResize.bind(this);
+    this.boundVisibility = this.onVisibilityChange.bind(this);
+    this.boundStartGame = this.startGame.bind(this);
+    this.boundFrame = () => {
+      this.drawPending = false;
+      this.raqId = 0;
+      if (this.suspended) return;
+      if (getTimeStamp() - this.time < this.msPerFrame - 1) {
+        this.raq();
+        return;
+      }
+      this.update();
+    };
     this.loadImages();
     }
     window['Runner'] = Runner;
@@ -328,7 +342,7 @@ const DinoGame = () => {
     this.startListening();
     this.update();
     window.addEventListener(Runner.events.RESIZE,
-    this.debounceResize.bind(this));
+    this.boundResize);
     },
     /**
     * Create the touch controller. A div that covers whole screen.
@@ -341,16 +355,14 @@ const DinoGame = () => {
     * Debounce the resize event.
     */
     debounceResize: function() {
-    if (!this.resizeTimerId_) {
-    this.resizeTimerId_ =
-    setInterval(this.adjustDimensions.bind(this), 250);
-    }
+    clearTimeout(this.resizeTimerId_);
+    this.resizeTimerId_ = setTimeout(() => this.adjustDimensions(), 150);
     },
     /**
     * Adjust game space dimensions on resize.
     */
     adjustDimensions: function() {
-    clearInterval(this.resizeTimerId_);
+    clearTimeout(this.resizeTimerId_);
     this.resizeTimerId_ = null;
     var boxStyles = window.getComputedStyle(this.outerContainerEl);
     var padding = Number(boxStyles.paddingLeft.substr(0,
@@ -370,7 +382,6 @@ const DinoGame = () => {
     this.containerEl.style.width = this.dimensions.WIDTH + 'px';
     this.containerEl.style.height = this.dimensions.HEIGHT + 'px';
     this.distanceMeter.update(0, Math.ceil(this.distanceRan));
-    this.stop();
     } else {
     this.tRex.draw(0, 0);
     }
@@ -398,8 +409,9 @@ const DinoGame = () => {
     var styleEl = document.createElement('style');
     styleEl.textContent = keyframes;
     document.head.appendChild(styleEl);
+    this.introStyle = styleEl;
     this.containerEl.addEventListener(Runner.events.ANIM_END,
-    this.startGame.bind(this));
+    this.boundStartGame, { once: true });
     this.containerEl.style.webkitAnimation = 'intro .4s ease-out 1 both';
     this.containerEl.style.width = this.dimensions.WIDTH + 'px';
     if (this.touchController) {
@@ -420,13 +432,8 @@ const DinoGame = () => {
     this.tRex.playingIntro = false;
     this.containerEl.style.webkitAnimation = '';
     this.playCount++;
-    // Handle tabbing off the page. Pause the current game.
-    window.addEventListener(Runner.events.VISIBILITY,
-    this.onVisibilityChange.bind(this));
-    window.addEventListener(Runner.events.BLUR,
-    this.onVisibilityChange.bind(this));
-    window.addEventListener(Runner.events.FOCUS,
-    this.onVisibilityChange.bind(this));
+    this.introStyle?.remove();
+    this.introStyle = null;
     },
     clearCanvas: function() {
     this.canvasCtx.clearRect(0, 0, this.dimensions.WIDTH,
@@ -436,9 +443,10 @@ const DinoGame = () => {
     * Update the game frame.
     */
     update: function() {
+    if (this.suspended) return;
     this.drawPending = false;
     var now = getTimeStamp();
-    var deltaTime = now - (this.time || now);
+    var deltaTime = Math.min(50, now - (this.time || now));
     this.time = now;
     if (this.activated) {
     this.clearCanvas();
@@ -464,7 +472,7 @@ const DinoGame = () => {
     if (!collision) {
     this.distanceRan += this.currentSpeed * deltaTime / this.msPerFrame;
     if (this.currentSpeed < this.config.MAX_SPEED) {
-    this.currentSpeed += this.config.ACCELERATION;
+    this.currentSpeed += this.config.ACCELERATION * deltaTime / this.msPerFrame;
     }
     } else {
     this.gameOver();
@@ -519,7 +527,7 @@ const DinoGame = () => {
     this.outerContainerEl.addEventListener(Runner.events.MOUSEDOWN, this);
     this.outerContainerEl.addEventListener(Runner.events.MOUSEUP, this);
     }
-    this.outerContainerEl.focus({ preventScroll: true });
+
     },
     /**
     * Remove all listeners.
@@ -544,9 +552,14 @@ const DinoGame = () => {
     if (Runner.keycodes.JUMP[String(e.keyCode)] || Runner.keycodes.DUCK[e.keyCode]) {
     e.preventDefault();
     }
+    if (e.type === Runner.events.MOUSEDOWN && e.button !== 0) return;
+    if (e.type === Runner.events.MOUSEDOWN || e.type === Runner.events.TOUCHSTART) {
+      this.outerContainerEl.focus({ preventScroll: true });
+    }
+    if (this.paused && !this.crashed) this.play();
     if (e.target != this.detailsButton) {
     if (!this.crashed && (Runner.keycodes.JUMP[String(e.keyCode)] ||
-    e.type == Runner.events.TOUCHSTART)) {
+    e.type == Runner.events.TOUCHSTART || e.type == Runner.events.MOUSEDOWN)) {
     if (!this.activated) {
     this.loadSounds();
     this.activated = true;
@@ -575,7 +588,7 @@ const DinoGame = () => {
     var keyCode = String(e.keyCode);
     var isjumpKey = Runner.keycodes.JUMP[keyCode] ||
     e.type == Runner.events.TOUCHEND ||
-    e.type == Runner.events.MOUSEDOWN;
+    e.type == Runner.events.MOUSEUP;
     if (this.isRunning() && isjumpKey) {
     this.tRex.endJump();
     } else if (Runner.keycodes.DUCK[keyCode]) {
@@ -597,9 +610,9 @@ const DinoGame = () => {
     * RequestAnimationFrame wrapper.
     */
     raq: function() {
-    if (!this.drawPending) {
+    if (!this.drawPending && !this.suspended) {
     this.drawPending = true;
-    this.raqId = requestAnimationFrame(this.update.bind(this));
+    this.raqId = requestAnimationFrame(this.boundFrame);
     }
     },
     /**
@@ -640,9 +653,10 @@ const DinoGame = () => {
     this.paused = true;
     cancelAnimationFrame(this.raqId);
     this.raqId = 0;
+    this.drawPending = false;
     },
     play: function() {
-    if (!this.crashed) {
+    if (!this.crashed && !this.suspended) {
     this.activated = true;
     this.paused = false;
     this.tRex.update(0, Trex.status.RUNNING);
@@ -672,10 +686,19 @@ const DinoGame = () => {
     * Pause the game if the tab is not in focus.
     */
     onVisibilityChange: function(e) {
-    if (document.hidden || document.webkitHidden || e.type == 'blur') {
-    this.stop();
-    } else {
-    this.play();
+    this.windowBlurred = e.type === 'blur' ? true : e.type === 'focus' ? false : this.windowBlurred;
+    this.setSuspended(!this.inView || document.hidden || this.windowBlurred);
+    },
+    setSuspended: function(value) {
+    if (this.suspended === value) return;
+    this.suspended = value;
+    if (value) {
+      cancelAnimationFrame(this.raqId);
+      this.raqId = 0;
+      this.drawPending = false;
+    } else if (!this.crashed) {
+      this.time = getTimeStamp();
+      this.raq();
     }
     },
     /**
@@ -870,7 +893,7 @@ const DinoGame = () => {
     * @return {Array.<CollisionBox>}
     */
     function checkForCollision(obstacle, tRex, opt_canvasCtx) {
-    var obstacleBoxXPos = Runner.defaultDimensions.WIDTH + obstacle.xPos;
+    if (!obstacle) return false;
     // Adjustments are made to the bounding box as there is a 1 pixel white
     // border around the t-rex and obstacles.
     var tRexBox = new CollisionBox(
@@ -1753,14 +1776,16 @@ const DinoGame = () => {
     * Draw the horizon line.
     */
     draw: function() {
-    this.canvasCtx.drawImage(this.image, this.sourceXPos[0], 0,
-    this.sourceDimensions.WIDTH, this.sourceDimensions.HEIGHT,
-    this.xPos[0], this.yPos,
-    this.dimensions.WIDTH, this.dimensions.HEIGHT);
-    this.canvasCtx.drawImage(this.image, this.sourceXPos[1], 0,
-    this.sourceDimensions.WIDTH, this.sourceDimensions.HEIGHT,
-    this.xPos[1], this.yPos,
-    this.dimensions.WIDTH, this.dimensions.HEIGHT);
+    // Keep drawing tiles through the right edge, including the extra tile
+    // exposed by scrolling. Two tiles only cover a 600px viewport reliably.
+    var first = this.xPos[0] <= this.xPos[1] ? 0 : 1;
+    var tile = 0;
+    for (var x = this.xPos[first]; x < this.canvas.width; x += this.dimensions.WIDTH) {
+      this.canvasCtx.drawImage(this.image, this.sourceXPos[(first + tile) % 2], 0,
+        this.sourceDimensions.WIDTH, this.sourceDimensions.HEIGHT,
+        Math.round(x), this.yPos, this.dimensions.WIDTH, this.dimensions.HEIGHT);
+      tile++;
+    }
     },
     /**
     * Update the x position of an indivdual piece of the line.
@@ -1784,7 +1809,7 @@ const DinoGame = () => {
     * @param {number} speed
     */
     update: function(deltaTime, speed) {
-    var increment = Math.floor(speed * (FPS / 1000) * deltaTime);
+    var increment = speed * (FPS / 1000) * deltaTime;
     if (this.xPos[0] <= 0) {
     this.updateXPos(0, increment);
     } else {
@@ -1965,41 +1990,48 @@ const DinoGame = () => {
     // Clear any previous singleton
     Runner.instance_ = null;
 
-    // Create the game instance
-    const runner = new Runner(outerContainer);
-    runnerRef.current = runner;
-
-    // Store cleanup function
-    cleanupRef.current = () => {
-      if (runnerRef.current) {
-        runnerRef.current.stopListening();
-        if (runnerRef.current.raqId) {
-          cancelAnimationFrame(runnerRef.current.raqId);
-        }
-        // Remove resize listener
-        window.removeEventListener(Runner.events.RESIZE,
-          runnerRef.current.debounceResize);
-        // Remove visibility/blur/focus listeners
-        window.removeEventListener(Runner.events.VISIBILITY,
-          runnerRef.current.onVisibilityChange);
-        window.removeEventListener(Runner.events.BLUR,
-          runnerRef.current.onVisibilityChange);
-        window.removeEventListener(Runner.events.FOCUS,
-          runnerRef.current.onVisibilityChange);
-        runnerRef.current = null;
-        Runner.instance_ = null;
-      }
-      // Remove appended children
-      const imgs = outerContainer.querySelectorAll('img[style="display: none;"]');
-      imgs.forEach(img => img.remove());
-      const tmpl = outerContainer.querySelector('#audio-resources');
-      if (tmpl) tmpl.remove();
-      const runnerContainer = outerContainer.querySelector('.runner-container');
-      if (runnerContainer) runnerContainer.remove();
-    };
+    let disposed = false;
+    let observer;
+    // Decode before the first draw, including after a React StrictMode remount.
+    Promise.all([...outerContainer.querySelectorAll('img')].map(img => img.decode())).then(() => {
+      if (disposed) return;
+      const runner = new Runner(outerContainer);
+      runnerRef.current = runner;
+      runner.inView = false;
+      runner.setSuspended(true);
+      observer = new IntersectionObserver(([entry]) => {
+        runner.inView = entry.isIntersecting;
+        runner.setSuspended(!runner.inView || document.hidden || runner.windowBlurred);
+      });
+      observer.observe(outerContainer);
+      document.addEventListener(Runner.events.VISIBILITY, runner.boundVisibility);
+      window.addEventListener(Runner.events.BLUR, runner.boundVisibility);
+      window.addEventListener(Runner.events.FOCUS, runner.boundVisibility);
+    }).catch(error => {
+      if (!disposed) console.error('Unable to load dinosaur sprites', error);
+    });
 
     return () => {
-      if (cleanupRef.current) cleanupRef.current();
+      disposed = true;
+      observer?.disconnect();
+      const runner = runnerRef.current;
+      if (runner) {
+        runner.setSuspended(true);
+        runner.stopListening();
+        clearTimeout(runner.resizeTimerId_);
+        window.removeEventListener(Runner.events.RESIZE, runner.boundResize);
+        document.removeEventListener(Runner.events.VISIBILITY, runner.boundVisibility);
+        window.removeEventListener(Runner.events.BLUR, runner.boundVisibility);
+        window.removeEventListener(Runner.events.FOCUS, runner.boundVisibility);
+        runner.containerEl.removeEventListener(Runner.events.ANIM_END, runner.boundStartGame);
+        runner.introStyle?.remove();
+        runner.audioContext?.close().catch(() => {});
+        runner.touchController?.remove();
+        runnerRef.current = null;
+      }
+      Runner.instance_ = null;
+      if (window.Runner === Runner) delete window.Runner;
+      outerContainer.querySelectorAll('img, template, .runner-container').forEach(el => el.remove());
     };
   }, []);
 

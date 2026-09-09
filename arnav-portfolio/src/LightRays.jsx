@@ -197,5 +197,5 @@ export default function LightRays({
     return () => window.removeEventListener('mousemove', handleMove);
   }, [followMouse, isVisible]);
 
-  return <div ref={containerRef} className={`absolute inset-0 w-full h-full pointer-events-none overflow-hidden ${className}`} />;
+  return <div ref={containerRef} data-audio-decoration="" className={`absolute inset-0 w-full h-full pointer-events-none overflow-hidden ${className}`} />;
 }
