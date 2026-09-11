@@ -1,0 +1,57 @@
+@font-face {
+  font-family: 'Gravitica Compressed';
+  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-ExtraLight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gravitica Compressed';
+  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gravitica Compressed';
+  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Gravitica Compressed';
+  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+.stay-creative-text {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-family: 'Gravitica Compressed', sans-serif;
+  font-size: 16vw;
+  line-height: 1.1;
+  font-weight: 200;
+  font-synthesis: none;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  color: #6a1010;
+}
+.stay-creative-slot { position: relative; display: inline-block; }
+.stay-creative-measure { visibility: hidden; font-weight: 500; }
+.stay-creative-glyph {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+}
+.stay-creative-reveal {
+  position: absolute;
+  inset: 0;
+  color: white;
+  pointer-events: none;
+  mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
+  -webkit-mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
+}

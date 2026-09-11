@@ -1,6 +1,10 @@
 export const CARD_SCROLL_SPEED = 0.65;
+export const BLURRED_SCROLL_SPEED = 0.85;
+export const BLURRED_POINTER_MULTIPLIER = 1.6;
 export const CARD_POINTER_X = 24;
 export const CARD_POINTER_Y = 14;
+
+export const BLURRED_CARD_NAMES = new Set(['logo_reveal.mov', 'background.jpeg', 'music_bed.wav']);
 
 const CARDS = [
   ['titles.png', 'orange', 'whoosh', 'half-right'],
@@ -45,18 +49,22 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
     const region = regions[regionName];
     if (regionName && !region) continue;
     const random = seededRandom(`individual-${name}`);
-    const cardWidth = Math.round(154 + random() * 44);
-    const cardHeight = Math.round(50 + random() * 12);
-    const horizontalRoom = CARD_POINTER_X + 12;
+    const blurred = BLURRED_CARD_NAMES.has(name);
+    const scale = blurred ? 1.5 : 1;
+    const scrollSpeed = blurred ? BLURRED_SCROLL_SPEED : CARD_SCROLL_SPEED;
+    const pointerScale = blurred ? BLURRED_POINTER_MULTIPLIER : 1;
+    const cardWidth = Math.round((154 + random() * 44) * scale);
+    const cardHeight = Math.round((50 + random() * 12) * scale);
+    const horizontalRoom = CARD_POINTER_X * pointerScale + 20;
     // Relative travel while the card is anywhere in the viewport, including
     // hover clearance. Outside that range the decoration is not visible.
-    const verticalRoom = (1 - CARD_SCROLL_SPEED) / CARD_SCROLL_SPEED
-      * (viewportHeight / 2 + cardHeight) + CARD_POINTER_Y / CARD_SCROLL_SPEED + 18;
+    const verticalRoom = (1 - scrollSpeed) / scrollSpeed
+      * (viewportHeight / 2 + cardHeight) + CARD_POINTER_Y * pointerScale / scrollSpeed + 18;
     const safe = candidate => candidate.envelope.top >= 0 && candidate.envelope.bottom <= height
       && !obstacles.some(rect => overlaps(candidate.envelope, rect))
       && !placed.some(card => overlaps(candidate.envelope, card.envelope) || Math.abs(candidate.top - card.top) < 320);
     const make = (left, top) => ({
-      name, variant, type, edge, region: regionName, width: cardWidth, height: cardHeight,
+      name, variant, type, edge, blurred, scrollSpeed, region: regionName, width: cardWidth, height: cardHeight,
       left, top, textLeft: edge === 'half-right' || edge === 'cropped-right',
       envelope: { left: left - horizontalRoom, right: left + cardWidth + horizontalRoom,
         top: top - verticalRoom, bottom: top + cardHeight + verticalRoom },

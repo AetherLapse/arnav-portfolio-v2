@@ -1,3 +1,4 @@
+import { BLURRED_CARD_NAMES } from './data/audioCardLayout';
 import { memo } from 'react';
 import './AudioWaveCard.css';
 
@@ -47,6 +48,7 @@ const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant
   return (
     <div
       data-file-card={name}
+      data-depth-blurred={BLURRED_CARD_NAMES.has(name) ? '' : undefined}
       data-edge={edge}
       data-card-region={region}
       aria-hidden="true"
@@ -57,7 +59,7 @@ const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant
             position: 'relative',
             width: '100%',
             height: '100%',
-            borderRadius: '14px',
+            borderRadius: BLURRED_CARD_NAMES.has(name) ? '21px' : '14px',
             overflow: 'hidden',
             backdropFilter: 'blur(14px)',
             WebkitBackdropFilter: 'blur(14px)',
@@ -69,7 +71,7 @@ const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant
           <span className="font-clash" style={{
             position: 'absolute', top: '8px', zIndex: 4,
             ...(textLeft ? { left: '10px' } : { right: '10px' }),
-            color: 'rgba(255,255,255,0.7)', fontSize: '10px', textShadow: '0 1px 3px rgba(0,0,0,0.25)',
+            color: 'rgba(255,255,255,0.7)', fontSize: BLURRED_CARD_NAMES.has(name) ? '15px' : '10px', textShadow: '0 1px 3px rgba(0,0,0,0.25)',
           }}>{name}</span>
         </div>
     </div>

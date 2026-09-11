@@ -19,11 +19,11 @@
 }
 
 /* These background accents stay defocused, including during hover. */
-[data-file-card="logo_reveal.mov"] .audio-wave-surface,
-[data-file-card="background.jpeg"] .audio-wave-surface,
-[data-file-card="music_bed.wav"] .audio-wave-surface {
+[data-depth-blurred] .audio-wave-surface {
   filter: blur(3px);
 }
+
+[data-depth-blurred] .audio-wave-surface svg { height: 85% !important; }
 
 @media (hover: hover) and (pointer: fine) {
   .audio-wave-surface:hover {

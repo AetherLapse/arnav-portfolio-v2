@@ -158,6 +158,56 @@ This supersedes both earlier band/group layouts after the user pointed out that 
 - Fixed click-to-jump and mouse release handling, removed automatic focus stealing on load, preserved play during resizing, and guarded collision checks when no obstacle exists.
 - Browser regression checks passed: pixel coverage across 12 width/offset combinations (1200/900/375 px), click/Space input, advancing score, offscreen freeze/resume, blur/focus, collision/Enter restart, resizing, and StrictMode unmount/remount. No page errors. Checks used an isolated real-component Vite entry, removed afterward; no full-page performance score is claimed.
 
+## Larger blurred cards and Stay Creative hover — September 11
+
+- Enlarged `logo_reveal.mov`, `background.jpeg`, and `music_bed.wav` to 150% of their previous dimensions, with proportionate labels and waveforms. Retained the permanent 3 px blur and updated placement clearance for the larger cards. Narrow layouts still omit accents when no safe pocket exists.
+- Replaced Stay Creative's TextRoll slide with stationary per-letter thickening. The hover center follows the mouse and tapers across three neighboring letters using the same smoothstep falloff as the ARNAV RAI BreathingText effect.
+- Kept the Dragon font and white spotlight. Dragon is static (no variable weight axis), so this uses stroke width; the hero's Unbounded font uses true variable weight. Both text layers share the hover values and retain fixed glyph positions.
+- Pointer updates are batched through one requestAnimationFrame, with cleanup/reset on exit, blur, resize, and visibility changes. Reduced motion removes the smoothing transition. The text has one accessible label.
+
+## Hover repair and differential card depth — September 11
+
+- Changed Stay Creative hover tracking to window pointer events with text-bound checks, removing the primary-device hover media gate. Overlay interception no longer prevents the circular white reveal or letter bulge. Increased peak stroke from 0.014em to 0.035em, retaining the hero-style neighbor falloff and stationary letter boxes.
+- Enlarged the blurred cards from 1.5x to 1.9x their original size. They now occupy a separate motion layer at 85% page scroll speed, while regular cards retain 65%. Blurred cards use 1.6x the shared mouse offset; cards within each layer still move in unison.
+- Placement clearance and anchor mapping now use each layer's actual speed and mouse range. Both layers retain reduced-motion handling and stable anchors.
+- Build and targeted lint passed. Browser checks passed with a full-screen pointer-intercepting overlay: bulge and spotlight coordinates updated, glyph boxes remained stationary, and hover reset on exit. A 200px reverse scroll produced approximately -30px and -70px layer offsets respectively. Larger blurred cards retained their 3px blur. No page errors were recorded.
+
+## Gravitica weights and smaller depth cards — September 11
+
+- Preserved the supplied Gravitica family from generated `dist/assets/fonts/Gravitica` in `public/assets/fonts/Gravitica`, so builds retain it.
+- Stay Creative now uses eight real Gravitica weights (200–900), with ExtraLight at rest and Black at the cursor, tapering through neighboring letters. Removed simulated stroke thickening. These are separate static fonts, so weight changes select actual faces rather than a variable-font axis.
+- Invisible Black-weight glyphs reserve each letter's width so hover does not shift the line. Preserved the circular white spotlight, shared layer values, global pointer tracking, and reduced-motion behavior. Sized the wider font at 16vw to keep the line prominent and inside the viewport.
+- Reduced blurred cards back to 1.5x (including labels/radii); retained their separate 85% scroll layer and 1.6x mouse depth.
+
+## Stay Creative input-path regression — September 11
+
+- Reproduced a mouse-only event failure: the custom cursor uses `mousemove`, while Stay Creative listened only to `pointermove`. The original browser check generated pointer events and missed this input path.
+- Added capture-phase mouse and pointer tracking, sharing one scheduled animation frame. Scroll and resize recalculate the effect against the last mouse coordinates; leaving the document, window blur, and visibility changes clear it. Inactive resets avoid repeated style writes.
+- The formerly failing mouse-only browser test now passes: real font weights rise from 200 to 900 with 700/400 neighbors, the circular reveal updates, and the fixed glyph slots do not move. Targeted lint and production build passed.
+
+## Gravitica Compressed trial — September 11
+
+- Switched Stay Creative from Gravitica to the supplied Gravitica Compressed family, including all eight active weight faces and font preloading. Preserved 16vw size, weight falloff, fixed letter slots, and the circular reveal.
+- Copied the complete supplied family into `public/assets/fonts/Gravitica-compressed` before building so generated-output cleanup cannot delete the originals.
+
+## Stay Creative weight cap — September 11
+
+- Capped Gravitica Compressed hover at Bold (700), with ExtraLight (200) at rest. Neighbor weights taper within that range. Removed ExtraBold/Black face declarations and preloads; fixed letter slots now reserve Bold widths.
+
+## Smooth static-weight blending — September 11
+
+- Replaced discrete font-face switching with crossfades between adjacent Gravitica Compressed weights. Continuous pointer falloff controls each face's opacity; a 240ms eased transition smooths movement and return to rest.
+- Retained actual 200–700 faces, fixed Bold-width slots, shared red/white layer values, and the circular reveal. Reduced motion disables the opacity transition.
+
+## Direct weight updates restored — September 11
+
+- Removed the crossfade and extra font-face layers at the user's request. Stay Creative now follows ARNAV RAI's direct per-letter updates: smoothstep neighbor falloff, 5-unit quantization, at most 30 updates per second, and skipped unchanged writes.
+- Kept mouse-driven control, the 200–700 range, fixed slots, and circular reveal. Uses CSS font-weight to select Gravitica Compressed's static faces; unlike Unbounded, those files cannot interpolate a variable weight axis.
+
+## Lighter Stay Creative hover
+
+- Reduced the peak from Bold (700) to Medium (500), retaining ExtraLight (200) at rest and proportionately lighter neighbors. Measurement slots and preloaded faces now also stop at Medium.
+
 ## Validation and known limits
 
 - Production builds passed after the implemented feature changes; the existing large JavaScript chunk warning remains.

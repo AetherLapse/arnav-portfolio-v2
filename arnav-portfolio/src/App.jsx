@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useContext, lazy, Suspense } from 'react';
 import DinoGame from './DinoGame';
+import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
 import WorksPage from './pages/WorksPage';
 import { X } from 'lucide-react';
@@ -1634,41 +1635,6 @@ const QuoteReveal = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-const StayCreativeSection = () => {
-  const sectionRef = useRef(null);
-
-  const innerRef = useRef(null);
-
-  usePointerSpotlight(innerRef, '--sx', '--sy');
-
-  return (
-    <section
-      ref={sectionRef}
-      data-stay-creative=""
-      className="relative w-full flex items-center justify-center overflow-visible"
-    >
-      <div ref={innerRef} className="w-full text-center relative" style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
-        {/* Base layer: dull red */}
-        <TextRoll className="font-dragon text-[30vw] leading-none tracking-tight text-[#6a1010] whitespace-nowrap">
-          #stAycReative
-        </TextRoll>
-        {/* Reveal layer: white, hard-edge mask */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            maskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%)',
-          }}
-        >
-          <TextRoll className="font-dragon text-[30vw] leading-none tracking-tight text-white whitespace-nowrap">
-            #stAycReative
-          </TextRoll>
-        </div>
-      </div>
-    </section>
   );
 };
 

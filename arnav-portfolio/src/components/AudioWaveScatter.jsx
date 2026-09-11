@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import AudioWaveCard from '../AudioWaveCard';
-import { createAudioCardLayout, CARD_SCROLL_SPEED } from '../data/audioCardLayout';
+import { createAudioCardLayout, CARD_SCROLL_SPEED, BLURRED_SCROLL_SPEED, BLURRED_POINTER_MULTIPLIER } from '../data/audioCardLayout';
 import { useSharedCardPointer } from '../hooks/useSharedCardPointer';
 
 export default function AudioWaveScatter({ enabled }) {
@@ -13,6 +13,9 @@ export default function AudioWaveScatter({ enabled }) {
   const pointer = useSharedCardPointer(layerRef, enabled && !reducedMotion);
   // Scroll stays direct; the only smoothing is the shared mouse offset.
   const layerY = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - CARD_SCROLL_SPEED) + pointer.y.get());
+
+  const blurredY = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - BLURRED_SCROLL_SPEED) + pointer.y.get() * BLURRED_POINTER_MULTIPLIER);
+  const blurredX = useTransform(pointer.x, value => value * BLURRED_POINTER_MULTIPLIER);
 
   useEffect(() => {
     if (!enabled) return;
@@ -110,15 +113,16 @@ export default function AudioWaveScatter({ enabled }) {
   return (
     <div ref={layerRef} data-audio-scatter="" aria-hidden="true"
       className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none">
-      <motion.div data-card-parallax-layer="" className="absolute inset-0" style={{ x: reducedMotion ? 0 : pointer.x, y: reducedMotion ? 0 : layerY }}>
-        {layout.cards.map(card => (
-          <AudioWaveCard key={card.name} {...card}
-            // Align each card with its chosen safe pocket at screen center.
-            // The shared layer then carries every card at identical speed.
-            top={reducedMotion ? card.top : CARD_SCROLL_SPEED * card.top + (1 - CARD_SCROLL_SPEED) * layout.viewportHeight / 2}
-            className="absolute" />
-        ))}
-      </motion.div>
+      {[true, false].map(blurred => (
+        <motion.div key={String(blurred)} data-card-parallax-layer={blurred ? 'blurred' : 'regular'}
+          className="absolute inset-0" style={{ x: reducedMotion ? 0 : blurred ? blurredX : pointer.x, y: reducedMotion ? 0 : blurred ? blurredY : layerY }}>
+          {layout.cards.filter(card => card.blurred === blurred).map(card => (
+            <AudioWaveCard key={card.name} {...card}
+              top={reducedMotion ? card.top : card.scrollSpeed * card.top + (1 - card.scrollSpeed) * layout.viewportHeight / 2}
+              className="absolute" />
+          ))}
+        </motion.div>
+      ))}
     </div>
   );
 }
