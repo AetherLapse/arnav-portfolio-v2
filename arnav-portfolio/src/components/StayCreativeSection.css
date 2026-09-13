@@ -7,20 +7,6 @@
 }
 @font-face {
   font-family: 'Gravitica Compressed';
-  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gravitica Compressed';
-  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gravitica Compressed';
   src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
@@ -54,4 +40,18 @@
   pointer-events: none;
   mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
   -webkit-mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
+}
+
+.stay-creative-glyph { font-weight: 200; }
+.stay-creative-slot[data-weight-state="heavy"] .stay-creative-glyph {
+  font-weight: 500;
+  animation: creative-weight-in 200ms ease-out both;
+}
+.stay-creative-slot[data-weight-state="light"] .stay-creative-glyph {
+  animation: creative-weight-out 200ms ease-out both;
+}
+@keyframes creative-weight-in { from { font-weight: 200; } to { font-weight: 500; } }
+@keyframes creative-weight-out { from { font-weight: 500; } to { font-weight: 200; } }
+@media (prefers-reduced-motion: reduce) {
+  .stay-creative-slot .stay-creative-glyph { animation: none; }
 }

@@ -1,5 +1,6 @@
 import { BLURRED_CARD_NAMES } from './data/audioCardLayout';
 import { memo } from 'react';
+import TimelineClip from './components/TimelineClip';
 import './AudioWaveCard.css';
 
 const VARIANTS = {
@@ -44,36 +45,31 @@ function DenseWaveform({ type = 'whoosh', bars = 220, height = 56, color = 'rgba
   );
 }
 
-const AudioWaveCard = memo(function AudioWaveCard({ name = "whoosh.wav", variant = "orange", type = "whoosh", textLeft = false, className = "", width = 240, height = 68, left, top, edge, region }) {
-  return (
-    <div
-      data-file-card={name}
-      data-depth-blurred={BLURRED_CARD_NAMES.has(name) ? '' : undefined}
-      data-edge={edge}
-      data-card-region={region}
-      aria-hidden="true"
-      className={`pointer-events-none select-none hidden md:block ${className}`}
-      style={{ width, height, left, top }}
-    >
-        <div className="audio-wave-surface pointer-events-auto" style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            borderRadius: BLURRED_CARD_NAMES.has(name) ? '21px' : '14px',
-            overflow: 'hidden',
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
-            background: VARIANTS[variant] || VARIANTS.orange,
-          }}
-        >
-          <DenseWaveform type={type} />
+const CLIP_COLORS = { purple: '#9b59b6', orange: '#e67e22', green: '#2ecc71', cyan: '#3498db', red: '#e74c3c' };
 
-          <span className="font-clash" style={{
-            position: 'absolute', top: '8px', zIndex: 4,
-            ...(textLeft ? { left: '10px' } : { right: '10px' }),
-            color: 'rgba(255,255,255,0.7)', fontSize: BLURRED_CARD_NAMES.has(name) ? '15px' : '10px', textShadow: '0 1px 3px rgba(0,0,0,0.25)',
-          }}>{name}</span>
-        </div>
+const AudioWaveCard = memo(function AudioWaveCard({ name = 'whoosh.wav', variant = 'orange', type = 'whoosh', textLeft = false, className = '', width = 240, height = 68, left, top, edge, region, kind = 'wave' }) {
+  const blurred = BLURRED_CARD_NAMES.has(name);
+  const surface = () => (
+    <div data-wave-surface="" className="audio-wave-surface pointer-events-auto" style={{
+      pointerEvents: blurred ? 'none' : 'auto', position: 'absolute', width: '100%', height: '100%',
+      left: 0, top: 0,
+      borderRadius: Math.min(18, height * 0.22), overflow: 'hidden',
+      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      background: VARIANTS[variant] || VARIANTS.orange,
+    }}>
+      <DenseWaveform type={type} />
+      <span className="font-clash" style={{ position: 'absolute', top: '12%', zIndex: 4,
+        ...(textLeft ? { left: '7%' } : { right: '7%' }), color: 'rgba(255,255,255,0.7)',
+        fontSize: Math.max(8, Math.min(13, width * 0.05)), textShadow: '0 1px 3px rgba(0,0,0,0.25)',
+      }}>{name}</span>
+    </div>
+  );
+  return (
+    <div data-file-card={name} data-depth-blurred={blurred ? '' : undefined}
+      data-overlap-accent={blurred ? '' : undefined} data-card-kind={kind} data-edge={edge} data-card-region={region}
+      aria-hidden="true" className={`pointer-events-none select-none hidden md:block ${className}`}
+      style={{ width, height, left, top }}>
+      {kind === 'clip' ? <TimelineClip name={name} color={CLIP_COLORS[variant]} className="audio-wave-surface pointer-events-auto w-full h-full" /> : surface()}
     </div>
   );
 });

@@ -69,7 +69,7 @@ export default function AudioWaveScatter({ enabled }) {
         const obstacles = elements.map(element => {
           const rect = element.getBoundingClientRect();
           if (!rect.width || !rect.height) return null;
-          return { left: rect.left - bounds.left - 12, right: rect.right - bounds.left + 12,
+          return { surface: element.hasAttribute('data-audio-surface'), left: rect.left - bounds.left - 12, right: rect.right - bounds.left + 12,
             top: rect.top - bounds.top - 16, bottom: rect.bottom - bounds.top + 16 };
         }).filter(Boolean);
         const regions = {};

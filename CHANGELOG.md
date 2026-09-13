@@ -208,6 +208,20 @@ This supersedes both earlier band/group layouts after the user pointed out that 
 
 - Reduced the peak from Bold (700) to Medium (500), retaining ExtraLight (200) at rest and proportionately lighter neighbors. Measurement slots and preloaded faces now also stop at Medium.
 
+## Editing-themed portfolio update — September 12
+
+Implemented from smaller copy/HUD changes through backgrounds, decorations, the sine line, and services:
+
+- Replaced the bottom playhead timecode with a clamped page-scroll percentage. The hero's top-right EN label is now a once-per-second India clock; the portfolio badge reads `PORTFOLIO # 2026`.
+- Added an always-visible `Scroll down` cue to the pinned “MY TOOLS ARE DIGITAL…” section. Replaced `p / Statement 01` with `T / Title Sequence 01` and rewrote system/diagnostic/case/evidence/deployment copy into editing, production, project, and collaboration language. Category IDs remain unchanged; displayed category labels are readable editing terms.
+- Extracted the contact background as `PremiereTimeline` and reused it in Career. Extracted `TimelineClip` so Career, Contact, floating clip decorations, and service previews share the same clip treatment. Playheads use transforms and pause outside view; reduced motion shows a static playhead.
+- Widened deterministic decoration size variation. Replaced selected waveform decorations with timeline clips. The three blurred filenames now render overlapping, differently sized waveform pairs inside their existing clearance envelopes. Retained 3px blur, separate depth-layer motion, no tilt, stable anchors, and mobile hiding.
+- Restored `CurvedThread`: a scroll-drawn red sine path ending above Channel Open, measured against its own scroll-content root. Geometry updates are resize-observed and frame-batched; removed the large SVG glow filter and provided a reduced-motion state.
+- Added `What I can do for you` between About and Career: Video editing, Motion graphics, Color & sound, and Social content. Accessible accordion buttons reveal concrete deliverables and clip previews. The CTA opens the existing contact form through its existing transition. Reserved accordion space and a full section obstacle prevent decoration collisions as panels change.
+- Excluded Stay Creative's layout-only heading box from decoration measurements while preserving its individual glyph obstacles, restoring room for the final-section clip.
+- Browser checks passed at 1859px desktop and 390px mobile: HUD text/clock, 0% and 100% endpoints, visible clip types, size variation, blurred overlap, Career/Contact backgrounds, sine path, scroll cue, accordion state and stable section height, contact opening/closing, mobile width and card hiding. Desktop services, Career, and mobile services screenshots reviewed. No page errors were recorded; the external hero tube renderer was stubbed in this test. The final minor pair-size adjustment stays within the same tested overlap envelope.
+- Production build and targeted lint passed; the preexisting large-chunk warning remains. No deployment or commit performed. The contact form retains its existing frontend-only behavior.
+
 ## Validation and known limits
 
 - Production builds passed after the implemented feature changes; the existing large JavaScript chunk warning remains.

@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef, useContext, lazy, Suspense } from 'react';
 import DinoGame from './DinoGame';
+import PremiereTimeline from './components/PremiereTimeline';
+import CurvedThread from './components/CurvedThread';
+import ServicesSection from './components/ServicesSection';
+import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
 import WorksPage from './pages/WorksPage';
@@ -35,7 +39,7 @@ const GLOBAL_STYLES = `
   #section-hero:focus { outline: none; }
 
   /* One frosted surface shared by every navbar state. */
-  .nav-glass {
+  .nav-glass, .panel-glass {
     --muted: #bcb8b8;
     background-color: rgba(10, 10, 10, 0.44);
     background-image: linear-gradient(120deg, rgba(255,255,255,0.12), rgba(255,255,255,0.025) 45%, rgba(255,0,0,0.035));
@@ -50,11 +54,11 @@ const GLOBAL_STYLES = `
   .nav-glass[data-state="menu"] { background-color: rgba(10,10,10,0.64); }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .nav-glass[data-state] { background-color: #171313; }
+    .nav-glass[data-state], .panel-glass { background-color: #171313; }
   }
 
   @media (prefers-reduced-transparency: reduce) {
-    .nav-glass[data-state] {
+    .nav-glass[data-state], .panel-glass {
       background-color: #171313;
       background-image: none;
       -webkit-backdrop-filter: none;
@@ -923,7 +927,7 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
       >
         {/* Left panel — Metadata */}
         <div className="w-full md:w-[320px] flex-shrink-0 bg-[#0A0A0A] border border-[var(--border)] p-8 flex flex-col overflow-y-auto">
-          <div className="font-clash text-[var(--red)] text-xs tracking-widest uppercase mb-8">METADATA</div>
+          <div className="font-clash text-[var(--red)] text-xs tracking-widest uppercase mb-8">PROJECT DETAILS</div>
 
           <div className="flex flex-col gap-6 mb-8">
             <div className="flex justify-between items-center font-clash text-sm">
@@ -959,7 +963,7 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
 
           {/* Stacks */}
           <div className="mb-8">
-            <span className="font-clash text-[var(--muted)] text-xs tracking-wider">STACKS:</span>
+            <span className="font-clash text-[var(--muted)] text-xs tracking-wider">EDITING TOOLS:</span>
             <div className="flex flex-wrap gap-2 mt-3">
               {item.stacks.map((stack, i) => (
                 <span key={i} className="font-clash text-[11px] px-4 py-2 border border-[var(--border)] text-[var(--black)] hover:border-[var(--red)] transition-colors">{stack}</span>
@@ -969,7 +973,7 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
 
           {/* Access button */}
           {item.link && item.link !== '#' ? (
-            <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto font-clash text-xs tracking-widest text-center py-3 border border-[var(--border)] hover:border-[var(--red)] hover:text-[var(--red)] transition-all cursor-none uppercase">ACCESS PROJECT</a>
+            <a href={item.link} target="_blank" rel="noreferrer" className="mt-auto font-clash text-xs tracking-widest text-center py-3 border border-[var(--border)] hover:border-[var(--red)] hover:text-[var(--red)] transition-all cursor-none uppercase">VIEW PROJECT</a>
           ) : (
             <p className="mt-auto font-clash text-xs text-[var(--muted)]">Full project coming soon.</p>
           )}
@@ -1111,7 +1115,7 @@ const CareerCard = ({ item, index }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Card body */}
-      <div className="w-full h-full relative overflow-hidden bg-[#0D0D0D] border border-[var(--border)] hover:border-[var(--red)]/50 transition-all duration-500 group">
+      <div data-audio-surface="" className="panel-glass w-full h-full relative overflow-hidden border border-[var(--border)] hover:border-[var(--red)]/50 transition-all duration-500 group">
 
         {/* Corner brackets */}
         <div className={`absolute top-3 left-3 w-4 h-4 border-t border-l transition-all duration-300 ${isHovered ? 'border-[var(--red)]' : 'border-transparent'}`} />
@@ -1249,7 +1253,8 @@ const CareerTimeline = () => {
   }, []);
 
   return (
-    <section className="relative w-full z-10 py-32 overflow-hidden">
+    <section id="section-career" className="relative w-full z-10 py-32 overflow-hidden">
+      <PremiereTimeline />
       <div className="w-full max-w-[90rem] mx-auto relative z-10 px-4 md:px-8">
 
         {/* Header */}
@@ -1258,14 +1263,14 @@ const CareerTimeline = () => {
             <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">CAREER</TextRoll>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
-              <span>ENTRIES_LOGGED: <span className="text-[var(--red)]">03</span></span>
+              <span>PRODUCTIONS: <span className="text-[var(--red)]">03</span></span>
             </div>
           </div>
         </ParticleFlyer>
       </div>
 
       {/* Horizontal scrolling cards */}
-      <div className="relative w-full">
+      <div className="relative w-full z-10">
         <div
           ref={scrollContainerRef}
           className="flex gap-4 md:gap-6 justify-center flex-wrap px-4 md:px-8 pb-8"
@@ -1279,7 +1284,7 @@ const CareerTimeline = () => {
 
       {/* Bottom metadata */}
       <div className="mt-12 flex justify-center px-4">
-        <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// END_CAREER_LOG — ENTRIES: 03 — STATUS: ONGOING</span>
+        <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// CAREER TIMELINE / THREE CHAPTERS / STILL CREATING</span>
       </div>
     </section>
   );
@@ -1381,7 +1386,7 @@ const ToolkitSection = () => {
 
         {/* Bottom metadata */}
         <div className="mt-16 flex justify-center">
-          <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// SYSTEM_ARSENAL — ALL TOOLS OPERATIONAL</span>
+          <span className="font-clash text-[8px] tracking-widest text-[var(--muted)] uppercase">// POST-PRODUCTION TOOLKIT / READY TO CREATE</span>
         </div>
       </div>
     </section>
@@ -1390,127 +1395,6 @@ const ToolkitSection = () => {
 
 
 // ================= PREMIERE PRO TIMELINE (BACKGROUND) =================
-
-const PremiereTimeline = () => {
-  const tracks = [
-    { label: 'V4', color: '#9b59b6', clips: [{ start: 5, width: 15, name: 'GLITCH.mogrt' }, { start: 48, width: 20, name: 'TRANS_03' }, { start: 75, width: 18, name: 'TITLE.mogrt' }] },
-    { label: 'V3', color: '#e74c3c', clips: [{ start: 0, width: 30, name: 'HERO_COMP.mp4' }, { start: 35, width: 25, name: 'REEL_CUT_02' }, { start: 65, width: 30, name: 'OUTRO.mogrt' }] },
-    { label: 'V2', color: '#FF0000', clips: [{ start: 2, width: 42, name: 'SHOWREEL_v3.mp4' }, { start: 50, width: 45, name: 'CONTACT_ANIM.aep' }] },
-    { label: 'V1', color: '#2ecc71', clips: [{ start: 0, width: 95, name: 'BASE_EDIT_FINAL.mp4' }] },
-    { label: 'A1', color: '#3498db', clips: [{ start: 0, width: 55, name: 'VO_MASTER.wav' }, { start: 60, width: 35, name: 'VO_OUTRO.wav' }] },
-    { label: 'A2', color: '#e67e22', clips: [{ start: 2, width: 92, name: 'SCORE_ATMOSPHERIC.mp3' }] },
-    { label: 'A3', color: '#1abc9c', clips: [{ start: 10, width: 20, name: 'SFX_WHOOSH.wav' }, { start: 40, width: 12, name: 'SFX_HIT.wav' }, { start: 62, width: 15, name: 'SFX_RISE.wav' }, { start: 82, width: 10, name: 'SFX_END.wav' }] },
-  ];
-
-  const timeMarkers = ['00:00', '00:05', '00:10', '00:15', '00:20', '00:25', '00:30', '00:35', '00:40', '00:45', '00:50', '00:55', '01:00'];
-
-  return (
-    <div
-      data-audio-decoration=""
-      className="absolute inset-0 z-0 pointer-events-none select-none overflow-hidden opacity-[0.12]"
-      style={{ transform: 'rotate(-8deg) scale(1.4)', transformOrigin: 'center center' }}
-    >
-      <div className="w-full h-full flex flex-col justify-center px-4">
-        {/* Timeline ruler */}
-        <div className="flex items-end mb-1 ml-[40px]">
-          {timeMarkers.map((t, i) => (
-            <div key={i} className="flex-1 flex flex-col items-start">
-              <span className="font-clash text-[8px] text-white mb-1">{t}</span>
-              <div className="w-[1px] h-2 bg-white/40" />
-            </div>
-          ))}
-        </div>
-        <div className="h-[1px] bg-white/30 ml-[40px] mb-2" />
-
-        {/* Playhead */}
-        <div className="relative ml-[40px] mb-1">
-          <motion.div
-            className="absolute top-0 z-20"
-            animate={{ left: ['0%', '95%'] }}
-            transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-          >
-            <div className="flex flex-col items-center">
-              <div className="w-2.5 h-2.5 bg-[var(--red)] rotate-45 -mb-0.5" />
-              <div className="w-[2px] h-[260px] bg-[var(--red)]" />
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Tracks */}
-        <div className="flex flex-col gap-[2px]">
-          {tracks.map((track, ti) => (
-            <div key={ti} className="flex items-stretch">
-              <div className="w-[40px] flex-shrink-0 flex items-center justify-center border-r border-white/20">
-                <span className="font-clash text-[9px] tracking-wider text-white/70">{track.label}</span>
-              </div>
-              <div className="flex-1 relative h-8 border-b border-white/5">
-                {track.clips.map((clip, ci) => (
-                  <motion.div
-                    key={ci}
-                    className="absolute top-[2px] bottom-[2px] rounded-[2px] flex items-center overflow-hidden"
-                    style={{
-                      left: `${clip.start}%`,
-                      width: `${clip.width}%`,
-                      backgroundColor: `${track.color}33`,
-                      borderLeft: `2px solid ${track.color}`,
-                      borderRight: `1px solid ${track.color}66`,
-                      borderTop: `1px solid ${track.color}44`,
-                      borderBottom: `1px solid ${track.color}44`,
-                    }}
-                    initial={{ scaleX: 0, opacity: 0 }}
-                    whileInView={{ scaleX: 1, opacity: 1 }}
-                    viewport={{ once: true, margin: '-100px' }}
-                    transition={{ duration: 0.6, delay: ti * 0.08 + ci * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  >
-                    <span className="font-clash text-[7px] text-white/80 px-2 truncate whitespace-nowrap">{clip.name}</span>
-                    {ci === 0 && (
-                      <>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[15%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[45%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
-                        <div className="absolute top-1/2 -translate-y-1/2 left-[75%] w-[5px] h-[5px] bg-[#f1c40f] rotate-45" />
-                      </>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Second pass of tracks (to fill the diagonal space) */}
-        <div className="mt-6 flex flex-col gap-[2px]">
-          {tracks.slice(0, 4).map((track, ti) => (
-            <div key={ti} className="flex items-stretch">
-              <div className="w-[40px] flex-shrink-0 flex items-center justify-center border-r border-white/20">
-                <span className="font-clash text-[9px] tracking-wider text-white/70">{track.label}</span>
-              </div>
-              <div className="flex-1 relative h-8 border-b border-white/5">
-                {track.clips.map((clip, ci) => (
-                  <div
-                    key={ci}
-                    className="absolute top-[2px] bottom-[2px] rounded-[2px] flex items-center overflow-hidden"
-                    style={{
-                      left: `${clip.start + 10}%`,
-                      width: `${clip.width * 0.8}%`,
-                      backgroundColor: `${track.color}33`,
-                      borderLeft: `2px solid ${track.color}`,
-                      borderRight: `1px solid ${track.color}66`,
-                      borderTop: `1px solid ${track.color}44`,
-                      borderBottom: `1px solid ${track.color}44`,
-                    }}
-                  >
-                    <span className="font-clash text-[7px] text-white/80 px-2 truncate whitespace-nowrap">{clip.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 // ================= DINO RUNNER GAME =================
 
@@ -1532,7 +1416,7 @@ const DinoRunner = () => {
     <div ref={containerRef} className="w-full max-w-[90rem] mx-auto px-4 md:px-12 py-16 z-10 relative">
       <div className="font-clash text-[9px] tracking-widest text-[var(--red)] uppercase mb-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
-        // BREAK_PROTOCOL [MINI GAME]
+        // RENDER BREAK [MINI GAME]
       </div>
       <div className="border border-[var(--border)] overflow-hidden rounded-sm" style={{ minHeight: '150px' }}>
         {shouldLoad && <DinoGame />}
@@ -1617,11 +1501,11 @@ const QuoteReveal = () => {
               <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[var(--red)]" />
               <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-[var(--red)]" />
               <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
-                <span className="text-[9px] font-clash font-bold text-black tracking-wider">p / Statement 01</span>
+                <span className="text-[9px] font-clash font-bold text-black tracking-wider">T / Title Sequence 01</span>
               </div>
               <div className="absolute -bottom-8 right-0 flex items-center gap-1">
                 <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
-                  content → <span className="text-[var(--red)]">editing{isTyping && <span className="animate-pulse">...</span>}</span>
+                  sequence → <span className="text-[var(--red)]">editing{isTyping && <span className="animate-pulse">...</span>}</span>
                 </span>
               </div>
             </div>
@@ -1633,6 +1517,7 @@ const QuoteReveal = () => {
             </h2>
           </div>
         </div>
+        <span data-scroll-cue="" className="absolute bottom-12 left-1/2 -translate-x-1/2 font-clash text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Scroll down ↓</span>
       </div>
     </div>
   );
@@ -1755,12 +1640,12 @@ const QuoteReveal_REPLACED = () => {
               <div className="absolute inset-0 border border-[var(--red)]/60 pointer-events-none" />
               {/* Element label */}
               <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
-                <span className="text-[9px] font-clash font-bold text-black tracking-wider">p / Statement 01</span>
+                <span className="text-[9px] font-clash font-bold text-black tracking-wider">T / Title Sequence 01</span>
               </div>
               {/* Tooltip below */}
               <div className="absolute -bottom-8 left-0 flex items-center gap-1">
                 <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
-                  content → <span className="text-[var(--red)]">editing<span className="animate-pulse">...</span></span>
+                  sequence → <span className="text-[var(--red)]">editing<span className="animate-pulse">...</span></span>
                 </span>
               </div>
             </>
@@ -1999,14 +1884,14 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
           className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]"
         />
         <div className="border border-[var(--red)]/50 text-[var(--red)] text-[9px] md:text-[10px] px-4 py-1.5 tracking-[0.2em] bg-[var(--bg)]/50 backdrop-blur-sm font-clash">
-          TOP SECRET // CASE #2026
+          PORTFOLIO # 2026
         </div>
       </ParticleFlyer>
 
-      <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-12 right-6 md:top-8 md:right-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-end gap-1 transition-opacity duration-300 ${hudClass}`}>
+      <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-24 right-6 md:top-24 md:right-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-end gap-1 transition-opacity duration-300 ${hudClass}`}>
         <div className="flex flex-col border border-[var(--border)] bg-[var(--bg)]/50 backdrop-blur-sm">
           <span className="px-2 py-1 border-b border-[var(--border)] text-[var(--muted)] transition-colors">IN</span>
-          <span className="px-2 py-1 text-[var(--red)] font-bold">EN</span>
+          <span className="px-2 py-1 text-[var(--red)] font-bold"><PortfolioClock /></span>
         </div>
       </ParticleFlyer>
 
@@ -2032,9 +1917,9 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
 
 
       <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
-        12,187th investigator on this case<br/>
-        SYS: DIAGNOSTIC<br/>
-        <span className="text-[var(--red)] font-bold">STABLE</span>
+        FROM FIRST CUT TO FINAL FRAME<br/>
+        PLAYBACK: FULL RESOLUTION<br/>
+        <span className="text-[var(--red)] font-bold">READY TO EDIT</span>
       </ParticleFlyer>
 
       {/* Subtitle text */}
@@ -2052,7 +1937,7 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
         </ParticleFlyer>
         <ParticleFlyer delay={hasLoaded ? 0.7 : 0}>
           <div className="text-[var(--muted)] mb-1.5">
-            <span className="text-[var(--red)]">Raw & Uncut</span> Storytelling & <span className="text-[var(--red)]">Interactivity</span>.
+            <span className="text-[var(--red)]">Raw & Uncut</span> Storytelling & <span className="text-[var(--red)]">Motion</span>.
           </div>
         </ParticleFlyer>
         <ParticleFlyer delay={hasLoaded ? 0.8 : 0}>
@@ -2064,102 +1949,6 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
     </div>
   );
 };
-
-// --- DYNAMIC SWEEPING RED THREAD (SINE WAVE) ---
-const CurvedThread = ({ hasLoaded }) => {
-  const { scrollYProgress } = useScroll();
-  
-  // Slowed down the acceleration. 
-  // It now maps almost 1:1 with the scroll, finishing the drawing right as you reach the end of the page (95% scroll)
-  const drawProgress = useTransform(scrollYProgress, [0, 0.95], [0, 1]);
-  
-  const [pathDef, setPathDef] = useState("");
-  const [circlePos, setCirclePos] = useState({ topY: 0, bottomY: 0, x: 0 });
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const updatePath = () => {
-      if (!containerRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      const vh = window.innerHeight;
-
-      // Start from the very top of the scroll content container
-      let topY = 0;
-      
-      // End circle perfectly above the "CHANNEL OPEN" text
-      const channelEl = document.getElementById('channel-open-marker');
-      let bottomY = h - (vh * 0.5) - 100; // Fallback
-      
-      if (channelEl && containerRef.current) {
-        const channelRect = channelEl.getBoundingClientRect();
-        const containerRect = containerRef.current.getBoundingClientRect();
-        // Calculate absolute Y position relative to the SVG container
-        // Increased the offset from 24 to 64 to avoid overlapping
-        bottomY = channelRect.top - containerRect.top - 64; 
-      }
-
-      const midX = w / 2;
-
-      setCirclePos({ topY, bottomY, x: midX });
-
-      if (h < vh * 2) {
-         setPathDef(`M ${midX} ${topY} L ${midX} ${bottomY}`);
-         return;
-      }
-
-      // Generate a perfect mathematical Sine Curve!
-      const amplitude = w > 768 ? w * 0.35 : w * 0.45;
-      const steps = 150; // High resolution for perfect smoothness
-      let d = `M ${midX} ${topY} `;
-      
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        // Linear interpolation for Y
-        const currentY = topY + t * (bottomY - topY);
-        // Sine wave for X (1 full cycle: right, left, center)
-        const currentX = midX + Math.sin(t * Math.PI * 2) * amplitude;
-        d += `L ${currentX} ${currentY} `;
-      }
-      
-      setPathDef(d);
-    };
-
-    updatePath();
-    const observer = new ResizeObserver(updatePath);
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    const timeout = setTimeout(updatePath, 500);
-    return () => {
-      observer.disconnect();
-      clearTimeout(timeout);
-    };
-  }, [hasLoaded]);
-
-  return (
-    <div ref={containerRef} className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-      <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        {/* Unlit Tracking Groove */}
-        <path d={pathDef} stroke="var(--border)" strokeWidth="1" fill="none" opacity="0.3" />
-        
-        {/* The Live Red Thread */}
-        <motion.path 
-          d={pathDef} 
-          stroke="var(--red)" 
-          strokeWidth="2" 
-          fill="none" 
-          style={{ pathLength: drawProgress, filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.8))' }} 
-        />
-
-        {/* Removed redundant top anchor circle; the glowing white dot now acts as the true source */}
-        
-        {/* Bottom Anchor Circle (Increased radius) */}
-        <circle cx={circlePos.x} cy={circlePos.bottomY} r={10} fill="var(--black)" stroke="var(--border)" strokeWidth="2" className="drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
-      </svg>
-    </div>
-  );
-};
-
 
 // --- SCROLL FX: velocity motion blur on titles, opacity reveals, portrait face effect ---
 // GPU-safe: filter updates only on viewport-visible small text layers; the portrait
@@ -2790,7 +2579,7 @@ export default function App() {
         <div className="relative w-full pb-32 z-10 bg-[var(--bg)]">
           <AudioWaveScatter enabled={hasEntered} />
 
-          {/* CurvedThread disabled for stacking card layout */}
+          <CurvedThread enabled={hasEntered} />
 
           {/* ================= SCROLL QUOTE SECTION ================= */}
           <QuoteReveal />
@@ -2804,7 +2593,7 @@ export default function App() {
               {/* Top absolute metadata */}
               <ParticleFlyer delay={0.1}>
                 <div className="absolute top-0 right-4 md:right-12 text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
-                   <span>CASE FILE #A-026</span>
+                   <span>EDITOR PROFILE / 2026</span>
                    <span>STATUS: <span className="text-[var(--red)]">ACTIVE</span></span>
                 </div>
               </ParticleFlyer>
@@ -2821,7 +2610,7 @@ export default function App() {
               <div className="w-full max-w-[85rem] pointer-events-auto relative z-20 flex flex-col lg:flex-row gap-6">
                 
                 {/* COLUMN 1: Profile & Meta */}
-                <div className="w-full lg:w-[22%] shrink-0 flex flex-col border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-6 transition-all duration-500 hover:border-[var(--red)]/40">
+                <div data-audio-surface="" className="panel-glass w-full lg:w-[22%] shrink-0 flex flex-col border border-[var(--border)] p-6 transition-all duration-500 hover:border-[var(--red)]/40">
                   <ParticleFlyer delay={0.2}>
                     <h3 className="font-clash font-bold text-sm md:text-base tracking-widest mb-6 uppercase text-center">ARNAV RAI</h3>
                     
@@ -2841,19 +2630,19 @@ export default function App() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-y-4 gap-x-2 font-clash text-[9px] md:text-[10px] uppercase mb-6">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[var(--muted)]">CLASS:</span>
-                        <span className="font-bold">MOTION_DESIGN</span>
+                        <span className="text-[var(--muted)]">CRAFT:</span>
+                        <span className="font-bold">MOTION DESIGN</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">XP_LEVEL:</span>
-                        <span className="font-bold">SENIOR_GRADE</span>
+                        <span className="font-bold">SENIOR EDITOR</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[var(--muted)]">LANG_1:</span>
+                        <span className="text-[var(--muted)]">ENGLISH:</span>
                         <span className="font-bold">EN (Fluent)</span>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-[var(--muted)]">LANG_2:</span>
+                        <span className="text-[var(--muted)]">HINDI:</span>
                         <span className="font-bold">HI (Native)</span>
                       </div>
                     </div>
@@ -2863,35 +2652,35 @@ export default function App() {
                       <div className="absolute inset-0 bg-[var(--red)]/5 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
                       <div className="flex items-center gap-2 font-clash text-[8px] text-[var(--red)] tracking-widest">
                         <div className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
-                        SYSTEM_ALERT
+                        BOOKING AVAILABILITY
                       </div>
                       <div className="font-clash font-bold text-lg text-[var(--black)] leading-none mt-1 relative z-10">
                         OPEN TO WORK
                       </div>
                       <div className="flex justify-between items-center font-clash text-[7px] text-[var(--muted)] mt-2 relative z-10">
-                        <span>// CONTRACTS: ENABLED</span>
-                        <span>[REMOTE_READY]</span>
+                        <span>// PROJECT BOOKINGS OPEN</span>
+                        <span>[REMOTE EDITING]</span>
                       </div>
                     </div>
                   </ParticleFlyer>
                 </div>
 
                 {/* COLUMN 2: Main Text Content & Logs */}
-                <div className="flex-1 flex flex-col border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-6 md:p-10 transition-all duration-500 hover:border-[var(--red)]/40">
+                <div data-audio-surface="" className="panel-glass flex-1 flex flex-col border border-[var(--border)] p-6 md:p-10 transition-all duration-500 hover:border-[var(--red)]/40">
                   <ParticleFlyer delay={0.3}>
                     <div className="flex justify-between items-center border-b border-[var(--border)] pb-3 mb-8 font-clash text-[9px] md:text-[10px] tracking-widest">
-                      <span className="text-[var(--muted)] uppercase">Competence_Analysis_Report</span>
-                      <span className="text-[var(--red)] uppercase">[Read_Only]</span>
+                      <span className="text-[var(--muted)] uppercase">Behind the edit</span>
+                      <span className="text-[var(--red)] uppercase">[EDITOR’S NOTES]</span>
                     </div>
                     
-                    <div className="font-clash text-sm md:text-base text-[var(--black)] leading-loose mb-12">
-                      Motion Designer and Video Editor obsessed with the fusion of <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5 whitespace-nowrap">technical rigor</span> and <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5 whitespace-nowrap">visual impact</span>. I don't just cut footage—I engineer kinetic visual narratives that demand attention and perform at the highest level. Every frame is treated as a critical asset.
+                    <div data-audio-obstacle="" className="font-clash text-sm md:text-base text-[var(--black)] leading-loose mb-12">
+                      Motion Designer and Video Editor obsessed with the fusion of <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5 whitespace-nowrap">precise pacing</span> and <span className="bg-[var(--red)]/15 text-[var(--red)] px-1.5 py-0.5 whitespace-nowrap">visual impact</span>. I shape raw footage into stories through rhythm, motion, and sound. Every cut has a purpose, and every frame moves the story forward.
                     </div>
 
                     {/* Academic Log */}
                     <div className="mb-10">
                       <div className="font-clash text-[10px] tracking-widest text-[var(--muted)] uppercase mb-6">
-                        // ACADEMIC_LOG [EDUCATION]
+                        // CREATIVE EDUCATION
                       </div>
                       
                       <div className="flex flex-col gap-6">
@@ -2908,13 +2697,13 @@ export default function App() {
                     {/* Experience Log */}
                     <div>
                       <div className="font-clash text-[10px] tracking-widest text-[var(--muted)] uppercase mb-6">
-                        // FIELD_OPERATIONS [EXPERIENCE]
+                        // POST-PRODUCTION EXPERIENCE
                       </div>
                       
                       <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[3+ YEARS ACTIVE DUTY]</span>
+                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[3+ YEARS IN THE EDIT]</span>
                             <span className="text-[8px] md:text-[9px] text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 bg-[#111]">2021-PRESENT</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">VARIOUS - Freelance Motion Designer & Premium Editor</span>
@@ -2922,7 +2711,7 @@ export default function App() {
                         
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[AGENCY DEPLOYMENTS]</span>
+                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[AGENCY PRODUCTIONS]</span>
                             <span className="text-[8px] md:text-[9px] text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 bg-[#111]">2022-2024</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">MULTIPLE - High-Retention Social Media Campaigns</span>
@@ -2932,7 +2721,7 @@ export default function App() {
                           <div className="flex items-center gap-3 font-clash">
                             <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[TOTAL_RUNTIME]</span>
                           </div>
-                          <span className="font-clash text-xs md:text-sm text-[var(--black)]">Continuous Learning Protocol & Execution</span>
+                          <span className="font-clash text-xs md:text-sm text-[var(--black)]">Exploring new techniques in editing and motion</span>
                         </div>
                       </div>
                     </div>
@@ -2940,10 +2729,10 @@ export default function App() {
                 </div>
 
                 {/* COLUMN 3: Sidebar Skills / Inventory */}
-                <div className="w-full lg:w-[25%] shrink-0 flex flex-col border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-6 transition-all duration-500 hover:border-[var(--red)]/40">
+                <div data-audio-surface="" className="panel-glass w-full lg:w-[25%] shrink-0 flex flex-col border border-[var(--border)] p-6 transition-all duration-500 hover:border-[var(--red)]/40">
                   <ParticleFlyer delay={0.4}>
                     <div className="font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] uppercase mb-8 text-right md:text-center border-b border-[var(--border)] pb-3">
-                      Equipment_Inventory
+                      Editing toolkit
                     </div>
                     
                     {/* Hard Skills */}
@@ -2977,6 +2766,8 @@ export default function App() {
             </div>
           </section>
 
+          <ServicesSection onContact={openContactForm} />
+
           {/* ================= EXPERIENCE + CAREER (CARD) ================= */}
           <div className="w-full bg-[#050505] overflow-hidden">
             <ExperienceStrip />
@@ -2995,8 +2786,8 @@ export default function App() {
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
-                    <span>CLEARANCE: <span className="text-[var(--red)]">LEVEL 5</span></span>
-                    <span>ENTITIES_DECRYPTED: <span className="text-[var(--red)]">ACTIVE</span></span>
+                    <span>COLLABORATIONS: <span className="text-[var(--red)]">BRANDS & CREATORS</span></span>
+                    <span>PRODUCTION: <span className="text-[var(--red)]">ACTIVE</span></span>
                   </div>
                 </ParticleFlyer>
               </div>
@@ -3006,7 +2797,7 @@ export default function App() {
                 <ParticleFlyer delay={0.3}>
                   <div className="font-clash text-[10px] tracking-widest text-[var(--red)] uppercase mb-8 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
-                    // CORPORATE_ENTITIES [BRANDS]
+                    // BRAND COLLABORATIONS
                   </div>
                 </ParticleFlyer>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -3049,7 +2840,7 @@ export default function App() {
                 <ParticleFlyer delay={0.4}>
                   <div className="font-clash text-[10px] tracking-widest text-[var(--red)] uppercase mb-8 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
-                    // TARGET_PROFILES [CREATORS]
+                    // CREATOR COLLABORATIONS
                   </div>
                 </ParticleFlyer>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -3101,7 +2892,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">EVIDENCE BOARD</TextRoll>                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">SELECTED EDITS</TextRoll>                  </motion.h2>
                 </ParticleFlyer>
 
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
@@ -3113,8 +2904,8 @@ export default function App() {
                   
                   {/* Right Meta Data */}
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
-                    <span>SECTOR: {activeSector.replace('_', ' ')}</span>
-                    <span>SCANNING: <span className="text-[var(--red)]">ACTIVE</span></span>
+                    <span>CATEGORY: {EVIDENCE_SECTORS.find(sector => sector.id === activeSector)?.label}</span>
+                    <span>PREVIEW: <span className="text-[var(--red)]">ACTIVE</span></span>
                   </div>
                 </ParticleFlyer>
               </div>
@@ -3165,7 +2956,7 @@ export default function App() {
                            
                            {/* Vertical Label */}
                            <div className="absolute top-6 left-3 font-clash text-[8px] tracking-[0.3em] text-[var(--red)] z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                             EVIDENCE #{work.id}
+                             PROJECT #{work.id}
                            </div>
                            
                            {/* Image (Grayscale to Color) */}
@@ -3177,7 +2968,7 @@ export default function App() {
 
                          {/* Title Area */}
                          <div className="flex flex-col gap-1 px-1">
-                           <span className="font-clash text-[10px] text-[var(--red)] tracking-widest">EVIDENCE #{work.id}</span>
+                           <span className="font-clash text-[10px] text-[var(--red)] tracking-widest">PROJECT #{work.id}</span>
                            <span className="font-dragon text-3xl md:text-4xl text-[var(--black)] tracking-wide">{work.title}</span>
                          </div>
 
@@ -3356,14 +3147,14 @@ export default function App() {
                {/* GET IN TOUCH CTA */}
                <button
                  onClick={openContactForm}
-                 className="btn-fill border border-[var(--border)] bg-[#050505]/70 backdrop-blur-sm p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
+                 className="panel-glass btn-fill border border-[var(--border)] p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
                >
                   <div className="relative z-10 w-14 h-14 bg-[var(--red)] group-hover:bg-white rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 group-hover:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
                   <div className="relative z-10 flex flex-col items-start gap-1">
                     <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)] group-hover:text-white transition-colors">GET IN TOUCH</span>
-                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)] group-hover:text-white/70 transition-colors">// INITIATE_CONTACT</span>
+                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)] group-hover:text-white/70 transition-colors">// LET’S TALK ABOUT YOUR EDIT</span>
                   </div>
                </button>
             </ParticleFlyer>
@@ -3377,7 +3168,7 @@ export default function App() {
                     <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
                     <span className="font-clash font-bold text-sm text-white">Arnav Rai</span>
                   </div>
-                  <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">A creative artist crafting digital experiences that merge art with functionality.</p>
+                  <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">Video editing and motion design that turn raw footage into stories worth watching.</p>
                 </div>
 
                 {/* Center: Sitemap */}
@@ -3561,7 +3352,7 @@ export default function App() {
             className="absolute -top-5 font-clash text-[8px] tracking-widest text-[var(--red)]"
             style={{ left: starLeft, translateX: '-50%' }}
           >
-            <Timecode />
+            <ScrollPercentage progress={scrollYProgress} />
           </motion.div>
         </motion.div>
 

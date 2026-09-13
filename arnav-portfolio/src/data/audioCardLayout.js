@@ -4,6 +4,8 @@ export const BLURRED_POINTER_MULTIPLIER = 1.6;
 export const CARD_POINTER_X = 24;
 export const CARD_POINTER_Y = 14;
 
+export const CLIP_CARD_NAMES = new Set(['titles.png', 'film_grain.png', 'reel_final_v3.mp4', 'showreel_comp.aep', 'outro_final.mov']);
+
 export const BLURRED_CARD_NAMES = new Set(['logo_reveal.mov', 'background.jpeg', 'music_bed.wav']);
 
 const CARDS = [
@@ -45,6 +47,7 @@ export const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top 
 // Every candidate must clear content for its full parallax and hover travel.
 export function createAudioCardLayout(width, height, obstacles, viewportHeight, regions = {}) {
   const placed = [];
+  const surfaces = obstacles.filter(rect => rect.surface);
   for (const [index, [name, variant, type, edge, regionName]] of [...FOOTER_CARDS, ...CARDS].entries()) {
     const region = regions[regionName];
     if (regionName && !region) continue;
@@ -53,18 +56,18 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
     const scale = blurred ? 1.5 : 1;
     const scrollSpeed = blurred ? BLURRED_SCROLL_SPEED : CARD_SCROLL_SPEED;
     const pointerScale = blurred ? BLURRED_POINTER_MULTIPLIER : 1;
-    const cardWidth = Math.round((154 + random() * 44) * scale);
-    const cardHeight = Math.round((50 + random() * 12) * scale);
+    const cardWidth = Math.round((125 + random() * 80) * scale);
+    const cardHeight = Math.round((40 + random() * 28) * scale);
     const horizontalRoom = CARD_POINTER_X * pointerScale + 20;
     // Relative travel while the card is anywhere in the viewport, including
     // hover clearance. Outside that range the decoration is not visible.
     const verticalRoom = (1 - scrollSpeed) / scrollSpeed
       * (viewportHeight / 2 + cardHeight) + CARD_POINTER_Y * pointerScale / scrollSpeed + 18;
     const safe = candidate => candidate.envelope.top >= 0 && candidate.envelope.bottom <= height
-      && !obstacles.some(rect => overlaps(candidate.envelope, rect))
+      && !obstacles.some(rect => !(blurred && rect.surface) && overlaps(candidate.envelope, rect))
       && !placed.some(card => overlaps(candidate.envelope, card.envelope) || Math.abs(candidate.top - card.top) < 320);
     const make = (left, top) => ({
-      name, variant, type, edge, blurred, scrollSpeed, region: regionName, width: cardWidth, height: cardHeight,
+      name, variant, type, edge, blurred, scrollSpeed, region: regionName, width: cardWidth, height: cardHeight, kind: CLIP_CARD_NAMES.has(name) ? 'clip' : 'wave',
       left, top, textLeft: edge === 'half-right' || edge === 'cropped-right',
       envelope: { left: left - horizontalRoom, right: left + cardWidth + horizontalRoom,
         top: top - verticalRoom, bottom: top + cardHeight + verticalRoom },
@@ -81,10 +84,16 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
       else if (edge === 'near-left') left = horizontalRoom + 8 + random() * 28;
       else if (edge === 'near-right') left = width - cardWidth - horizontalRoom - 8 - random() * 28;
       else left = horizontalRoom + 8 + random() * (width - cardWidth - (horizontalRoom + 8) * 2);
-      const top = region ? region.top + random() * Math.max(0, region.height - cardHeight)
+      let top = region ? region.top + random() * Math.max(0, region.height - cardHeight)
         : verticalRoom + random() * Math.max(0, height - cardHeight - verticalRoom * 2);
+      if (blurred && surfaces.length && attempt % 2 === 0) {
+        const panel = surfaces[Math.floor(random() * surfaces.length)];
+        left = (random() > 0.5 ? panel.right : panel.left) - cardWidth * 0.5;
+        top = panel.top + random() * Math.max(0, panel.bottom - panel.top - cardHeight);
+      }
       const candidate = make(Math.round(left), Math.round(top));
-      const distance = Math.abs(top - preferredTop)
+      const overlapsPanel = surfaces.some(panel => overlaps({ left, right: left + cardWidth, top, bottom: top + cardHeight }, panel));
+      const distance = Math.abs(top - preferredTop) + (blurred && !overlapsPanel ? height : 0)
         + (edge === 'cropped-right' ? Math.max(0, cardWidth * 0.4 - (width - left)) * 0.5 : 0);
       if (distance < bestDistance && safe(candidate)) { best = candidate; bestDistance = distance; }
     }

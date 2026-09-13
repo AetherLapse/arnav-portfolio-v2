@@ -1,8 +1,8 @@
 export const EVIDENCE_SECTORS = [
-  { id: "KINETIC_CUTS", label: "// KINETIC_CUTS [VIDEO EDITING]" },
-  { id: "GRID_ARCHIVES", label: "// GRID_ARCHIVES [SOCIAL GRIDS]" },
-  { id: "CONTENT_DEPLOYMENTS", label: "// CONTENT_DEPLOYMENTS [SOCIAL POSTS]" },
-  { id: "BRAND_IDENTITIES", label: "// BRAND_IDENTITIES [LOGO FOLIO]" }
+  { id: "KINETIC_CUTS", label: "VIDEO EDITING" },
+  { id: "GRID_ARCHIVES", label: "SOCIAL GRIDS" },
+  { id: "CONTENT_DEPLOYMENTS", label: "SOCIAL CONTENT" },
+  { id: "BRAND_IDENTITIES", label: "BRAND IDENTITY" }
 ];
 
 export const EVIDENCE_DATA = [

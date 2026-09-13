@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import './StayCreativeSection.css';
 
 const TEXT = '#stAycReative';
-const WEIGHTS = [200, 300, 400, 500];
+const WEIGHTS = [200, 500];
 
 export default function StayCreativeSection() {
   const textRef = useRef(null);
@@ -10,6 +10,7 @@ export default function StayCreativeSection() {
   useEffect(() => {
     const element = textRef.current;
     const letters = [...element.querySelectorAll('[data-bulge-letter]')];
+    const slots = [...element.querySelectorAll('.stay-creative-slot')];
     // Load the real static weights before the first hover.
     WEIGHTS.forEach(weight => {
       document.fonts.load(`${weight} 16px "Gravitica Compressed"`).catch(() => {});
@@ -21,14 +22,14 @@ export default function StayCreativeSection() {
     let y = 0;
 
     let lastUpdate = 0;
-    const lastWeights = [];
-    const setWeight = (index, weight) => {
-      // Like BreathingText, quantize to 5 and skip unchanged writes.
-      // Gravitica has static faces, so use font-weight rather than a wght axis.
-      const next = 200 + Math.round((weight - 200) / 5) * 5;
-      if (next === lastWeights[index]) return;
-      lastWeights[index] = next;
-      element.style.setProperty(`--bulge-${index}`, String(next));
+    const lastWeights = Array(letters.length).fill(false);
+    const setWeight = (index, enabled) => {
+      if (enabled === lastWeights[index]) return;
+      lastWeights[index] = enabled;
+      // One glyph, two real faces, no opacity layers or intermediate faces.
+      [slots[index], slots[index + letters.length]].forEach(slot => {
+        slot.dataset.weightState = enabled ? 'heavy' : 'light';
+      });
     };
     const update = now => {
       frame = 0;
@@ -53,7 +54,7 @@ export default function StayCreativeSection() {
         // Match BreathingText’s smooth weight falloff, centered on the pointer.
         const t = Math.max(0, 1 - distance / 3);
         const influence = t * t * (3 - 2 * t);
-        setWeight(index, 200 + influence * 300);
+        setWeight(index, influence > 0.5);
       });
     };
     const move = event => {
@@ -68,7 +69,7 @@ export default function StayCreativeSection() {
       frame = 0;
       if (!active) return;
       active = false;
-      letters.forEach((_, index) => setWeight(index, 200));
+      letters.forEach((_, index) => setWeight(index, false));
       element.style.setProperty('--sx', '-9999px');
       element.style.setProperty('--sy', '-9999px');
     };
@@ -102,13 +103,13 @@ export default function StayCreativeSection() {
     <span className="stay-creative-slot" key={index} data-bulge-letter={base ? '' : undefined}>
       <span className="stay-creative-measure">{letter}</span>
       <span className="stay-creative-glyph"
-        style={{ fontWeight: `var(--bulge-${index}, 200)` }}>{letter}</span>
+        >{letter}</span>
     </span>
   ));
 
   return (
     <section data-stay-creative="" className="relative w-full flex items-center justify-center overflow-visible">
-      <h2 ref={textRef} aria-label={TEXT}
+      <h2 data-audio-layout="" ref={textRef} aria-label={TEXT}
         className="stay-creative-text"
         style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
         <span aria-hidden="true" className="stay-creative-base">{layer(true)}</span>

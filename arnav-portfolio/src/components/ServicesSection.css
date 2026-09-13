@@ -1,0 +1,23 @@
+.services-section { position: relative; z-index: 20; padding: clamp(80px, 10vw, 160px) 24px; background: var(--bg); color: var(--black); }
+.services-layout { width: 100%; max-width: 1320px; margin: auto; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(40px, 7vw, 112px); align-items: start; }
+.services-kicker { font-size: 9px; line-height: 1.8; letter-spacing: .12em; text-transform: uppercase; color: var(--red); margin-bottom: 24px; }
+.services-intro h2 { font-size: clamp(64px, 7.5vw, 112px); line-height: .95; margin: 0 0 28px; font-weight: normal; }
+.services-intro h2 span { color: var(--red); }
+.services-description { font-size: 12px; line-height: 1.9; max-width: 38ch; color: var(--muted); }
+.services-contact { display: inline-flex; align-items: center; gap: 16px; margin-top: 32px; padding: 12px 0; font-size: 10px; color: var(--black); text-align: left; }
+.services-contact:hover { color: var(--red); }
+.services-list { min-height: 640px; }
+.service-item { border-bottom: 1px solid var(--border); }
+.service-item:first-child { border-top: 1px solid var(--border); }
+.service-item h3 { margin: 0; }
+.service-toggle { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 26px 0; width: 100%; text-align: left; font-size: clamp(16px, 1.8vw, 25px); font-weight: 500; color: var(--black); }
+.service-item[data-open='true'] .service-toggle { color: var(--red); }
+.service-toggle svg { flex-shrink: 0; }
+.service-panel-motion { overflow: hidden; }
+.service-panel { padding: 0 0 28px; }
+.service-panel > p { font-size: 12px; line-height: 1.9; color: var(--muted); max-width: 52ch; }
+.service-deliverables { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 20px 0 28px; padding: 0; list-style: none; font-size: 9px; color: var(--black); }
+.service-edit-preview { border-left: 1px solid var(--red); padding: 4px 0 4px 12px; opacity: .7; }
+.service-preview-clip { height: 30px; margin-bottom: 4px; }
+.services-contact:focus-visible, .service-toggle:focus-visible { outline: 2px solid var(--red); outline-offset: 5px; }
+@media (max-width: 767px) { .services-layout { grid-template-columns: 1fr; gap: 48px; } .services-section { padding-inline: 20px; } .services-intro h2 { font-size: 72px; } }
