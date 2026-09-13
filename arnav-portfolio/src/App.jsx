@@ -7,6 +7,7 @@ import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
 import WorksPage from './pages/WorksPage';
+import RealmPage from './pages/RealmPage';
 import { X } from 'lucide-react';
 import PageLink from './components/PageLink';
 import { EVIDENCE_DATA, EVIDENCE_SECTORS } from './data/projects';
@@ -38,20 +39,38 @@ const GLOBAL_STYLES = `
 
   #section-hero:focus { outline: none; }
 
-  /* One frosted surface shared by every navbar state. */
+  .nav-record-dot { animation: nav-record-blink 1.4s ease-in-out infinite; }
+  @keyframes nav-record-blink {
+    0%, 35%, 100% { opacity: 1; }
+    50%, 85% { opacity: 0.15; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-record-dot { animation: none; }
+  }
+
+  /* Flat tinted blur shared by navigation and content panels. */
   .nav-glass, .panel-glass {
     --muted: #bcb8b8;
     background-color: rgba(10, 10, 10, 0.44);
-    background-image: linear-gradient(120deg, rgba(255,255,255,0.12), rgba(255,255,255,0.025) 45%, rgba(255,0,0,0.035));
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
-    backdrop-filter: blur(28px) saturate(160%);
+    background-image: none;
+    -webkit-backdrop-filter: blur(28px);
+    backdrop-filter: blur(28px);
     border: 1px solid rgba(255, 80, 80, 0.32);
-    border-top-color: rgba(255, 220, 220, 0.38);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.045), 0 12px 32px rgba(0,0,0,0.32);
+    box-shadow: none;
   }
 
   .nav-glass[data-state="collapsed"] { background-color: rgba(10,10,10,0.5); }
   .nav-glass[data-state="menu"] { background-color: rgba(10,10,10,0.64); }
+
+  .panel-glass {
+    background-color: rgba(10, 10, 10, 0.2);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  #section-toolkit .panel-glass {
+    border: 1px dashed var(--border);
+  }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .nav-glass[data-state], .panel-glass { background-color: #171313; }
@@ -1314,7 +1333,7 @@ const ToolkitSection = () => {
   };
 
   return (
-    <section ref={sectionRef} className="relative w-full py-32 px-4 md:px-8 z-10 overflow-hidden" onMouseMove={handleMouseMove}>
+    <section id="section-toolkit" ref={sectionRef} className="relative w-full py-32 px-4 md:px-8 z-10 bg-[#050505] overflow-hidden" onMouseMove={handleMouseMove}>
       <div className="w-full max-w-[90rem] mx-auto relative z-10">
 
         {/* Header */}
@@ -1333,7 +1352,8 @@ const ToolkitSection = () => {
           {toolkitData.map((tool, i) => (
             <motion.div
               key={tool.name}
-              className="relative flex flex-col items-center justify-center py-10 md:py-14 border border-dashed border-[var(--border)] cursor-none group hover:bg-white/[0.02] transition-colors duration-300"
+              data-audio-surface=""
+              className="panel-glass relative flex flex-col items-center justify-center py-10 md:py-14 border border-dashed border-[var(--border)] cursor-none group transition-colors duration-300"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -2317,6 +2337,7 @@ export default function App() {
   const [isMounted, setIsMounted] = useState(false);
   const navigation = usePageNavigation(isMounted);
   const isWorksPage = navigation.location.pathname === '/works';
+  const isRealmPage = navigation.location.pathname === '/realm';
 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -2462,12 +2483,13 @@ export default function App() {
               }}
             >
               {/* Expanded bar content (on hero) */}
-              <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-5 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home"><img src="/assets/photos/hornet.png" alt="" className="w-7 h-7" /></PageLink>
-                <div className="flex items-center gap-4 md:gap-8">
-                  <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
-                  <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[11px] tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
-                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[11px] tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
+              <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-3 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home"><img src="/assets/photos/hornet.png" alt="" className="w-5 h-5 md:w-7 md:h-7" /></PageLink>
+                <div className="flex items-center gap-2 md:gap-8">
+                  <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
+                  <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
+                  <PageLink href="/realm" navigate={navigateWithTransition} aria-current={isRealmPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isRealmPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>MY REALM</PageLink>
+                  <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
                 </div>
               </div>
 
@@ -2479,7 +2501,7 @@ export default function App() {
                 </button>
                 <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="font-dragon text-sm text-white">A.</PageLink>
                 <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
-                  <div className="w-2 h-2 rounded-full bg-[var(--red)]" />
+                  <div aria-hidden="true" className="nav-record-dot w-2 h-2 rounded-full bg-[var(--red)]" />
                 </PageLink>
               </div>
 
@@ -2492,7 +2514,7 @@ export default function App() {
                   </button>
                   <img src="/assets/photos/hornet.png" alt="Logo" className="w-8 h-8" />
                   <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
+                    <div aria-hidden="true" className="nav-record-dot w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
                   </PageLink>
                 </div>
 
@@ -2504,8 +2526,9 @@ export default function App() {
                     <div className="flex flex-col gap-4">
                       {[
                         { num: '01', label: 'Works', href: '/works' },
-                        { num: '02', label: 'Contact', href: '#section-contact' },
-                        { num: '03', label: 'About', href: '#section-intro' },
+                        { num: '02', label: 'My Realm', href: '/realm' },
+                        { num: '03', label: 'Contact', href: '#section-contact' },
+                        { num: '04', label: 'About', href: '#section-intro' },
                       ].map(item => (
                         <PageLink
                           key={item.num}
@@ -2550,7 +2573,9 @@ export default function App() {
           </motion.nav>
         )}
 
-        {isWorksPage ? (
+        {isRealmPage ? (
+          <RealmPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} entered={hasEntered && !navigation.active} />
+        ) : isWorksPage ? (
           <WorksPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} onContact={openContactForm} />
         ) : (
           <>

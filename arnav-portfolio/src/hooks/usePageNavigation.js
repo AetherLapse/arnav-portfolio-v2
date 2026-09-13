@@ -5,7 +5,7 @@ const readLocation = () => ({
   hash: window.location.hash,
 });
 
-// A small history router for the portfolio's two pages. Content changes only
+// A small history router for the portfolio's views. Content changes only
 // at the shutter midpoint; loading and cursor state stay in the shared shell.
 export function usePageNavigation(ready) {
   const [location, setLocation] = useState(readLocation);
@@ -74,11 +74,11 @@ export function usePageNavigation(ready) {
 
   useLayoutEffect(() => {
     if (!ready) return;
-    document.title = location.pathname === '/works' ? 'Works | Arnav Rai' : 'Arnav Rai | Creative Portfolio';
+    document.title = location.pathname === '/realm' ? 'My Realm | Arnav Rai' : location.pathname === '/works' ? 'Works | Arnav Rai' : 'Arnav Rai | Creative Portfolio';
     const target = location.hash ? document.getElementById(location.hash.slice(1)) : null;
     if (target) target.scrollIntoView({ behavior: 'instant' });
     else window.scrollTo({ top: 0, behavior: 'instant' });
-    const focusTarget = target || document.querySelector('#works-heading, #section-hero');
+    const focusTarget = target || document.querySelector('#realm-heading, #works-heading, #section-hero');
     if (focusTarget) {
       focusTarget.setAttribute('tabindex', '-1');
       focusTarget.focus({ preventScroll: true });

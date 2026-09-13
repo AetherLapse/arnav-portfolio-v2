@@ -11,9 +11,9 @@ export default function StayCreativeSection() {
     const element = textRef.current;
     const letters = [...element.querySelectorAll('[data-bulge-letter]')];
     const slots = [...element.querySelectorAll('.stay-creative-slot')];
-    // Load the real static weights before the first hover.
+    // Load the variable face before the first hover.
     WEIGHTS.forEach(weight => {
-      document.fonts.load(`${weight} 16px "Gravitica Compressed"`).catch(() => {});
+      document.fonts.load(`${weight} 16px "Roboto Condensed"`).catch(() => {});
     });
     let frame = 0;
     let hasPosition = false;
@@ -22,13 +22,13 @@ export default function StayCreativeSection() {
     let y = 0;
 
     let lastUpdate = 0;
-    const lastWeights = Array(letters.length).fill(false);
-    const setWeight = (index, enabled) => {
-      if (enabled === lastWeights[index]) return;
-      lastWeights[index] = enabled;
-      // One glyph, two real faces, no opacity layers or intermediate faces.
+    const lastWeights = Array(letters.length).fill(200);
+    const setWeight = (index, weight) => {
+      if (weight === lastWeights[index]) return;
+      lastWeights[index] = weight;
+      // Both color layers share one continuously variable weight.
       [slots[index], slots[index + letters.length]].forEach(slot => {
-        slot.dataset.weightState = enabled ? 'heavy' : 'light';
+        slot.style.setProperty('--creative-weight', weight);
       });
     };
     const update = now => {
@@ -54,7 +54,7 @@ export default function StayCreativeSection() {
         // Match BreathingText’s smooth weight falloff, centered on the pointer.
         const t = Math.max(0, 1 - distance / 3);
         const influence = t * t * (3 - 2 * t);
-        setWeight(index, influence > 0.5);
+        setWeight(index, 200 + Math.round(influence * 300));
       });
     };
     const move = event => {
@@ -69,7 +69,7 @@ export default function StayCreativeSection() {
       frame = 0;
       if (!active) return;
       active = false;
-      letters.forEach((_, index) => setWeight(index, false));
+      letters.forEach((_, index) => setWeight(index, 200));
       element.style.setProperty('--sx', '-9999px');
       element.style.setProperty('--sy', '-9999px');
     };

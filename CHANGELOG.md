@@ -222,6 +222,56 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 - Browser checks passed at 1859px desktop and 390px mobile: HUD text/clock, 0% and 100% endpoints, visible clip types, size variation, blurred overlap, Career/Contact backgrounds, sine path, scroll cue, accordion state and stable section height, contact opening/closing, mobile width and card hiding. Desktop services, Career, and mobile services screenshots reviewed. No page errors were recorded; the external hero tube renderer was stubbed in this test. The final minor pair-size adjustment stays within the same tested overlap envelope.
 - Production build and targeted lint passed; the preexisting large-chunk warning remains. No deployment or commit performed. The contact form retains its existing frontend-only behavior.
 
+## Glass, layering, and interaction corrections — September 13
+
+- Moved the hero clock below the navbar footprint on desktop and mobile.
+- Shared the navbar's 28px frosted-glass treatment with About panels, Career cards, and the contact CTA, including reduced-transparency and unsupported-browser fallbacks.
+- Moved the sine thread into background layers. Section-local SVG portals preserve its continuous geometry while allowing panels inside paint-contained sections to blur it; observer and animation-frame cleanup is retained.
+- Removed paired waveform decorations. Individual blurred icons now prefer overlapping panel edges while avoiding text, controls, and other icons; pointer events pass through them. Preserved sizes, differential parallax, and stable placement anchors.
+- Added 300ms height/opacity animation to service accordion opening and closing. Closed panels remain inaccessible to focus and assistive technology; reduced motion disables the transition.
+- Stay Creative now uses 200ms endpoint weight keyframes, ExtraLight (200) to the previously requested lighter Medium cap (500). Removed intermediate face declarations; retained fixed glyph slots, mouse/pointer input, and the circular white reveal. Static font files still switch glyph shapes rather than continuously interpolating their outlines; no crossfade was added.
+- Fixed an incomplete sine-component edit encountered when resuming the interrupted session. Targeted lint and production build passed. Desktop/mobile browser checks passed for clock clearance, glass styles, accordion intermediate/final heights, and text hover/reset; no page errors. Reviewed the About screenshot to confirm the sine is behind the panels and a single blurred icon crosses a panel edge. The external hero tube renderer was stubbed for this browser check. The existing large-bundle warning remains.
+
+## Stay Creative animation diagnosis — September 13
+
+- User reported the 200ms change was not visibly animated. A browser rendering check sampled the supplied ExtraLight/Medium files at 0, 25, 50, 75, 100, 150, and 200ms. Pixel hashes showed only two shapes: unchanged through 75ms, then a single switch by 100ms. Numeric CSS weight interpolates, but the static glyph outlines do not.
+- The previous animation-duration check did not establish visual smoothing. No additional font substitution or stroke simulation applied yet; asked the user to choose a variable font for real interpolation or retain Gravitica with simulated stroke thickening. Circular reveal remains intact.
+
+## Roboto Condensed variable-font trial — September 13
+
+- Added Roboto Condensed's 100–900 variable range to the existing Google Fonts head stylesheet, preserving the existing families and preconnects. Stay Creative now uses Roboto Condensed.
+- Replaced static-face keyframes with interruptible 200ms font-weight transitions on a single variable glyph. Resting weight remains 200, hover peaks at 500, and neighboring letters receive a smooth weight falloff. Fixed measurement slots, circular white reveal, and reduced-motion handling remain.
+- Browser component checks confirmed the loaded face reports weight range 100–900, five sampled weights render five distinct pixel shapes, and a real hover passes through an intermediate weight (346.25). Hover reset and circular reveal passed; no text overflow at the checked 1306px viewport. Screenshot reviewed. Targeted lint and production build passed, with the existing bundle-size warning.
+
+## Depth accent sizing — September 13
+
+- Increased Stay Creative's circular reveal radius from 100px to 150px (1.5x).
+- Increased blurred waveform decoration scale from 1.5x to 1.8x (20% larger) and permanent blur from 3px to 6px. Placement clearance uses the enlarged dimensions; regular icons and differential parallax remain unchanged.
+
+## Toolkit glass correction — September 13
+
+- Applied the shared navbar-like frosted glass to all eight Toolkit tiles. Added a section-local sine background and an opaque section base so the global path cannot draw sharply through the tiles. Preserved grid layout, icons, entrance animations, and video previews.
+
+## Flat glass and Toolkit borders — September 13
+
+- Removed shared glass gradients, shadows, saturation enhancement, and top-edge highlights, retaining flat tint and blur.
+- Reduced content panel blur from 28px to 4px and tint opacity from 44% to 20% so the thin sine line remains visible as a softened line. Navbar retains its stronger blur.
+- Restored Toolkit's subtle dashed neutral borders with a section-specific rule overriding the shared glass border.
+
+## My Realm spiral gallery — September 13
+
+- Added `/realm`, linked as My Realm in both the expanded navbar and the navigation menu, using the existing red checker transition and history router. Added route title and heading focus handling; existing routes retain their behavior.
+- Added RealmPage with a bounded entrance loader that preloads project previews and continues when an image fails or after a 3.5-second deadline. After the entrance, the image tower rises into view.
+- Built a leaning CSS 3D helix using the existing eight-project collection repeated across three turns of the gallery. Native scrolling moves frames vertically and around the axis together; Motion values and one spring drive transforms without per-frame React state or a continuous animation loop. Frames wrap outside the visible area. Rear-facing previews flip to remain readable.
+- Selecting an image opens the existing project dialog. Added a keyboard-accessible Project index and Works return link; reduced-motion users see the index automatically. The existing project preview failure fallback is preserved; the current collection is still illustrative data, not newly supplied portfolio assets.
+- Kept the existing black/red palette and type. Adjusted mobile navbar spacing to accommodate My Realm on one line; mobile gallery framing keeps images clear of the heading and controls.
+- Targeted lint and production build passed (existing large-bundle warning remains). Browser checks passed for direct route/title, entrance completion, changing scroll transforms, pointer-selected frame/dialog, index/dialog, Works navigation and Back, mobile width/menu link, and reduced-motion loading. Desktop, scrolled, and mobile screenshots reviewed; no page errors recorded. No deployment performed; production hosting needs the same SPA fallback for `/realm` as `/works`.
+
+## Realm edge motion blur — September 13
+
+- Added smoothly graduated blur to frames toward the top and bottom of the spiral, leaving the central frames sharp. Edge blur rests at up to 3px and increases to at most 10px with scroll speed, easing back when movement stops.
+- One shared velocity/spring drives the effect; filters stay on individual artwork surfaces to preserve the tower's 3D geometry. The reduced-motion project index remains unblurred.
+
 ## Validation and known limits
 
 - Production builds passed after the implemented feature changes; the existing large JavaScript chunk warning remains.

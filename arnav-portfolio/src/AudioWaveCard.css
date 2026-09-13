@@ -20,7 +20,7 @@
 
 /* These background accents stay defocused, including during hover. */
 [data-depth-blurred] .audio-wave-surface {
-  filter: blur(3px);
+  filter: blur(6px);
 }
 
 [data-depth-blurred] .audio-wave-surface svg { height: 85% !important; }

@@ -25,7 +25,7 @@ export default function CurvedThread({ enabled }) {
       rootTop.set(bounds.top + window.scrollY);
       end.set(bottom);
       viewport.set(innerHeight);
-      const sections = [...root.querySelectorAll('#section-intro, #section-career, #section-contact')]
+      const sections = [...root.querySelectorAll('#section-intro, #section-career, #section-toolkit, #section-contact')]
         .map(element => ({ element, top: element.getBoundingClientRect().top - bounds.top }));
       setGeometry(previous => {
         if (previous.width === width && Math.abs(previous.end - bottom) < 1 && previous.sections.length === sections.length && sections.every((item, index) => Math.abs(item.top - previous.sections[index].top) < 1)) return previous;
@@ -41,7 +41,14 @@ export default function CurvedThread({ enabled }) {
     observer.observe(root);
     window.addEventListener('resize', schedule);
     schedule();
-    const drawing = top => (
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('resize', schedule);
+    };
+  }, [enabled, rootTop, end, viewport]);
+
+  const drawing = top => (
     <svg width={geometry.width} height={geometry.end + 14} className="absolute left-0 overflow-visible" style={{ top }}>
       <path d={geometry.path} stroke="var(--red)" strokeWidth="1" fill="none" opacity="0.1" />
       <motion.path d={geometry.path} stroke="var(--red)" strokeWidth="1.5" fill="none" opacity="0.5" style={{ pathLength: reducedMotion ? 1 : progress }} />

@@ -53,7 +53,7 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
     if (regionName && !region) continue;
     const random = seededRandom(`individual-${name}`);
     const blurred = BLURRED_CARD_NAMES.has(name);
-    const scale = blurred ? 1.5 : 1;
+    const scale = blurred ? 1.8 : 1;
     const scrollSpeed = blurred ? BLURRED_SCROLL_SPEED : CARD_SCROLL_SPEED;
     const pointerScale = blurred ? BLURRED_POINTER_MULTIPLIER : 1;
     const cardWidth = Math.round((125 + random() * 80) * scale);

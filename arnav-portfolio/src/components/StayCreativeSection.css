@@ -1,27 +1,15 @@
-@font-face {
-  font-family: 'Gravitica Compressed';
-  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-ExtraLight.otf') format('opentype');
-  font-weight: 200;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Gravitica Compressed';
-  src: url('/assets/fonts/Gravitica-compressed/GraviticaCompressed-Medium.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
 .stay-creative-text {
   position: relative;
   width: 100%;
   margin: 0;
   text-align: center;
-  font-family: 'Gravitica Compressed', sans-serif;
+  font-family: 'Roboto Condensed', sans-serif;
   font-size: 16vw;
   line-height: 1.1;
   font-weight: 200;
   font-synthesis: none;
+  font-optical-sizing: auto;
+  font-style: normal;
   letter-spacing: -0.045em;
   white-space: nowrap;
   color: #6a1010;
@@ -38,20 +26,15 @@
   inset: 0;
   color: white;
   pointer-events: none;
-  mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
-  -webkit-mask-image: radial-gradient(100px circle at var(--sx) var(--sy), white 100%, transparent 100%);
+  mask-image: radial-gradient(150px circle at var(--sx) var(--sy), white 100%, transparent 100%);
+  -webkit-mask-image: radial-gradient(150px circle at var(--sx) var(--sy), white 100%, transparent 100%);
 }
 
-.stay-creative-glyph { font-weight: 200; }
-.stay-creative-slot[data-weight-state="heavy"] .stay-creative-glyph {
-  font-weight: 500;
-  animation: creative-weight-in 200ms ease-out both;
+/* A single variable face interpolates outlines without stacked font layers. */
+.stay-creative-glyph {
+  font-weight: var(--creative-weight, 200);
+  transition: font-weight 200ms ease-out;
 }
-.stay-creative-slot[data-weight-state="light"] .stay-creative-glyph {
-  animation: creative-weight-out 200ms ease-out both;
-}
-@keyframes creative-weight-in { from { font-weight: 200; } to { font-weight: 500; } }
-@keyframes creative-weight-out { from { font-weight: 500; } to { font-weight: 200; } }
 @media (prefers-reduced-motion: reduce) {
-  .stay-creative-slot .stay-creative-glyph { animation: none; }
+  .stay-creative-slot .stay-creative-glyph { transition: none; }
 }
