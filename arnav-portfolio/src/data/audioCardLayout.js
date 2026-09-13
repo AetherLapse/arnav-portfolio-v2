@@ -1,12 +1,19 @@
 export const CARD_SCROLL_SPEED = 0.65;
-export const BLURRED_SCROLL_SPEED = 0.85;
-export const BLURRED_POINTER_MULTIPLIER = 1.6;
+export const BLURRED_SCROLL_SPEED = 0.94;
+export const BLURRED_POINTER_MULTIPLIER = 2.2;
 export const CARD_POINTER_X = 24;
 export const CARD_POINTER_Y = 14;
 
 export const CLIP_CARD_NAMES = new Set(['titles.png', 'film_grain.png', 'reel_final_v3.mp4', 'showreel_comp.aep', 'outro_final.mov']);
 
 export const BLURRED_CARD_NAMES = new Set(['logo_reveal.mov', 'background.jpeg', 'music_bed.wav']);
+
+export const DISTANT_CARD_NAMES = new Set(['room_tone.wav', 'color_grade.cube', 'transition_07.wav']);
+export const CARD_DEPTHS = {
+  distant: { scale: 0.72, scrollSpeed: 0.5, pointerScale: 0.4 },
+  regular: { scale: 1, scrollSpeed: CARD_SCROLL_SPEED, pointerScale: 1 },
+  blurred: { scale: 1.8, scrollSpeed: BLURRED_SCROLL_SPEED, pointerScale: BLURRED_POINTER_MULTIPLIER },
+};
 
 const CARDS = [
   ['titles.png', 'orange', 'whoosh', 'half-right'],
@@ -53,9 +60,8 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
     if (regionName && !region) continue;
     const random = seededRandom(`individual-${name}`);
     const blurred = BLURRED_CARD_NAMES.has(name);
-    const scale = blurred ? 1.8 : 1;
-    const scrollSpeed = blurred ? BLURRED_SCROLL_SPEED : CARD_SCROLL_SPEED;
-    const pointerScale = blurred ? BLURRED_POINTER_MULTIPLIER : 1;
+    const depth = blurred ? 'blurred' : DISTANT_CARD_NAMES.has(name) ? 'distant' : 'regular';
+    const { scale, scrollSpeed, pointerScale } = CARD_DEPTHS[depth];
     const cardWidth = Math.round((125 + random() * 80) * scale);
     const cardHeight = Math.round((40 + random() * 28) * scale);
     const horizontalRoom = CARD_POINTER_X * pointerScale + 20;
@@ -67,7 +73,7 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
       && !obstacles.some(rect => !(blurred && rect.surface) && overlaps(candidate.envelope, rect))
       && !placed.some(card => overlaps(candidate.envelope, card.envelope) || Math.abs(candidate.top - card.top) < 320);
     const make = (left, top) => ({
-      name, variant, type, edge, blurred, scrollSpeed, region: regionName, width: cardWidth, height: cardHeight, kind: CLIP_CARD_NAMES.has(name) ? 'clip' : 'wave',
+      name, variant, type, edge, blurred, depth, scrollSpeed, region: regionName, width: cardWidth, height: cardHeight, kind: CLIP_CARD_NAMES.has(name) ? 'clip' : 'wave',
       left, top, textLeft: edge === 'half-right' || edge === 'cropped-right',
       envelope: { left: left - horizontalRoom, right: left + cardWidth + horizontalRoom,
         top: top - verticalRoom, bottom: top + cardHeight + verticalRoom },
@@ -84,6 +90,12 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
       else if (edge === 'near-left') left = horizontalRoom + 8 + random() * 28;
       else if (edge === 'near-right') left = width - cardWidth - horizontalRoom - 8 - random() * 28;
       else left = horizontalRoom + 8 + random() * (width - cardWidth - (horizontalRoom + 8) * 2);
+      // Reserve at most one edge-clipped distant accent when the larger
+      // slow-scroll envelope cannot fit within the page's content margins.
+      if (depth === 'distant' && attempt > 1600
+        && !placed.some(card => card.depth === 'distant' && (card.left < 0 || card.left + card.width > width))) {
+        left = random() > 0.5 ? -cardWidth * 0.55 : width - cardWidth * 0.45;
+      }
       let top = region ? region.top + random() * Math.max(0, region.height - cardHeight)
         : verticalRoom + random() * Math.max(0, height - cardHeight - verticalRoom * 2);
       if (blurred && surfaces.length && attempt % 2 === 0) {

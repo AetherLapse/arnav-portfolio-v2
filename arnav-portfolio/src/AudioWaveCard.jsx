@@ -47,7 +47,7 @@ function DenseWaveform({ type = 'whoosh', bars = 220, height = 56, color = 'rgba
 
 const CLIP_COLORS = { purple: '#9b59b6', orange: '#e67e22', green: '#2ecc71', cyan: '#3498db', red: '#e74c3c' };
 
-const AudioWaveCard = memo(function AudioWaveCard({ name = 'whoosh.wav', variant = 'orange', type = 'whoosh', textLeft = false, className = '', width = 240, height = 68, left, top, edge, region, kind = 'wave' }) {
+const AudioWaveCard = memo(function AudioWaveCard({ name = 'whoosh.wav', variant = 'orange', type = 'whoosh', textLeft = false, className = '', width = 240, height = 68, left, top, edge, region, kind = 'wave', depth = 'regular' }) {
   const blurred = BLURRED_CARD_NAMES.has(name);
   const surface = () => (
     <div data-wave-surface="" className="audio-wave-surface pointer-events-auto" style={{
@@ -65,7 +65,7 @@ const AudioWaveCard = memo(function AudioWaveCard({ name = 'whoosh.wav', variant
     </div>
   );
   return (
-    <div data-file-card={name} data-depth-blurred={blurred ? '' : undefined}
+    <div data-file-card={name} data-card-depth={depth} data-depth-blurred={blurred ? '' : undefined}
       data-overlap-accent={blurred ? '' : undefined} data-card-kind={kind} data-edge={edge} data-card-region={region}
       aria-hidden="true" className={`pointer-events-none select-none hidden md:block ${className}`}
       style={{ width, height, left, top }}>

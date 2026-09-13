@@ -3,6 +3,7 @@ import DinoGame from './DinoGame';
 import PremiereTimeline from './components/PremiereTimeline';
 import CurvedThread from './components/CurvedThread';
 import ServicesSection from './components/ServicesSection';
+import MentorSection from './components/MentorSection';
 import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
@@ -3147,6 +3148,8 @@ export default function App() {
           <div className="w-full bg-[#050505] overflow-hidden">
             <ToolkitSection />
           </div>
+
+          <MentorSection />
 
 
           {/* ================= DINO GAME (CARD) ================= */}

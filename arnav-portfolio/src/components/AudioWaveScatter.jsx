@@ -1,8 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import AudioWaveCard from '../AudioWaveCard';
-import { createAudioCardLayout, CARD_SCROLL_SPEED, BLURRED_SCROLL_SPEED, BLURRED_POINTER_MULTIPLIER } from '../data/audioCardLayout';
+import { createAudioCardLayout, CARD_DEPTHS } from '../data/audioCardLayout';
 import { useSharedCardPointer } from '../hooks/useSharedCardPointer';
+
+function DepthLayer({ depth, layout, pointer, scrollY, rootTop, reducedMotion }) {
+  const { scrollSpeed, pointerScale } = CARD_DEPTHS[depth];
+  // One transform per depth plane; all cards within it move in unison.
+  const x = useTransform(pointer.x, value => value * pointerScale);
+  const y = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - scrollSpeed) + pointer.y.get() * pointerScale);
+  return <motion.div data-card-parallax-layer={depth} className="absolute inset-0"
+    style={{ x: reducedMotion ? 0 : x, y: reducedMotion ? 0 : y }}>
+    {layout.cards.filter(card => card.depth === depth).map(card => (
+      <AudioWaveCard key={card.name} {...card}
+        top={reducedMotion ? card.top : scrollSpeed * card.top + (1 - scrollSpeed) * layout.viewportHeight / 2}
+        className="absolute" />
+    ))}
+  </motion.div>;
+}
 
 export default function AudioWaveScatter({ enabled }) {
   const layerRef = useRef(null);
@@ -11,12 +26,6 @@ export default function AudioWaveScatter({ enabled }) {
   const { scrollY } = useScroll();
   const rootTop = useMotionValue(0);
   const pointer = useSharedCardPointer(layerRef, enabled && !reducedMotion);
-  // Scroll stays direct; the only smoothing is the shared mouse offset.
-  const layerY = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - CARD_SCROLL_SPEED) + pointer.y.get());
-
-  const blurredY = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - BLURRED_SCROLL_SPEED) + pointer.y.get() * BLURRED_POINTER_MULTIPLIER);
-  const blurredX = useTransform(pointer.x, value => value * BLURRED_POINTER_MULTIPLIER);
-
   useEffect(() => {
     if (!enabled) return;
     const root = layerRef.current.parentElement;
@@ -113,15 +122,8 @@ export default function AudioWaveScatter({ enabled }) {
   return (
     <div ref={layerRef} data-audio-scatter="" aria-hidden="true"
       className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none">
-      {[true, false].map(blurred => (
-        <motion.div key={String(blurred)} data-card-parallax-layer={blurred ? 'blurred' : 'regular'}
-          className="absolute inset-0" style={{ x: reducedMotion ? 0 : blurred ? blurredX : pointer.x, y: reducedMotion ? 0 : blurred ? blurredY : layerY }}>
-          {layout.cards.filter(card => card.blurred === blurred).map(card => (
-            <AudioWaveCard key={card.name} {...card}
-              top={reducedMotion ? card.top : card.scrollSpeed * card.top + (1 - card.scrollSpeed) * layout.viewportHeight / 2}
-              className="absolute" />
-          ))}
-        </motion.div>
+      {Object.keys(CARD_DEPTHS).map(depth => (
+        <DepthLayer key={depth} depth={depth} layout={layout} pointer={pointer} scrollY={scrollY} rootTop={rootTop} reducedMotion={reducedMotion} />
       ))}
     </div>
   );

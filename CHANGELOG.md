@@ -272,6 +272,28 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 - Added smoothly graduated blur to frames toward the top and bottom of the spiral, leaving the central frames sharp. Edge blur rests at up to 3px and increases to at most 10px with scroll speed, easing back when movement stops.
 - One shared velocity/spring drives the effect; filters stay on individual artwork surfaces to preserve the tower's 3D geometry. The reduced-motion project index remains unblurred.
 
+## Main-page audio icon depth — September 13
+
+- Added a third shared parallax plane to the main-page audio scatter. Distant icons (room_tone.wav, color_grade.cube, transition_07.wav) use 72% size, 42% opacity, 1.5px blur, 50%-page scroll speed, and 0.4x mouse response.
+- Regular icons retain 65%-page scroll speed and standard mouse response. The existing large blurred foreground icons retain 1.8x scale and 6px blur, now moving at 94%-page speed with 2.2x mouse response and 70% opacity. Foreground draws last.
+- Browser check at 1600px confirmed all three planes are populated (1 distant, 4 regular, 3 foreground), distinct scroll/mouse movement, and unchanged placement anchors. Distant placement permits at most one additional edge-clipped accent when inner margins are too tight. Targeted lint and build passed.
+- Layout clearance uses each plane's actual size and movement bounds. Stable anchors, unified per-plane movement, reduced-motion handling, and mobile hiding remain. My Realm was not changed by this request.
+
+## Mentor collage gallery — September 13
+
+- Added MY MENTORS immediately after My Toolkit, using the existing section heading type and size. The section is protected from decorative audio-card overlap.
+- Implemented the approved three-state collage in a fixed square outer frame: A tall at left by default; B spans the top on selection with A bottom-left and C unchanged; C becomes tall at right with B top-left and A bottom-left. Smaller frames remain square and tall frames are 1:2 portraits.
+- Frames stay mounted and animate their bounds over 650ms with gentle easing. Hover, tap, focus, and arrow-key selection update the active caption. Reduced motion switches layouts immediately. Gallery dimensions remain fixed during interaction.
+- Added three example photographs as requested, clearly marked in captions/alt text. No mentor identities or personal endorsements invented. Real photo paths, names, disciplines, reflections, and crop focal points belong in src/data/mentors.js. Image failure fallbacks are included.
+- Targeted lint and production build passed, with the existing bundle-size warning. Browser checks passed for all three loaded images, three arrangements, intermediate animated bounds, fixed outer geometry, keyboard selection, and mobile selection/width. Desktop and mobile screenshots reviewed; no page errors.
+
+## Mentor transition collision fix — September 13
+
+- Reviewed recording.mp4. Simultaneous position/size interpolation let mentor frames cross during rearrangement.
+- Replaced concurrent animation with a sequence: shrink the dominant photo into a square, slide B through the vacant top row if needed, then expand the selected photo. Each stage takes 280ms; complete transitions take 560–840ms.
+- Validation: browser sampled 533 animation frames across all six transition directions and rapid repeated inputs; zero photo overlaps and the final requested layout was reached. No page errors. Targeted lint and production build passed.
+- Rapid inputs queue the latest selection instead of interrupting a frame halfway through its path. Ignore hover-entry events caused by moving frame boundaries; actual mouse movement, clicks/taps, focus, and arrow keys still select photos. Reduced motion retains immediate stages. Unmount cleanup is handled by the scoped animation hook and a disposal guard.
+
 ## Validation and known limits
 
 - Production builds passed after the implemented feature changes; the existing large JavaScript chunk warning remains.
@@ -285,7 +307,7 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 
 ## Deferred work and handoff
 
-- Mentor is explicitly deferred by the user. When resumed, the requested location is after My Toolkit; the content and whether it profiles a mentor or offers mentorship still need deciding.
+- Mentor gallery is now implemented after My Toolkit with example photos. Arnav’s real shared photographs, mentor names, disciplines, and personal reflections remain to be supplied.
 - Works currently reuses illustrative project data and images. Real project content and working destination links remain to be supplied; one existing image uses the unavailable-preview fallback.
 - The contact form still has its preexisting frontend-only behavior and does not send inquiries.
 - Production hosting must serve the SPA entry point for `/works`; no deployment was performed in this conversation.

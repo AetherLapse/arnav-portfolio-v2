@@ -1,0 +1,31 @@
+.mentor-story { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 72px 32px; border: 0; background: transparent; overflow-y: auto; color: #f3f0e8; cursor: auto; }
+.mentor-story::backdrop { background: rgba(0,0,0,.85); backdrop-filter: blur(6px); }
+.mentor-story-panel { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px,5vw,72px); max-width: 1200px; margin: auto; padding: 64px 48px; background: #101010; border: 1px solid #ffffff1c; animation: mentor-story-enter 280ms ease-out both; }
+.mentor-story-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; display: grid; place-items: center; color: #bbb; background: transparent; border: 1px solid #ffffff26; cursor: pointer; }
+.mentor-story-close:hover { color: #fff; border-color: var(--red); }
+.mentor-story-close:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; }
+.mentor-story-photo { align-self: start; position: sticky; top: 0; }
+.mentor-story-photo img { display: block; width: 100%; height: auto; max-height: 72dvh; object-fit: contain; }
+.mentor-story-example { display: block; margin-top: 12px; font-size: 9px; color: #999; }
+.mentor-story-eyebrow { margin: 0 0 24px; font-size: 10px; color: #aaa; letter-spacing: .08em; }
+.mentor-story-content h2 { font-weight: 400; font-size: clamp(60px,6vw,90px); line-height: .95; margin: 0 0 20px; }
+.mentor-story-content h2 span { color: var(--red); }
+.mentor-story-discipline { color: #aaa; font-size: 11px; line-height: 1.8; }
+.mentor-story-content blockquote { margin: 28px 0; font-size: 18px; line-height: 1.7; }
+.mentor-story-bio { font-size: 12px; line-height: 1.9; }
+.mentor-story-note { font-size: 10px; color: #999; line-height: 1.9; margin-top: 24px; }
+.mentor-journey { list-style: none; margin: 40px 0 0; padding: 0; }
+.mentor-journey li { display: grid; grid-template-columns: 28px 1fr; gap: 16px; margin-bottom: 30px; }
+.mentor-chapter-number { font-size: 9px; color: var(--red); padding-top: 5px; }
+.mentor-journey h3 { font-size: 14px; font-weight: 500; margin: 0 0 10px; }
+.mentor-journey p { font-size: 11px; line-height: 1.9; color: #aaa; margin: 0; }
+.mentor-journey time { display: block; margin-bottom: 8px; font-size: 9px; color: #888; }
+@keyframes mentor-story-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@media(max-width: 767px) {
+  .mentor-story { padding: 16px; }
+  .mentor-story-panel { grid-template-columns: 1fr; padding: 72px 24px 24px; gap: 32px; }
+  .mentor-story-photo { position: static; }
+  .mentor-story-photo img { max-height: 45dvh; }
+  .mentor-story-content h2 { font-size: 64px; }
+}
+@media(prefers-reduced-motion: reduce) { .mentor-story-panel { animation: none; } }
