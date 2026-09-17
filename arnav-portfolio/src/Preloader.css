@@ -1,0 +1,27 @@
+.preloader-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.preloader-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(ellipse at 28% 62%, rgba(160, 18, 18, 0.18), transparent 55%),
+    radial-gradient(ellipse at 76% 28%, rgba(180, 160, 150, 0.045), transparent 48%);
+  animation: preloader-atmosphere-drift 12s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes preloader-atmosphere-drift {
+  from { transform: translate3d(-4%, 3%, 0); }
+  to { transform: translate3d(5%, -4%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader-atmosphere::before { animation: none; will-change: auto; }
+}

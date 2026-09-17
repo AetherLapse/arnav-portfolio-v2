@@ -294,6 +294,29 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 - Validation: browser sampled 533 animation frames across all six transition directions and rapid repeated inputs; zero photo overlaps and the final requested layout was reached. No page errors. Targeted lint and production build passed.
 - Rapid inputs queue the latest selection instead of interrupting a frame halfway through its path. Ignore hover-entry events caused by moving frame boundaries; actual mouse movement, clicks/taps, focus, and arrow keys still select photos. Reduced motion retains immediate stages. Unmount cleanup is handled by the scoped animation hook and a disposal guard.
 
+## Subtle preloader atmosphere — September 17
+
+- Added a restrained dark-red gradient with a faint warm highlight behind the preloader content. Positioned above the opaque curtain SVG so it is visible.
+- A 12-second CSS transform drift animates the gradient without additional JavaScript loops or animated blur filters. The atmosphere fades during the existing curtain exit; reduced-motion users get a static gradient. Loading timing and progress logic remain unchanged.
+
+## Hornet logo proportions — September 17
+
+- Fixed all three hornet.png instances (navbar, open menu, footer). The 4096×2304 image was forced into square boxes. Each now uses its existing display height with automatic width, object-contain, and shrink protection, preserving the original 16:9 proportions. Added intrinsic width/height attributes.
+
+## Digital tools audio accents — September 17
+
+- Added three audio-wave cards inside the pinned “My Tools Are Digital” section, with distinct sizes, blur depths, scroll travel, and shared mouse parallax. The enlarged foreground card clips at the right edge while the central text stays clear.
+- Reused the existing wave cards and pointer hook. Motion stops for reduced-motion preferences; accents hide on small or short screens.
+- Targeted lint and production build passed. Desktop browser checks confirmed scroll and mouse movement; screenshot reviewed at 1600×900.
+
+## Contact fluid background — September 17
+
+- Replaced the initial thin-line canvas approximation with an original local WebGL shader: continuously drifting soft red bands and a glossy, deformable liquid wake with warm/magenta highlights around mouse movement, based on the recording.
+- User explicitly declined a direct Unicorn Studio embed because of its watermark. The final implementation uses no embed, SDK, hosted scene, or scene assets.
+- Removed the contact timeline/rays; suppressed the contact sine overlay and excluded the section from audio-card placement for a clean black background. Career keeps its timeline.
+- Rendering capped at 750,000 pixels and 45 fps; pauses offscreen/in hidden tabs, stays static for reduced motion, and releases GPU resources on unmount. Contact controls remain interactive.
+- Production build and targeted component lint passed. This is an original visual recreation, not the source scene.
+
 ## Validation and known limits
 
 - Production builds passed after the implemented feature changes; the existing large JavaScript chunk warning remains.

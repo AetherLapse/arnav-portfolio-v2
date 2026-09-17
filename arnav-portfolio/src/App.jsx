@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useContext, lazy, Suspense } from 'react';
 import DinoGame from './DinoGame';
 import PremiereTimeline from './components/PremiereTimeline';
+import ContactFlow from './components/ContactFlow';
 import CurvedThread from './components/CurvedThread';
 import ServicesSection from './components/ServicesSection';
 import MentorSection from './components/MentorSection';
@@ -20,6 +21,7 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVe
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
 import AudioWaveScatter from './components/AudioWaveScatter';
+import QuoteAudioAccents from './components/QuoteAudioAccents';
 import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 
 const GLOBAL_STYLES = `
@@ -1501,10 +1503,11 @@ const QuoteReveal = () => {
   };
 
   return (
-    <div ref={sectionRef} data-audio-obstacle="" className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
+    <div id="section-digital-tools" ref={sectionRef} data-audio-obstacle="" className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
       <div className="sticky top-0 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+        <QuoteAudioAccents progress={scrollYProgress} />
         <div
-          className="relative w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
+          className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
           style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
         >
           {/* Counter */}
@@ -2485,7 +2488,7 @@ export default function App() {
             >
               {/* Expanded bar content (on hero) */}
               <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-3 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home"><img src="/assets/photos/hornet.png" alt="" className="w-5 h-5 md:w-7 md:h-7" /></PageLink>
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex shrink-0"><img src="/assets/photos/hornet.png" width="4096" height="2304" alt="" className="h-5 md:h-7 w-auto max-w-none shrink-0 object-contain" /></PageLink>
                 <div className="flex items-center gap-2 md:gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
                   <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
@@ -2513,7 +2516,7 @@ export default function App() {
                   <button aria-label="Close navigation" onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   </button>
-                  <img src="/assets/photos/hornet.png" alt="Logo" className="w-8 h-8" />
+                  <img src="/assets/photos/hornet.png" width="4096" height="2304" alt="Arnav Rai" className="h-8 w-auto max-w-none shrink-0 object-contain" />
                   <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
                     <div aria-hidden="true" className="nav-record-dot w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
                   </PageLink>
@@ -2655,6 +2658,14 @@ export default function App() {
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-y-4 gap-x-2 font-clash text-[9px] md:text-[10px] uppercase mb-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[var(--muted)]">AGE:</span>
+                        <span className="font-bold">20</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[var(--muted)]">LOCATION:</span>
+                        <span className="font-bold">Noida, India</span>
+                      </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">CRAFT:</span>
                         <span className="font-bold">MOTION DESIGN</span>
@@ -3158,10 +3169,8 @@ export default function App() {
           </div>
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
-          <section id="section-contact" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
-            <Suspense fallback={null}><LightRays raysOrigin="bottom-center" raysColor="#FF0000" raysSpeed={0.4} lightSpread={1.8} rayLength={2.2} pulsating={true} mouseInfluence={0.15} noiseAmount={0.01} distortion={0.03} className="opacity-25" /></Suspense>
-            {/* Premiere Pro Timeline Background */}
-            <PremiereTimeline />
+          <section id="section-contact" data-audio-obstacle="" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
+            <ContactFlow />
 
             <ParticleFlyer delay={0.1} className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
                
@@ -3177,7 +3186,7 @@ export default function App() {
                  onClick={openContactForm}
                  className="panel-glass btn-fill border border-[var(--border)] p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
                >
-                  <div className="relative z-10 w-14 h-14 bg-[var(--red)] group-hover:bg-white rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 group-hover:-rotate-[10deg] transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+                  <div className="relative z-10 w-14 h-14 bg-[var(--red)] group-hover:bg-white rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
                   <div className="relative z-10 flex flex-col items-start gap-1">
@@ -3193,7 +3202,7 @@ export default function App() {
                 {/* Left: Brand */}
                 <div className="flex flex-col gap-3 max-w-[300px]">
                   <div className="flex items-center gap-3">
-                    <img src="/assets/photos/hornet.png" alt="Logo" className="w-7 h-7" />
+                    <img src="/assets/photos/hornet.png" width="4096" height="2304" alt="" className="h-7 w-auto max-w-none shrink-0 object-contain" />
                     <span className="font-clash font-bold text-sm text-white">Arnav Rai</span>
                   </div>
                   <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">Video editing and motion design that turn raw footage into stories worth watching.</p>

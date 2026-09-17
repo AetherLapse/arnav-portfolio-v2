@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
+import './Preloader.css';
 
 const LOAD_DURATION = 7500;
 const COMPLETION_HOLD = 400;
@@ -94,7 +95,7 @@ export default function Preloader({ onComplete }) {
     <motion.div
       data-preloader=""
       className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]"
-      style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,0,0,0.04) 0%, transparent 60%)', willChange: 'transform' }}
+      style={{ willChange: 'transform' }}
       initial={{ y: 0 }}
       exit={{ y: '-100%' }}
       transition={{
@@ -123,12 +124,16 @@ export default function Preloader({ onComplete }) {
         />
       </motion.svg>
 
-      {/* Bottom edge glow that intensifies on exit */}
+      {/* Above the opaque curtain, below the greeting; no per-frame JS work. */}
+      <motion.div className="preloader-atmosphere" aria-hidden="true"
+        exit={{ opacity: 0 }} transition={{ duration: 0.35 }} />
+
+      {/* Glow rises with the curtain, then fades as its edge reaches the top. */}
       <motion.div
         className="absolute bottom-0 left-0 right-0 h-px z-30 pointer-events-none"
         initial={{ opacity: 0 }}
-        exit={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.3, ease: 'easeIn' }}
+        exit={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 1.1, delay: 0.15, times: [0, 0.45, 0.72, 1], ease: 'easeInOut' }}
         style={{ background: 'var(--red)', boxShadow: '0 0 15px 4px rgba(255,0,0,0.5), 0 0 30px 8px rgba(255,0,0,0.2)' }}
       />
 

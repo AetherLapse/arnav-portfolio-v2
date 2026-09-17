@@ -1,0 +1,7 @@
+.quote-audio-accents { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.quote-audio-accent { position: absolute; pointer-events: none; }
+.quote-audio-distant { right: 12%; top: 22%; }
+.quote-audio-regular { left: 7%; top: 16%; }
+.quote-audio-foreground { left: calc(100% - 150px); top: 76%; }
+.quote-audio-accents .audio-wave-surface { pointer-events: none !important; }
+@media (max-width: 767px), (max-height: 600px) { .quote-audio-accents { display: none; } }
