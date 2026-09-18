@@ -1504,7 +1504,9 @@ const QuoteReveal = () => {
 
   return (
     <div id="section-digital-tools" ref={sectionRef} data-audio-obstacle="" className="relative z-10 w-full bg-[#0A0A0A]" style={{ height: '250vh' }}>
-      <div className="sticky top-0 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+      <div className="sticky top-0 z-10 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+        <div data-digital-glow="" data-audio-decoration="" aria-hidden="true" className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 0% 65%, rgba(255,0,0,0.15), transparent 65%), radial-gradient(ellipse at 100% 15%, rgba(139,0,0,0.09), transparent 55%)' }} />
         <QuoteAudioAccents progress={scrollYProgress} />
         <div
           className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
@@ -1524,9 +1526,6 @@ const QuoteReveal = () => {
               <div className="absolute -top-2 -right-2 w-2 h-2 bg-[var(--red)]" />
               <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[var(--red)]" />
               <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-[var(--red)]" />
-              <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
-                <span className="text-[9px] font-clash font-bold text-black tracking-wider">T / Title Sequence 01</span>
-              </div>
               <div className="absolute -bottom-8 right-0 flex items-center gap-1">
                 <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
                   sequence → <span className="text-[var(--red)]">editing{isTyping && <span className="animate-pulse">...</span>}</span>
@@ -2594,12 +2593,13 @@ export default function App() {
             Hardcoding 56.25vw was wrong — the showreel is 1920x892 (21:9), so its
             height is ~46.5vw; a fixed taller value left phantom space after the card. */}
         <div className="relative z-10">
+        <AudioWaveScatter enabled={hasEntered} />
 
         {/* ================= HERO SECTION ================= */}
         <HeroSection hasLoaded={hasLoaded} hasEntered={hasEntered} />
 
           {/* SHOWREEL VIDEO — the card that slides up over the pinned hero (flat edges = true stack) */}
-          <section className="relative w-full z-20 bg-[#0A0A0A] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
+          <section id="section-showreel" className="relative w-full z-20 bg-[#0A0A0A] border-t-2 border-[var(--red)]/50 shadow-[0_-24px_80px_rgba(0,0,0,0.95)] overflow-hidden">
             <ShowreelVideo />
           </section>
         </div>
@@ -3164,7 +3164,7 @@ export default function App() {
 
 
           {/* ================= DINO GAME (CARD) ================= */}
-          <div className="w-full bg-[var(--bg)] overflow-hidden">
+          <div id="section-play" className="relative w-full bg-[var(--bg)] overflow-hidden">
             <DinoRunner />
           </div>
 
@@ -3182,7 +3182,7 @@ export default function App() {
                
 
                {/* GET IN TOUCH CTA */}
-               <button
+               <button data-audio-surface=""
                  onClick={openContactForm}
                  className="panel-glass btn-fill border border-[var(--border)] p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
                >

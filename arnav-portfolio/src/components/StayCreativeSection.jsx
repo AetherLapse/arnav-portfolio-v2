@@ -109,7 +109,7 @@ export default function StayCreativeSection() {
 
   return (
     <section data-stay-creative="" className="relative w-full flex items-center justify-center overflow-visible">
-      <h2 data-audio-layout="" ref={textRef} aria-label={TEXT}
+      <h2 data-audio-surface="" ref={textRef} aria-label={TEXT}
         className="stay-creative-text"
         style={{ '--sx': '-9999px', '--sy': '-9999px' }}>
         <span aria-hidden="true" className="stay-creative-base">{layer(true)}</span>

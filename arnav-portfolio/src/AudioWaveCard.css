@@ -25,12 +25,20 @@
 }
 
 /* Foreground accents stay defocused, including during hover. */
+[data-depth-blurred]::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 3px;
+  background: #080808;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
 [data-depth-blurred] .audio-wave-surface {
   filter: blur(6px);
   opacity: 0.7;
 }
-
-[data-depth-blurred] .audio-wave-surface svg { height: 85% !important; }
 
 @media (hover: hover) and (pointer: fine) {
   .audio-wave-surface:hover {

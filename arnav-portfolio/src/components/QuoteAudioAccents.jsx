@@ -6,9 +6,9 @@ import { CARD_DEPTHS } from '../data/audioCardLayout';
 import './QuoteAudioAccents.css';
 
 const ACCENTS = [
-  { depth: 'distant', name: 'room_tone.wav', variant: 'green', width: 120, height: 40, className: 'quote-audio-distant', travel: 40 },
-  { depth: 'regular', name: 'sfx_whoosh.wav', variant: 'purple', width: 175, height: 54, className: 'quote-audio-regular', travel: 80 },
-  { depth: 'blurred', name: 'music_bed.wav', variant: 'orange', width: 290, height: 90, className: 'quote-audio-foreground', travel: 160 },
+  { depth: 'distant', name: 'DIGITAL_SELECTS.mp4', variant: 'green', width: 120, height: 30, className: 'quote-audio-distant', travel: 40 },
+  { depth: 'regular', name: 'TITLE_SEQUENCE.aep', variant: 'purple', width: 175, height: 42, className: 'quote-audio-regular', travel: 80 },
+  { depth: 'blurred', name: 'DIGITAL_MASTER.mov', variant: 'orange', width: 290, height: 70, className: 'quote-audio-foreground', travel: 160 },
 ];
 
 function AccentPlane({ accent, progress, pointer, reducedMotion }) {

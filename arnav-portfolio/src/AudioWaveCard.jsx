@@ -1,77 +1,17 @@
-import { BLURRED_CARD_NAMES } from './data/audioCardLayout';
 import { memo } from 'react';
 import TimelineClip from './components/TimelineClip';
 import './AudioWaveCard.css';
 
-const VARIANTS = {
-  purple: 'linear-gradient(90deg, rgba(82,17,118,0.5), rgba(154,42,179,0.4))',
-  orange: 'linear-gradient(90deg, rgba(103,42,16,0.5), rgba(176,75,35,0.4))',
-  green: 'linear-gradient(90deg, rgba(40,120,24,0.5), rgba(103,201,52,0.4))',
-  cyan: 'linear-gradient(90deg, rgba(19,134,162,0.5), rgba(51,213,218,0.4))',
-  red: 'linear-gradient(90deg, rgba(120,15,15,0.5), rgba(180,30,30,0.4))',
-};
+const COLORS = { purple: '#9b59b6', orange: '#e67e22', green: '#2ecc71', cyan: '#3498db', red: '#e74c3c' };
 
-function fract(x) { return x - Math.floor(x); }
-function noise(i) { return fract(Math.sin(i * 12.9898) * 43758.5453123); }
-
-function getEnvelope(t, type) {
-  switch (type) {
-    case 'riser': return 0.08 + 0.78 * Math.pow(t, 1.9) + 0.22 * Math.exp(-Math.pow((t - 0.86) / 0.05, 2));
-    case 'bass': return 0.22 + 0.65 * Math.exp(-t * 2.8);
-    case 'whoosh': default: return 0.18 + 0.42 * Math.exp(-Math.pow((t - 0.5) / 0.35, 2));
-  }
-}
-
-function DenseWaveform({ type = 'whoosh', bars = 220, height = 56, color = 'rgba(255,255,255,0.7)' }) {
-  const barWidth = 1.35;
-  const gap = 0.28;
-  const width = bars * (barWidth + gap);
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: '58px', zIndex: 1, opacity: 0.8 }}>
-      {Array.from({ length: bars }).map((_, i) => {
-        const t = i / (bars - 1);
-        const env = getEnvelope(t, type);
-        const n1 = noise(i);
-        const n2 = noise(i * 1.7 + 11.3);
-        const n3 = noise(i * 0.37 + 5.1);
-        const texture = 0.55 + n1 * 0.22 + n2 * 0.15 + n3 * 0.08;
-        const h = Math.max(2, env * texture * height);
-        const x = i * (barWidth + gap);
-        const y = height - h;
-        return <rect key={i} x={x} y={y} width={barWidth} height={h} rx="0.6" fill={color} />;
-      })}
-    </svg>
-  );
-}
-
-const CLIP_COLORS = { purple: '#9b59b6', orange: '#e67e22', green: '#2ecc71', cyan: '#3498db', red: '#e74c3c' };
-
-const AudioWaveCard = memo(function AudioWaveCard({ name = 'whoosh.wav', variant = 'orange', type = 'whoosh', textLeft = false, className = '', width = 240, height = 68, left, top, edge, region, kind = 'wave', depth = 'regular' }) {
-  const blurred = BLURRED_CARD_NAMES.has(name);
-  const surface = () => (
-    <div data-wave-surface="" className="audio-wave-surface pointer-events-auto" style={{
-      pointerEvents: blurred ? 'none' : 'auto', position: 'absolute', width: '100%', height: '100%',
-      left: 0, top: 0,
-      borderRadius: Math.min(18, height * 0.22), overflow: 'hidden',
-      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-      background: VARIANTS[variant] || VARIANTS.orange,
-    }}>
-      <DenseWaveform type={type} />
-      <span className="font-clash" style={{ position: 'absolute', top: '12%', zIndex: 4,
-        ...(textLeft ? { left: '7%' } : { right: '7%' }), color: 'rgba(255,255,255,0.7)',
-        fontSize: Math.max(8, Math.min(13, width * 0.05)), textShadow: '0 1px 3px rgba(0,0,0,0.25)',
-      }}>{name}</span>
-    </div>
-  );
-  return (
-    <div data-file-card={name} data-card-depth={depth} data-depth-blurred={blurred ? '' : undefined}
-      data-overlap-accent={blurred ? '' : undefined} data-card-kind={kind} data-edge={edge} data-card-region={region}
-      aria-hidden="true" className={`pointer-events-none select-none hidden md:block ${className}`}
-      style={{ width, height, left, top }}>
-      {kind === 'clip' ? <TimelineClip name={name} color={CLIP_COLORS[variant]} className="audio-wave-surface pointer-events-auto w-full h-full" /> : surface()}
-    </div>
-  );
+// Retain the existing motion/layout API; every decorative asset is now a clip.
+const AudioWaveCard = memo(function AudioWaveCard({ name = 'EDIT_SEQUENCE.mp4', variant = 'orange', className = '', width = 240, height = 48, left, top, edge, region, depth = 'regular' }) {
+  const blurred = depth === 'blurred';
+  return <div data-file-card={name} data-card-depth={depth} data-depth-blurred={blurred ? '' : undefined}
+    data-overlap-accent={blurred ? '' : undefined} data-card-kind="clip" data-edge={edge} data-card-region={region}
+    aria-hidden="true" className={`pointer-events-none select-none hidden md:block ${className}`} style={{ width, height, left, top }}>
+    <TimelineClip name={name} color={COLORS[variant]} className="audio-wave-surface w-full h-full"
+      style={{ pointerEvents: blurred ? 'none' : 'auto' }} />
+  </div>;
 });
-
 export default AudioWaveCard;

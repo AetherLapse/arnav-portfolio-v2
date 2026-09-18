@@ -23,7 +23,7 @@ export default function ServicesSection({ onContact }) {
           <p className="services-description font-clash">An edit, a campaign, or a whole new look. Let’s make your next story feel like you.</p>
           <button type="button" className="services-contact font-clash" onClick={onContact}>Tell me about your project <ArrowUpRight size={18} aria-hidden="true" /></button>
         </header>
-        <div className="services-list">
+        <div data-audio-surface="" className="services-list">
           {SERVICES.map((service, index) => (
             <article key={service.title} className="service-item" data-open={active === index}>
               <h3>

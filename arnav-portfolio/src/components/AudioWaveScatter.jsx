@@ -10,7 +10,7 @@ function DepthLayer({ depth, layout, pointer, scrollY, rootTop, reducedMotion })
   const x = useTransform(pointer.x, value => value * pointerScale);
   const y = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - scrollSpeed) + pointer.y.get() * pointerScale);
   return <motion.div data-card-parallax-layer={depth} className="absolute inset-0"
-    style={{ x: reducedMotion ? 0 : x, y: reducedMotion ? 0 : y }}>
+    style={{ x: reducedMotion ? 0 : x, y: reducedMotion ? 0 : y, zIndex: depth === 'blurred' ? 3 : depth === 'regular' ? 2 : 1 }}>
     {layout.cards.filter(card => card.depth === depth).map(card => (
       <AudioWaveCard key={card.name} {...card}
         top={reducedMotion ? card.top : scrollSpeed * card.top + (1 - scrollSpeed) * layout.viewportHeight / 2}
@@ -54,6 +54,7 @@ export default function AudioWaveScatter({ enabled }) {
       // rendering savings, while placement uses real sizes and resting poses.
       root.classList.add('audio-measuring');
       let next;
+      let clipTop = 0;
       try {
         root.querySelectorAll('section').forEach(section => {
           if (!intrinsicSizes.has(section)) intrinsicSizes.set(section, section.style.containIntrinsicBlockSize);
@@ -67,33 +68,34 @@ export default function AudioWaveScatter({ enabled }) {
         });
         const bounds = root.getBoundingClientRect();
         rootTop.set(bounds.top + window.scrollY);
-        const elements = [...root.querySelectorAll('h1, h2, h3, h4, p, button, a, input, textarea, canvas, video, img, [class*="border"], [data-audio-obstacle], span, li, div')]
+        const elements = [...root.querySelectorAll('h1, h2, h3, h4, p, button, a, input, textarea, canvas, video, img, [class*="border"], [data-audio-obstacle], [data-audio-surface], span, li, div')]
           .filter(element => !element.closest('[data-audio-scatter]')
             && !element.closest('[data-audio-decoration]')
             && !element.hasAttribute('data-audio-layout')
-            && (element.tagName !== 'SECTION' || element.hasAttribute('data-audio-obstacle'))
-            && (!element.closest('[data-audio-obstacle]') || element.hasAttribute('data-audio-obstacle'))
-            && (element.matches('h1, h2, h3, h4, p, button, a, input, textarea, canvas, video, img, [class*="border"], [data-audio-obstacle]')
+            && element.tagName !== 'SECTION'
+            && !element.matches('#section-digital-tools')
+            && !element.closest('#section-digital-tools')
+            && (element.matches('h1, h2, h3, h4, p, button, a, input, textarea, canvas, video, img, [class*="border"], [data-audio-obstacle], [data-audio-surface]')
               || (!element.childElementCount && element.textContent.trim())));
         const obstacles = elements.map(element => {
           const rect = element.getBoundingClientRect();
           if (!rect.width || !rect.height) return null;
-          return { surface: element.hasAttribute('data-audio-surface'), left: rect.left - bounds.left - 12, right: rect.right - bounds.left + 12,
+          return { surface: element.hasAttribute('data-audio-surface') || element.matches('img, video, canvas, .mentor-frame'), left: rect.left - bounds.left - 12, right: rect.right - bounds.left + 12,
             top: rect.top - bounds.top - 16, bottom: rect.bottom - bounds.top + 16 };
         }).filter(Boolean);
         const regions = {};
-        for (const [name, selector] of Object.entries({ contact: '#section-contact', creative: '[data-audio-region="creative"]' })) {
-          const element = root.querySelector(selector);
-          if (element) {
-            const rect = element.getBoundingClientRect();
-            regions[name] = { top: rect.top - bounds.top, height: rect.height };
-          }
+        for (const element of root.querySelectorAll('section[id], [data-audio-region="creative"], #section-play')) {
+          if (element.id === 'section-hero') continue;
+          const rect = element.getBoundingClientRect();
+          if (rect.height < 100) continue;
+          regions[element.id || 'section-creative'] = { top: rect.top - bounds.top, height: rect.height };
         }
+        if (root.querySelector('#section-hero')) clipTop = regions['section-showreel']?.top || 0;
         next = createAudioCardLayout(bounds.width, bounds.height, obstacles, window.innerHeight, regions);
       } finally {
         root.classList.remove('audio-measuring');
       }
-      setLayout({ cards: next, viewportHeight: window.innerHeight });
+      setLayout({ cards: next, viewportHeight: window.innerHeight, clipTop });
     };
     const schedule = () => {
       clearTimeout(resizeTimer);
@@ -121,7 +123,8 @@ export default function AudioWaveScatter({ enabled }) {
 
   return (
     <div ref={layerRef} data-audio-scatter="" aria-hidden="true"
-      className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none">
+      className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none"
+      style={{ clipPath: layout.clipTop ? `inset(${layout.clipTop}px 0 0)` : undefined }}>
       {Object.keys(CARD_DEPTHS).map(depth => (
         <DepthLayer key={depth} depth={depth} layout={layout} pointer={pointer} scrollY={scrollY} rootTop={rootTop} reducedMotion={reducedMotion} />
       ))}

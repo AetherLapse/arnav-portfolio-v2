@@ -1,0 +1,6 @@
+/* Keep the shared line over each opaque section background, below content. */
+.services-layout,
+.mentor-container {
+  position: relative;
+  z-index: 1;
+}

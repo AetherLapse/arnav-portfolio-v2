@@ -315,7 +315,7 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 - User explicitly declined a direct Unicorn Studio embed because of its watermark. The final implementation uses no embed, SDK, hosted scene, or scene assets.
 - Removed the contact timeline/rays; suppressed the contact sine overlay and excluded the section from audio-card placement for a clean black background. Career keeps its timeline.
 - Rendering capped at 750,000 pixels and 45 fps; pauses offscreen/in hidden tabs, stays static for reduced motion, and releases GPU resources on unmount. Contact controls remain interactive.
-- Production build and targeted component lint passed. This is an original visual recreation, not the source scene.
+- Production build and targeted component lint passed. September 18 desktop browser review confirmed visibly changing idle frames and a glossy hover wake, with no page errors. This is an original visual recreation, not the source scene; no pixel-identical claim or hardware FPS benchmark is made.
 
 ## Validation and known limits
 
@@ -337,3 +337,34 @@ Implemented from smaller copy/HUD changes through backgrounds, decorations, the 
 - Application changes through the initial card placement were already present in commit `de58981` when this log was started. This log and the stronger parallax refinement are subsequent changes; no commit was created by this logging/refinement task.
 
 All source paths above are relative to `arnav-portfolio/` unless otherwise stated.
+
+## Timeline decorations across sections — September 18
+
+- Replaced every floating audio-wave visual with the shared timeline-clip component, including Digital Tools. Removed waveform geometry.
+- Allocated three deterministic decorations to each of 14 homepage sections (including hero, showreel, services, mentors, game, contact, and Stay Creative), with varied dimensions and distant/regular/blurred depth layers.
+- Enlarged foreground clips overlap panel/photo edges, remain blurred, and cannot intercept input. Shared scroll/mouse motion, no tilt, hover lift on sharper clips, reduced-motion behavior, and existing small-screen hiding remain.
+- Dense sections use clipped edge placements rather than dropping clips; foreground corner selection penalizes collisions with text and other decorations.
+- Desktop browser inspection confirmed 42 floating clips, three per section, and no remaining wave kind. Layout quota/size checks passed at 768, 1024, 1440, and 1920px. Targeted lint and production build passed.
+
+## Hero and Digital Tools refinement — September 18
+
+- Excluded Hero from clip allocation and clipped the showreel decoration layer below the hero boundary so its parallax cannot intrude.
+- Added Digital Tools to the local sine-line portals so its opaque section background no longer hides the line.
+- Added a subtle, static red radial glow behind the pinned text, preserving clip depth and text contrast. Removed the Title Sequence 01 badge.
+- Production build and targeted lint passed.
+
+## Foreground clips over sine line — September 18
+
+- Added a softly blurred, opaque dark backing behind enlarged foreground clips so the sine line is occluded instead of showing through their translucent fill. Explicitly ordered blurred clip planes above the other clip depths.
+
+## Continuous sine line — September 18
+
+- Extended local line rendering to Services, Worked With, Selected Edits, Posts, Mentors, the dinosaur section and its lazily mounted game surface. Preserved foreground clips above the line.
+- Restored the contact line above its opaque fluid canvas and connected the endpoint to the actual Channel Open dot, removing the old 64px gap and centered-x assumption.
+- Track section resizes, lazy game insertion, and the contact entrance transform; compensate for inset game-container coordinates to keep the path continuous.
+- Targeted lint/build passed; browser review confirmed the missing section layers and visible Services path.
+
+## Dinosaur line correction — September 18
+
+- Removed the extra sine-line portal inside the game renderer and its lazy-mount observer. Only the outer page section renders the shared path; the opaque game card naturally hides it. Removed the game-specific stacking override.
+- Targeted lint and production build passed.
