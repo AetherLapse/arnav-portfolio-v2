@@ -13,7 +13,7 @@ export default function StayCreativeSection() {
     const slots = [...element.querySelectorAll('.stay-creative-slot')];
     // Load the variable face before the first hover.
     WEIGHTS.forEach(weight => {
-      document.fonts.load(`${weight} 16px "Roboto Condensed"`).catch(() => {});
+      document.fonts.load(`${weight} 16px "Unbounded"`).catch(() => {});
     });
     let frame = 0;
     let hasPosition = false;

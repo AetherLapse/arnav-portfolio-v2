@@ -368,3 +368,7 @@ All source paths above are relative to `arnav-portfolio/` unless otherwise state
 
 - Removed the extra sine-line portal inside the game renderer and its lazy-mount observer. Only the outer page section renders the shared path; the opaque game card naturally hides it. Removed the game-specific stacking override.
 - Targeted lint and production build passed.
+
+## Stay Creative font — September 19
+
+- Switched Stay Creative and its font preloading to Unbounded. Adjusted font size for its wider letterforms; retained the 200–500 variable-weight hover transition and 150px circular reveal. Targeted lint and build passed.
