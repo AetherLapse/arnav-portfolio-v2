@@ -85,7 +85,7 @@ export default function RealmPage({ projects, onOpenProject, navigate, entered }
         <p>A world made of moving images.</p>
       </header>
       <div className="realm-view-controls">
-        <PageLink href="/works" navigate={navigate}><ArrowLeft size={14} aria-hidden="true" /> Works</PageLink>
+        <PageLink href="/" navigate={navigate}><ArrowLeft size={14} aria-hidden="true" /> Home</PageLink>
         {!reducedMotion && <button onClick={() => setIndexOpen(value => !value)} aria-pressed={indexOpen}>
           {indexOpen ? <Orbit size={15} aria-hidden="true" /> : <LayoutGrid size={15} aria-hidden="true" />}{indexOpen ? 'Spiral view' : 'Project index'}
         </button>}

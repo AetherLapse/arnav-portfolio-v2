@@ -372,3 +372,26 @@ All source paths above are relative to `arnav-portfolio/` unless otherwise state
 ## Stay Creative font — September 19
 
 - Switched Stay Creative and its font preloading to Unbounded. Adjusted font size for its wider letterforms; retained the 200–500 variable-weight hover transition and 150px circular reveal. Targeted lint and build passed.
+
+## Portfolio navigation and decoration cleanup — September 19
+
+- Restored the homepage Selected Edits heading. Replaced Works navigation with the existing My Realm subpage, removed the duplicate menu item, and made legacy /works URLs render My Realm. Realm now links back Home.
+- Removed Stay Creative clip allocation and clipped the scatter layer at its boundary so neighboring clips cannot drift over it.
+- Removed the hero CAM_04 / REC / SIGNAL__STRONG status block. Replaced navbar, expanded-menu, and footer hornet images with the existing /favicon.svg, preserving its proportions.
+- Targeted lint and production build passed.
+
+## Contact hover — September 19
+
+- Matched Get in Touch to Open to Work: a subtle 5% red wash slides in from the left over 500ms with a red outline. Removed the former solid fill and icon zoom/color change. Keyboard focus uses the same wash; reduced motion skips the transition.
+
+## Contact frosted glass — September 19
+
+- Added 20px backdrop blur and a flat 34% dark tint to Get in Touch, retaining the sliding hover wash. Removed the contact entrance wrapper’s persistent opacity will-change hint so it does not isolate the backdrop sampled by the glass. Existing reduced-transparency fallback remains.
+
+## New favicon — September 19
+
+- Replaced the tab icon and all three site icon images with the user-provided favicon.jpeg. File inspection identified a 500×500 PNG, so the unchanged bytes are served as public/favicon.png with image/png MIME and square intrinsic dimensions. Original upload preserved.
+
+## Toolkit hover — September 19
+
+- Removed cursor-following hover videos, their state/mouse handlers, and video references from Toolkit. Tile borders now transition to red on hover while keeping the existing dashed strokes.

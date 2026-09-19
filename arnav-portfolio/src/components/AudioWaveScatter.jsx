@@ -55,6 +55,7 @@ export default function AudioWaveScatter({ enabled }) {
       root.classList.add('audio-measuring');
       let next;
       let clipTop = 0;
+      let clipBottom = 0;
       try {
         root.querySelectorAll('section').forEach(section => {
           if (!intrinsicSizes.has(section)) intrinsicSizes.set(section, section.style.containIntrinsicBlockSize);
@@ -85,17 +86,19 @@ export default function AudioWaveScatter({ enabled }) {
         }).filter(Boolean);
         const regions = {};
         for (const element of root.querySelectorAll('section[id], [data-audio-region="creative"], #section-play')) {
-          if (element.id === 'section-hero') continue;
+          if (element.id === 'section-hero' || element.hasAttribute('data-audio-region')) continue;
           const rect = element.getBoundingClientRect();
           if (rect.height < 100) continue;
           regions[element.id || 'section-creative'] = { top: rect.top - bounds.top, height: rect.height };
         }
+        const creative = root.querySelector('[data-audio-region="creative"]');
+        if (creative) clipBottom = Math.max(0, bounds.bottom - creative.getBoundingClientRect().top);
         if (root.querySelector('#section-hero')) clipTop = regions['section-showreel']?.top || 0;
         next = createAudioCardLayout(bounds.width, bounds.height, obstacles, window.innerHeight, regions);
       } finally {
         root.classList.remove('audio-measuring');
       }
-      setLayout({ cards: next, viewportHeight: window.innerHeight, clipTop });
+      setLayout({ cards: next, viewportHeight: window.innerHeight, clipTop, clipBottom });
     };
     const schedule = () => {
       clearTimeout(resizeTimer);
@@ -124,7 +127,7 @@ export default function AudioWaveScatter({ enabled }) {
   return (
     <div ref={layerRef} data-audio-scatter="" aria-hidden="true"
       className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none"
-      style={{ clipPath: layout.clipTop ? `inset(${layout.clipTop}px 0 0)` : undefined }}>
+      style={{ clipPath: layout.clipTop || layout.clipBottom ? `inset(${layout.clipTop || 0}px 0 ${layout.clipBottom || 0}px)` : undefined }}>
       {Object.keys(CARD_DEPTHS).map(depth => (
         <DepthLayer key={depth} depth={depth} layout={layout} pointer={pointer} scrollY={scrollY} rootTop={rootTop} reducedMotion={reducedMotion} />
       ))}

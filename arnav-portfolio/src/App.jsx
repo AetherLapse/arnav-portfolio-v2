@@ -8,7 +8,6 @@ import MentorSection from './components/MentorSection';
 import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
-import WorksPage from './pages/WorksPage';
 import RealmPage from './pages/RealmPage';
 import { X } from 'lucide-react';
 import PageLink from './components/PageLink';
@@ -66,13 +65,32 @@ const GLOBAL_STYLES = `
   .nav-glass[data-state="menu"] { background-color: rgba(10,10,10,0.64); }
 
   .panel-glass {
-    background-color: rgba(10, 10, 10, 0.2);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    background-color: var(--panel-tint, rgba(10, 10, 10, 0.2));
+    -webkit-backdrop-filter: blur(var(--panel-blur, 4px));
+    backdrop-filter: blur(var(--panel-blur, 4px));
+  }
+
+  .contact-glass {
+    --panel-blur: 20px;
+    --panel-tint: rgba(10, 10, 10, 0.34);
+    transition: background-color 350ms ease;
+  }
+
+  .contact-glass:hover, .contact-glass:focus-visible,
+  #section-toolkit .panel-glass:hover {
+    --panel-tint: rgba(65, 8, 8, 0.42);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-glass { transition: none; }
   }
 
   #section-toolkit .panel-glass {
     border: 1px dashed var(--border);
+  }
+
+  #section-toolkit .panel-glass:hover {
+    border-color: var(--red);
   }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -500,9 +518,9 @@ const MagneticAttraction = ({ children, force = 0.2, radius = 300, className = "
   );
 };
 
-const ParticleFlyer = ({ children, className, style, delay = 0 }) => (
+const ParticleFlyer = ({ children, className, style, delay = 0, willChange = 'transform, opacity' }) => (
   <motion.div
-    className={className} style={{ ...style, willChange: 'transform, opacity' }}
+    className={className} style={{ ...style, willChange }}
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: "-50px" }}
@@ -1316,27 +1334,19 @@ const CareerTimeline = () => {
 // ================= TOOLKIT SECTION =================
 
 const toolkitData = [
-  { name: 'Premiere Pro', icon: 'Pr', color: '#9999FF', category: 'EDIT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Adobe_Premiere_Pro_CC_2026_icon.svg/1280px-Adobe_Premiere_Pro_CC_2026_icon.svg.png', video: '/assets/videos/videoplayback.mp4' },
-  { name: 'After Effects', icon: 'Ae', color: '#9999FF', category: 'MOTION', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Adobe_After_Effects_CC_2026_icon.svg/1280px-Adobe_After_Effects_CC_2026_icon.svg.png', video: '/assets/videos/ae.mp4' },
-  { name: 'Photoshop', icon: 'Ps', color: '#31A8FF', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Adobe_Photoshop_CC_2026_icon.svg/1280px-Adobe_Photoshop_CC_2026_icon.svg.png', video: '/assets/videos/phsp.mp4' },
-  { name: 'Illustrator', icon: 'Ai', color: '#FF9A00', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Adobe_Illustrator_CC_icon.svg/960px-Adobe_Illustrator_CC_icon.svg.png', video: '/assets/videos/ai.mp4' },
-  { name: 'Blender', icon: 'Bl', color: '#F5792A', category: '3D', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png', video: '/assets/videos/blendee.mp4' },
+  { name: 'Premiere Pro', icon: 'Pr', color: '#9999FF', category: 'EDIT', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Adobe_Premiere_Pro_CC_2026_icon.svg/1280px-Adobe_Premiere_Pro_CC_2026_icon.svg.png' },
+  { name: 'After Effects', icon: 'Ae', color: '#9999FF', category: 'MOTION', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Adobe_After_Effects_CC_2026_icon.svg/1280px-Adobe_After_Effects_CC_2026_icon.svg.png' },
+  { name: 'Photoshop', icon: 'Ps', color: '#31A8FF', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Adobe_Photoshop_CC_2026_icon.svg/1280px-Adobe_Photoshop_CC_2026_icon.svg.png' },
+  { name: 'Illustrator', icon: 'Ai', color: '#FF9A00', category: 'DESIGN', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Adobe_Illustrator_CC_icon.svg/960px-Adobe_Illustrator_CC_icon.svg.png' },
+  { name: 'Blender', icon: 'Bl', color: '#F5792A', category: '3D', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/960px-Blender_logo_no_text.svg.png' },
   { name: 'Lightroom', icon: 'Lr', color: '#31A8FF', category: 'PHOTO' },
-  { name: 'Kling', icon: 'Kl', color: '#00D4AA', category: 'AI', logo: 'https://www.freelogovectors.net/wp-content/uploads/2026/03/kling-ai-logo-icon_freelogovectors.net_.png', video: '/assets/videos/kling.mp4' },
+  { name: 'Kling', icon: 'Kl', color: '#00D4AA', category: 'AI', logo: 'https://www.freelogovectors.net/wp-content/uploads/2026/03/kling-ai-logo-icon_freelogovectors.net_.png' },
   { name: 'Higgsfield', icon: 'Hf', color: '#FF3366', category: 'AI', logo: 'https://cdn.iconscout.com/icon/free/png-256/free-higgsfield-icon-svg-download-png-14426782.png?f=webp' },
 ];
 
 const ToolkitSection = () => {
-  const [hoveredVideo, setHoveredVideo] = useState(null);
-  const [pipPos, setPipPos] = useState({ x: 0, y: 0 });
-  const sectionRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    setPipPos({ x: e.clientX + 16, y: e.clientY + 16 });
-  };
-
   return (
-    <section id="section-toolkit" ref={sectionRef} className="relative w-full py-32 px-4 md:px-8 z-10 bg-[#050505] overflow-hidden" onMouseMove={handleMouseMove}>
+    <section id="section-toolkit" className="relative w-full py-32 px-4 md:px-8 z-10 bg-[#050505] overflow-hidden">
       <div className="w-full max-w-[90rem] mx-auto relative z-10">
 
         {/* Header */}
@@ -1356,16 +1366,15 @@ const ToolkitSection = () => {
             <motion.div
               key={tool.name}
               data-audio-surface=""
-              className="panel-glass relative flex flex-col items-center justify-center py-10 md:py-14 border border-dashed border-[var(--border)] cursor-none group transition-colors duration-300"
+              className="panel-glass relative overflow-hidden flex flex-col items-center justify-center py-10 md:py-14 border border-dashed border-[var(--border)] cursor-none group transition-colors duration-[350ms] motion-reduce:transition-none"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              onMouseEnter={() => tool.video && setHoveredVideo(tool.video)}
-              onMouseLeave={() => setHoveredVideo(null)}
             >
+              <div aria-hidden="true" className="absolute inset-0 bg-[var(--red)]/5 -translate-x-full group-hover:translate-x-0 transition-transform duration-500 motion-reduce:transition-none pointer-events-none" />
               {/* Logo / Icon */}
-              <div className="mb-4 h-10 flex items-center justify-center">
+              <div className="relative z-10 mb-4 h-10 flex items-center justify-center">
                 {tool.logo ? (
                   <img src={tool.logo} alt={tool.name} className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300" />
                 ) : (
@@ -1373,39 +1382,16 @@ const ToolkitSection = () => {
                 )}
               </div>
               {/* Name */}
-              <span className="font-clash font-bold text-sm md:text-base text-[var(--black)] group-hover:text-[var(--red)] transition-colors duration-300">
+              <span className="relative z-10 font-clash font-bold text-sm md:text-base text-[var(--black)] transition-colors duration-300">
                 {tool.name}
               </span>
               {/* Category */}
-              <span className="font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] mt-1">
+              <span className="relative z-10 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] mt-1">
                 {tool.category}
               </span>
             </motion.div>
           ))}
         </div>
-
-        {/* PiP Video Player — follows cursor */}
-        <AnimatePresence>
-          {hoveredVideo && (
-            <motion.div
-              className="fixed pointer-events-none z-[9500] rounded-lg overflow-hidden border border-[var(--red)]/50 shadow-[0_0_30px_rgba(255,0,0,0.3)]"
-              style={{ left: pipPos.x, top: pipPos.y }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <video
-                src={hoveredVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-[200px] md:w-[260px] aspect-video object-cover"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Bottom metadata */}
         <div className="mt-16 flex justify-center">
@@ -1884,14 +1870,6 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-12 left-6 md:top-8 md:left-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1 transition-opacity duration-300 ${hudClass}`}>
-        <span>CAM_04 [REC]</span>
-        <span className="text-[var(--red)] flex items-center gap-2">
-          <motion.div animate={!isBase && active ? { opacity: [1, 0, 1] } : { opacity: 1 }} transition={{ repeat: Infinity, duration: 2 }} className="w-3 h-3 rounded-full bg-[var(--red)]" />
-          SIGNAL__STRONG
-        </span>
-      </ParticleFlyer>
-
       <ParticleFlyer delay={hasLoaded ? 0.3 : 0} className={`absolute top-12 left-0 right-0 w-full flex flex-col items-center justify-center gap-3 transition-opacity duration-300 ${hudClass}`}>
         <motion.div
           id="top-secret-marker"
@@ -2339,8 +2317,7 @@ const CursorOverlay = () => {
 export default function App() {
   const [isMounted, setIsMounted] = useState(false);
   const navigation = usePageNavigation(isMounted);
-  const isWorksPage = navigation.location.pathname === '/works';
-  const isRealmPage = navigation.location.pathname === '/realm';
+  const isRealmPage = ['/realm', '/works'].includes(navigation.location.pathname);
 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -2383,7 +2360,7 @@ export default function App() {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [filteredEvidence, isWorksPage]); // Re-bind if content changes
+  }, [filteredEvidence, isRealmPage]); // Re-bind if content changes
 
   const handleArrowScroll = (direction) => {
     if (carouselRef.current) {
@@ -2487,10 +2464,9 @@ export default function App() {
             >
               {/* Expanded bar content (on hero) */}
               <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-3 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex shrink-0"><img src="/assets/photos/hornet.png" width="4096" height="2304" alt="" className="h-5 md:h-7 w-auto max-w-none shrink-0 object-contain" /></PageLink>
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-5 md:h-7 w-auto max-w-none shrink-0 object-contain" /></PageLink>
                 <div className="flex items-center gap-2 md:gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
-                  <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
                   <PageLink href="/realm" navigate={navigateWithTransition} aria-current={isRealmPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isRealmPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>MY REALM</PageLink>
                   <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
                 </div>
@@ -2515,7 +2491,7 @@ export default function App() {
                   <button aria-label="Close navigation" onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   </button>
-                  <img src="/assets/photos/hornet.png" width="4096" height="2304" alt="Arnav Rai" className="h-8 w-auto max-w-none shrink-0 object-contain" />
+                  <img src="/favicon.png" width="500" height="500" alt="Arnav Rai" className="h-8 w-auto max-w-none shrink-0 object-contain" />
                   <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
                     <div aria-hidden="true" className="nav-record-dot w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
                   </PageLink>
@@ -2528,10 +2504,9 @@ export default function App() {
                     <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase mb-8">NAVIGATION</span>
                     <div className="flex flex-col gap-4">
                       {[
-                        { num: '01', label: 'Works', href: '/works' },
-                        { num: '02', label: 'My Realm', href: '/realm' },
-                        { num: '03', label: 'Contact', href: '#section-contact' },
-                        { num: '04', label: 'About', href: '#section-intro' },
+                        { num: '01', label: 'My Realm', href: '/realm' },
+                        { num: '02', label: 'Contact', href: '#section-contact' },
+                        { num: '03', label: 'About', href: '#section-intro' },
                       ].map(item => (
                         <PageLink
                           key={item.num}
@@ -2578,8 +2553,7 @@ export default function App() {
 
         {isRealmPage ? (
           <RealmPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} entered={hasEntered && !navigation.active} />
-        ) : isWorksPage ? (
-          <WorksPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} onContact={openContactForm} />
+
         ) : (
           <>
         {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
@@ -3172,7 +3146,7 @@ export default function App() {
           <section id="section-contact" data-audio-obstacle="" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
             <ContactFlow />
 
-            <ParticleFlyer delay={0.1} className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
+            <ParticleFlyer delay={0.1} willChange="transform" className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
                
                {/* Marker for Red Thread to latch onto */}
                <div id="channel-open-marker" className="text-[var(--red)] font-clash text-[10px] tracking-[0.2em] flex items-center gap-2 mb-16">
@@ -3184,14 +3158,15 @@ export default function App() {
                {/* GET IN TOUCH CTA */}
                <button data-audio-surface=""
                  onClick={openContactForm}
-                 className="panel-glass btn-fill border border-[var(--border)] p-8 md:p-12 flex items-center gap-8 transition-all duration-500 hover:border-[var(--red)]/40 group cursor-none"
+                 className="panel-glass contact-glass relative overflow-hidden border border-[var(--red)] p-8 md:p-12 flex items-center gap-8 group cursor-none"
                >
-                  <div className="relative z-10 w-14 h-14 bg-[var(--red)] group-hover:bg-white rounded-[1rem] flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+                  <div aria-hidden="true" className="absolute inset-0 bg-[var(--red)]/5 -translate-x-full group-hover:translate-x-0 group-focus-visible:translate-x-0 transition-transform duration-500 motion-reduce:transition-none pointer-events-none" />
+                  <div className="relative z-10 w-14 h-14 bg-[var(--red)] flex items-center justify-center shadow-[0_0_20px_rgba(255,0,0,0.4)]">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
                   <div className="relative z-10 flex flex-col items-start gap-1">
-                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)] group-hover:text-white transition-colors">GET IN TOUCH</span>
-                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)] group-hover:text-white/70 transition-colors">// LET’S TALK ABOUT YOUR EDIT</span>
+                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)]">GET IN TOUCH</span>
+                    <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">// LET’S TALK ABOUT YOUR EDIT</span>
                   </div>
                </button>
             </ParticleFlyer>
@@ -3202,7 +3177,7 @@ export default function App() {
                 {/* Left: Brand */}
                 <div className="flex flex-col gap-3 max-w-[300px]">
                   <div className="flex items-center gap-3">
-                    <img src="/assets/photos/hornet.png" width="4096" height="2304" alt="" className="h-7 w-auto max-w-none shrink-0 object-contain" />
+                    <img src="/favicon.png" width="500" height="500" alt="" className="h-7 w-auto max-w-none shrink-0 object-contain" />
                     <span className="font-clash font-bold text-sm text-white">Arnav Rai</span>
                   </div>
                   <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">Video editing and motion design that turn raw footage into stories worth watching.</p>
@@ -3213,7 +3188,7 @@ export default function App() {
                   <span className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase mb-2">SITEMAP</span>
                   <a href="#section-hero" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Home</a>
                   <a href="#section-intro" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">About</a>
-                  <PageLink href="/works" navigate={navigateWithTransition} className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Works</PageLink>
+                  <PageLink href="/realm" navigate={navigateWithTransition} className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">My Realm</PageLink>
                   <a href="#section-contact" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Contact</a>
                 </div>
 
