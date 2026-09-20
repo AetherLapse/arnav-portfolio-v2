@@ -1,10 +1,9 @@
 // Shared clip appearance for the timeline backgrounds and floating edit clips.
-export default function TimelineClip({ name, color = '#9b59b6', style, className = '', keyframes = true }) {
+export default function TimelineClip({ name, color = '#9b59b6', style, className = '' }) {
   return (
     <div data-timeline-clip="" className={`relative rounded-[2px] flex items-center overflow-hidden ${className}`}
       style={{ backgroundColor: `${color}33`, borderLeft: `2px solid ${color}`, borderRight: `1px solid ${color}66`, borderTop: `1px solid ${color}44`, borderBottom: `1px solid ${color}44`, ...style }}>
       <span className="font-clash text-[9px] text-white/80 px-2 truncate whitespace-nowrap relative z-10">{name}</span>
-      {keyframes && [18, 48, 78].map(left => <span key={left} aria-hidden="true" className="absolute top-1/2 w-[5px] h-[5px] bg-[#f1c40f] rotate-45" style={{ left: `${left}%` }} />)}
     </div>
   );
 }

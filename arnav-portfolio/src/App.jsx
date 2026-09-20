@@ -23,7 +23,6 @@ const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
 import AudioWaveScatter from './components/AudioWaveScatter';
 import QuoteAudioAccents from './components/QuoteAudioAccents';
-import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -160,9 +159,8 @@ const GLOBAL_STYLES = `
   .font-dancing { font-family: 'Dancing Script', cursive; }
   .font-clash { font-family: 'Unbounded', sans-serif; }
   
-  /* New Supertalls Utility Class */
-  .font-dragon { font-family: 'Supertalls'; }
-  .font-dragon { font-family: 'Dragon', sans-serif; }
+  /* Shared display headings */
+  .font-dragon { font-family: 'Dirtyline', sans-serif; font-weight: 400; font-synthesis: none; text-transform: lowercase; }
 
   /* Pure White Text */
   .cinematic-text {
@@ -531,57 +529,6 @@ const ParticleFlyer = ({ children, className, style, delay = 0, willChange = 'tr
     {children}
   </motion.div>
 );
-
-const BreathingText = ({ text, className = '', active }) => {
-  const charsRef = useRef([]);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (!active) return;
-    let frame;
-    let lastUpdate = 0;
-    const lastWeights = [];
-    const animate = now => {
-      if (now - lastUpdate >= 1000 / 30) {
-        lastUpdate = now - ((now - lastUpdate) % (1000 / 30));
-        const pos = (now * 0.003) % (charsRef.current.length + 6);
-        charsRef.current.forEach((el, index) => {
-          if (!el) return;
-          const t = Math.max(0, 1 - Math.abs(index - pos + 3) / 3);
-          const weight = 300 + Math.round((t * t * (3 - 2 * t) * 500) / 5) * 5;
-          if (weight !== lastWeights[index]) {
-            el.style.fontVariationSettings = `'wght' ${weight}`;
-            lastWeights[index] = weight;
-          }
-        });
-      }
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [active]);
-
-  const lines = text.split('\n');
-  let charIndex = 0;
-
-  return (
-    <span ref={containerRef} className={`tracking-[0.05em] ${className}`}>
-      {lines.map((line, li) => (
-        <span key={li} className="block">
-          {line.split('').map((char) => {
-            const idx = charIndex++;
-            if (char === ' ') return <span key={idx} className="inline-block w-[0.3em]">&nbsp;</span>;
-            return (
-              <span key={idx} ref={el => { charsRef.current[idx] = el; }} className="inline-block" style={{ fontVariationSettings: "'wght' 300" }}>
-                {char}
-              </span>
-            );
-          })}
-        </span>
-      ))}
-    </span>
-  );
-};
 
 const ParticleTextSwap = ({ text }) => (
   <span className="relative inline-flex items-center justify-center whitespace-nowrap">
@@ -1302,7 +1249,7 @@ const CareerTimeline = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">CAREER</TextRoll>            </motion.h2>
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">CAREER</span>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
               <span>PRODUCTIONS: <span className="text-[var(--red)]">03</span></span>
@@ -1354,7 +1301,7 @@ const ToolkitSection = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">MY TOOLKIT</TextRoll>            </motion.h2>
+            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">MY TOOLKIT</span>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>ARSENAL: <span className="text-[var(--red)]">LOADED</span></span>
               <span>SOFTWARE_COUNT: <span className="text-[var(--red)]">{toolkitData.length}</span></span>
@@ -1738,7 +1685,10 @@ const HeroBackground = ({ hasLoaded, active }) => {
           animate={hasLoaded ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.1, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
           style={{
-            fontFamily: "'Unbounded', sans-serif",
+            fontFamily: "'Dirtyline', sans-serif",
+            textTransform: 'lowercase',
+            fontWeight: 400,
+            fontSynthesis: 'none',
             fontSize: 'clamp(60px, 12vw, 160px)',
             '--mx': '0px',
             '--my': '0px',
@@ -1749,7 +1699,10 @@ const HeroBackground = ({ hasLoaded, active }) => {
             letterSpacing: '0.02em',
           }}
         >
-          <BreathingText active={active} text={"ARNAV\nRAI"} className="[&>span:nth-child(2)]:mt-2 md:[&>span:nth-child(2)]:mt-4" />
+          <span>
+            <span className="block">ARNAV</span>
+            <span className="block mt-2 md:mt-4">RAI</span>
+          </span>
         </motion.div>
         <motion.p
           className="font-clash text-[var(--muted)] tracking-[0.3em] uppercase mt-4 md:mt-6"
@@ -1824,22 +1777,16 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
 
 
       <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-24 right-6 md:bottom-16 md:right-12 border border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-sm p-4 flex items-center gap-4 transition-opacity duration-300 ${hudClass}`}>
-        <div className="w-10 h-10 rounded-lg border border-green-500/50 flex items-center justify-center relative">
+        <div className="w-10 h-10 flex items-center justify-center">
           <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-          <div className="absolute inset-0 rounded-lg border border-green-500/30 animate-ping opacity-30" />
         </div>
         <div className="flex flex-col font-clash">
           <span className="text-[8px] text-[var(--muted)] tracking-widest">STATUS</span>
           <span className="text-[12px] text-green-400 font-bold tracking-widest">AVAILABLE</span>
+          <span className="mt-1 text-[8px] text-[var(--muted)] tracking-widest">FOR PROJECTS</span>
         </div>
       </ParticleFlyer>
 
-
-      <ParticleFlyer delay={hasLoaded ? 0.5 : 0} className={`absolute bottom-6 right-6 md:bottom-4 md:right-12 font-clash text-[7px] md:text-[8px] text-right text-[var(--muted)] tracking-widest leading-loose transition-opacity duration-300 ${hudClass}`}>
-        FROM FIRST CUT TO FINAL FRAME<br/>
-        PLAYBACK: FULL RESOLUTION<br/>
-        <span className="text-[var(--red)] font-bold">READY TO EDIT</span>
-      </ParticleFlyer>
 
       {/* Subtitle text */}
       <div className="absolute top-[64%] md:top-[66%] left-4 md:left-8 text-left text-[10px] md:text-[12px] font-clash tracking-[0.15em] flex flex-col items-start opacity-100">
@@ -2211,7 +2158,7 @@ const CursorOverlay = () => {
 
       {/* OUTER CURSOR (TRAILING RED OUTLINE) */}
       <motion.div
-        className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none hidden md:block ${cursorOnLink ? 'w-12 h-12 rounded-lg bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
+        className={`fixed top-0 left-0 z-[9998] pointer-events-none border border-[var(--red)] transition-none hidden md:block ${cursorOnLink ? 'w-12 h-12 rounded-none bg-[var(--red)]/10' : 'w-8 h-8 rounded-full'}`}
         style={{ x: wellX, y: wellY, translateX: '-50%', translateY: '-50%' }}
       />
 
@@ -2430,7 +2377,7 @@ export default function App() {
                           className="flex items-center gap-6 group cursor-none text-left"
                         >
                           <span className="font-clash text-xs text-[var(--muted)]">{item.num}</span>
-                          <span className="font-clash font-bold text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
+                          <span className="font-clash font-semibold text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
                         </PageLink>
                       ))}
                     </div>
@@ -2449,9 +2396,9 @@ export default function App() {
                     <div>
                       <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-3">SOCIALS</span>
                       <div className="flex gap-4">
-                        <a href="https://www.behance.net/arnavrai1" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Behance</a>
                         <a href="https://www.linkedin.com/in/arnav-rai-645517267" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">LinkedIn</a>
                         <a href="https://www.instagram.com/thearnavrai" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Instagram</a>
+                        <a href="https://www.behance.net/arnavrai1" target="_blank" rel="noreferrer" className="font-clash text-xs text-[var(--muted)] hover:text-white transition-colors cursor-none">Behance</a>
                       </div>
                     </div>
                     <div>
@@ -2522,7 +2469,7 @@ export default function App() {
                   className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
                   style={{ marginBottom: '-0.15em' }}
                 >
-                  <TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">ABOUT</TextRoll>
+                  <span className="block font-dragon text-[clamp(40px,8vw,80px)]">ABOUT</span>
                 </motion.h2>
               </ParticleFlyer>
 
@@ -2709,7 +2656,7 @@ export default function App() {
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">WORKED WITH</TextRoll>                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">WORKED WITH</span>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -2819,7 +2766,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">SELECTED EDITS</TextRoll>                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">SELECTED EDITS</span>                  </motion.h2>
                 </ParticleFlyer>
 
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
@@ -2915,7 +2862,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">POSTS SHOWCASE</TextRoll>                  </motion.h2>
+                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">POSTS SHOWCASE</span>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2}>
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -3131,6 +3078,18 @@ export default function App() {
           {/* Giant #stAycReative at very bottom */}
           <div data-audio-region="creative" className="w-full bg-[var(--bg)] py-16 md:py-24">
             <StayCreativeSection />
+            <div className="flex justify-end px-6 md:px-16 mt-8 pointer-events-none select-none" aria-hidden="true">
+              <img
+                src="/assets/photos/hornet.png"
+                alt=""
+                width="4096"
+                height="2304"
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+                className="w-40 md:w-56 h-auto object-contain opacity-20"
+              />
+            </div>
           </div>
 
 

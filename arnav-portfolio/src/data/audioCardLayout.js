@@ -22,7 +22,7 @@ function seededRandom(seed) {
 
 export const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
-// Stable per-section quotas. Foreground clips may cross panel borders, but text
+// Stable per-section accents. Foreground clips may cross panel borders, but text
 // and interactive controls remain protected. No scroll-time randomization.
 export function createAudioCardLayout(width, height, obstacles, viewportHeight, regions = {}) {
   const cards = [];
@@ -59,8 +59,8 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
           + (left < 0 || rect.right > width ? 90 : 0);
         if (score < bestScore) { best = { left, top, envelope, onSurface }; bestScore = score; }
       }
-      // Dense sections still receive three accents: narrow, clipped edge slivers
-      // are non-interactive and do not obscure the central reading area.
+      // Try clipped edges in dense sections. The final pass removes smaller
+      // accents if these fallback positions conflict with larger clips.
       if (foreground && surfaces.length && !best?.onSurface) best = undefined;
       if (!best) {
         let left = index === 1 ? width - cardWidth * .32 : -cardWidth * (foreground ? .72 : .68);
@@ -80,7 +80,8 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
             }
           }
         }
-        best = { left, top, envelope: { left, right: left + cardWidth, top, bottom: top + cardHeight } };
+        best = { left, top, envelope: { left: left - horizontalRoom, right: left + cardWidth + horizontalRoom,
+          top: top - verticalRoom, bottom: top + cardHeight + verticalRoom } };
       }
       const prefix = regionName.replace('section-', '').replace(/-/g, '_').toUpperCase();
       cards.push({ ...best, name: `${prefix}_${['SELECTS.mp4','MOTION.aep','MASTER.mov'][index]}`, region: regionName,
@@ -88,5 +89,11 @@ export function createAudioCardLayout(width, height, obstacles, viewportHeight, 
         width: cardWidth, height: cardHeight, edge: best.left < 0 || best.left + cardWidth > width ? 'clipped' : 'inside' });
     }
   }
-  return cards;
+  // Resolve collisions once, not on scroll, so clips never pop in and out.
+  // Envelopes include each depth plane's scroll and pointer travel.
+  const kept = [];
+  for (const card of [...cards].sort((a, b) => b.width * b.height - a.width * a.height)) {
+    if (!kept.some(other => overlaps(card.envelope, other.envelope))) kept.push(card);
+  }
+  return cards.filter(card => kept.includes(card));
 }

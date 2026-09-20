@@ -73,7 +73,7 @@ export default function PremiereTimeline() {
                     viewport={{ once: true, margin: '-100px' }}
                     transition={{ duration: 0.6, delay: ti * 0.08 + ci * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
                   >
-                    <TimelineClip name={clip.name} color={track.color} keyframes={ci === 0} className="w-full h-full" />
+                    <TimelineClip name={clip.name} color={track.color} className="w-full h-full" />
                   </motion.div>
                 ))}
               </div>
@@ -90,7 +90,7 @@ export default function PremiereTimeline() {
               </div>
               <div className="flex-1 relative h-8 border-b border-white/5">
                 {track.clips.map((clip, ci) => (
-                  <TimelineClip key={ci} name={clip.name} color={track.color} keyframes={false}
+                  <TimelineClip key={ci} name={clip.name} color={track.color}
                     className="absolute top-[2px] bottom-[2px]"
                     style={{ left: `${clip.start + 10}%`, width: `${clip.width * 0.8}%` }} />
                 ))}
@@ -102,5 +102,4 @@ export default function PremiereTimeline() {
     </div>
   );
 };
-
 

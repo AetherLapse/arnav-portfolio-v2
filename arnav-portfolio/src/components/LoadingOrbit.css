@@ -1,0 +1,6 @@
+.loading-orbit { width: 85px; height: 72px; position: relative; flex-shrink: 0; perspective: 240px; }
+.loading-orbit i { position: absolute; inset: 0; border: 1px solid var(--red); border-radius: 50%; transform: rotateX(65deg); animation: loading-orbit 1.6s ease-in-out infinite; }
+.loading-orbit i:nth-child(2) { animation-delay: -.2s; }
+.loading-orbit i:nth-child(3) { animation-delay: -.4s; }
+@keyframes loading-orbit { 0%,100% { transform: translateY(-12px) rotateX(65deg); opacity: .25; } 50% { transform: translateY(12px) rotateX(65deg); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .loading-orbit i { animation: none; } }

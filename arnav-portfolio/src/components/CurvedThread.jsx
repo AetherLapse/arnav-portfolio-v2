@@ -61,7 +61,7 @@ export default function CurvedThread({ enabled }) {
 
   const drawing = (top, left = 0) => (
     <svg width={geometry.width} height={geometry.end + 14} className="absolute left-0 overflow-visible" style={{ top, left }}>
-      <path d={geometry.path} stroke="var(--red)" strokeWidth="1" fill="none" opacity="0.1" />
+      <path d={geometry.path} stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.1" />
       <motion.path d={geometry.path} stroke="var(--red)" strokeWidth="1.5" fill="none" opacity="0.5" style={{ pathLength: reducedMotion ? 1 : progress }} />
       <circle cx={geometry.endX} cy={geometry.end} r="5" fill="var(--red)" opacity="0.65" />
     </svg>

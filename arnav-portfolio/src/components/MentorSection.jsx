@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useAnimate, useReducedMotion } from 'framer-motion';
 import { Image as ImageIcon } from 'lucide-react';
-import { TextRoll } from '@/components/ui/skiper-ui/skiper58';
 import { MENTORS } from '../data/mentors';
 import './MentorSection.css';
 import MentorStory from './MentorStory';
@@ -82,7 +81,7 @@ export default function MentorSection() {
   return <section id="section-mentors" className="mentor-section" data-audio-obstacle="" aria-labelledby="mentors-heading">
     <div className="mentor-container">
       <header className="mentor-header">
-        <h2 id="mentors-heading" className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><TextRoll className="font-dragon text-[clamp(40px,8vw,80px)]">MY MENTORS</TextRoll></h2>
+        <h2 id="mentors-heading" className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">MY MENTORS</span></h2>
       </header>
       <div className="mentor-gallery">
         <div ref={scope} className="mentor-collage" role="group" aria-label="Moments with Arnav's mentors. Hover or focus to expand a photograph. Click or tap to read the mentor story." data-active-mentor={active}>

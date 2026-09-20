@@ -86,7 +86,8 @@ export default function AudioWaveScatter({ enabled }) {
         }).filter(Boolean);
         const regions = {};
         for (const element of root.querySelectorAll('section[id], [data-audio-region="creative"], #section-play')) {
-          if (element.id === 'section-hero' || element.hasAttribute('data-audio-region')) continue;
+          // Digital tools already has its own accents inside the sticky scene.
+          if (element.id === 'section-hero' || element.id === 'section-digital-tools' || element.hasAttribute('data-audio-region')) continue;
           const rect = element.getBoundingClientRect();
           if (rect.height < 100) continue;
           regions[element.id || 'section-creative'] = { top: rect.top - bounds.top, height: rect.height };

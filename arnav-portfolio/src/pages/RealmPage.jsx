@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTra
 import { ArrowDown, ArrowLeft, ArrowUpRight, LayoutGrid, Orbit } from 'lucide-react';
 import InteractiveDotGrid from '../components/InteractiveDotGrid';
 import PageLink from '../components/PageLink';
+import LoadingOrbit from '../components/LoadingOrbit';
 import './RealmPage.css';
 
 function RealmImage({ project }) {
@@ -110,7 +111,7 @@ export default function RealmPage({ projects, onOpenProject, navigate, entered }
       <AnimatePresence>
         {!ready && <motion.div className="realm-entrance" key="entrance" exit={{ opacity: 0 }} transition={{ duration: reducedMotion ? 0 : 0.55 }}>
           <span className="realm-entrance-label">ARNAV RAI / ENTERING</span>
-          <div className="realm-entrance-orbit" aria-hidden="true"><i /><i /><i /></div>
+          <LoadingOrbit className="realm-entrance-orbit" />
           <p className="font-dragon">MY REALM<span>.</span></p>
           <span role="status">Preparing the collection · {Math.min(settled, projects.length)} / {projects.length}</span>
         </motion.div>}
