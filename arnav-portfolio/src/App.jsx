@@ -9,6 +9,8 @@ import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
 import RealmPage from './pages/RealmPage';
+import WorksPage from './pages/WorksPage';
+import InteractiveDotGrid from './components/InteractiveDotGrid';
 import { X } from 'lucide-react';
 import PageLink from './components/PageLink';
 import { EVIDENCE_DATA, EVIDENCE_SECTORS } from './data/projects';
@@ -1493,6 +1495,9 @@ const QuoteReveal = () => {
       <div className="sticky top-0 z-10 h-screen w-full flex items-center justify-center" style={{ perspective: '1200px' }}>
         <div data-digital-glow="" data-audio-decoration="" aria-hidden="true" className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 0% 65%, rgba(255,0,0,0.15), transparent 65%), radial-gradient(ellipse at 100% 15%, rgba(139,0,0,0.09), transparent 55%)' }} />
+        <div data-digital-dot-grid="" data-audio-decoration="" aria-hidden="true" className="absolute inset-0 pointer-events-none">
+          <InteractiveDotGrid active={true} />
+        </div>
         <QuoteAudioAccents progress={scrollYProgress} />
         <div
           className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
@@ -1684,102 +1689,6 @@ const QuoteReveal_REPLACED = () => {
   );
 };
 
-const InteractiveDotGrid = ({ active }) => {
-  const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-
-  useEffect(() => {
-    if (!active || !window.matchMedia('(pointer: fine)').matches) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let raf = 0;
-    let visible = true;
-    const gap = 24;
-    const dotSize = 0.6;
-    const influenceRadius = 100;
-    const dpr = Math.min(window.devicePixelRatio, 1.5);
-
-    const resize = () => {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      schedule();
-    };
-
-
-    // Draw ONE frame only — dots are static except near the cursor, so a
-    // continuous rAF loop would redraw 660+ arcs 60x/sec for zero change.
-    const draw = () => {
-      if (!visible) return;
-      ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
-      ctx.beginPath();
-      for (let x = gap; x < w; x += gap) {
-        for (let y = gap; y < h; y += gap) {
-          const dx = x - mx;
-          const dy = y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          let px = x;
-          let py = y;
-
-          if (dist < influenceRadius && dist > 0) {
-            const force = (1 - dist / influenceRadius) * 6;
-            px += (dx / dist) * force;
-            py += (dy / dist) * force;
-          }
-
-          ctx.moveTo(px + dotSize, py);
-          ctx.arc(px, py, dotSize, 0, Math.PI * 2);
-
-        }
-      }
-      ctx.fill();
-    };
-
-    const schedule = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => { raf = 0; draw(); });
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      if (visible) schedule();
-    });
-    observer.observe(canvas);
-
-    const onMove = (e) => {
-      if (!visible) return;
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      schedule();
-    };
-    window.addEventListener('mousemove', onMove);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', onMove);
-      observer.disconnect();
-    };
-  }, [active]);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
-};
-
 const ShowreelVideo = () => {
   const videoRef = useRef(null);
 
@@ -1891,7 +1800,19 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
 
       <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-24 right-6 md:top-24 md:right-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-end gap-1 transition-opacity duration-300 ${hudClass}`}>
         <div className="flex flex-col border border-[var(--border)] bg-[var(--bg)]/50 backdrop-blur-sm">
-          <span className="px-2 py-1 border-b border-[var(--border)] text-[var(--muted)] transition-colors">IN</span>
+          <span className="inline-flex items-center gap-2 px-2 py-1 border-b border-[var(--border)] text-[var(--muted)] transition-colors">
+            IN
+            <svg width="18" height="12" viewBox="0 0 36 24" role="img" aria-label="Flag of India" className="shrink-0">
+              <path fill="#FF9933" d="M0 0h36v8H0z" />
+              <path fill="#FFFFFF" d="M0 8h36v8H0z" />
+              <path fill="#138808" d="M0 16h36v8H0z" />
+              <g fill="none" stroke="#000080" strokeWidth="0.35">
+                <circle cx="18" cy="12" r="3.3" />
+                {Array.from({ length: 24 }, (_, i) => <path key={i} d="M18 12v-3.3" transform={`rotate(${i * 15} 18 12)`} />)}
+              </g>
+              <circle cx="18" cy="12" r="0.5" fill="#000080" />
+            </svg>
+          </span>
           <span className="px-2 py-1 text-[var(--red)] font-bold"><PortfolioClock /></span>
         </div>
       </ParticleFlyer>
@@ -1910,9 +1831,6 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
         <div className="flex flex-col font-clash">
           <span className="text-[8px] text-[var(--muted)] tracking-widest">STATUS</span>
           <span className="text-[12px] text-green-400 font-bold tracking-widest">AVAILABLE</span>
-          <span className="text-[8px] text-[var(--muted)] tracking-widest flex items-center gap-1 mt-1">
-            <span className="w-1 h-1 rounded-full bg-green-500" /> FOR PROJECTS
-          </span>
         </div>
       </ParticleFlyer>
 
@@ -2317,7 +2235,8 @@ const CursorOverlay = () => {
 export default function App() {
   const [isMounted, setIsMounted] = useState(false);
   const navigation = usePageNavigation(isMounted);
-  const isRealmPage = ['/realm', '/works'].includes(navigation.location.pathname);
+  const isRealmPage = navigation.location.pathname === '/realm';
+  const isWorksPage = navigation.location.pathname === '/works';
 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -2360,7 +2279,7 @@ export default function App() {
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [filteredEvidence, isRealmPage]); // Re-bind if content changes
+  }, [filteredEvidence, isRealmPage, isWorksPage]); // Re-bind if content changes
 
   const handleArrowScroll = (direction) => {
     if (carouselRef.current) {
@@ -2467,6 +2386,7 @@ export default function App() {
                 <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-5 md:h-7 w-auto max-w-none shrink-0 object-contain" /></PageLink>
                 <div className="flex items-center gap-2 md:gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
+                  <PageLink href="/works" navigate={navigateWithTransition} aria-current={isWorksPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isWorksPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>WORKS</PageLink>
                   <PageLink href="/realm" navigate={navigateWithTransition} aria-current={isRealmPage ? 'page' : undefined} className={`font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest hover:text-white transition-colors cursor-none ${isRealmPage ? 'text-[var(--red)]' : 'text-[var(--muted)]'}`}>MY REALM</PageLink>
                   <button onClick={() => navigateWithTransition('#section-contact')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CONTACT</button>
                 </div>
@@ -2474,27 +2394,21 @@ export default function App() {
 
               {/* Contracted pill content */}
               <div inert={!navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
+                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex items-center justify-center shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-7 w-7 object-contain" /></PageLink>
                 <button aria-label="Open navigation" onClick={() => { setNavMenuOpen(true); SFX.navOpen(); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
                   <div className="w-4 h-px bg-white" />
                   <div className="w-4 h-px bg-white" />
                 </button>
-                <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="font-dragon text-sm text-white">A.</PageLink>
-                <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-6 h-6 rounded-full border border-[var(--red)] flex items-center justify-center cursor-none">
-                  <div aria-hidden="true" className="nav-record-dot w-2 h-2 rounded-full bg-[var(--red)]" />
-                </PageLink>
               </div>
 
               {/* Full-screen menu overlay content */}
               <div inert={!navMenuOpen} className={`absolute inset-0 flex flex-col transition-opacity duration-300 delay-200 ${navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {/* Top bar */}
                 <div className="flex items-center justify-between px-6 md:px-10 h-14 flex-shrink-0">
+                  <img src="/favicon.png" width="500" height="500" alt="Arnav Rai" className="h-8 w-auto max-w-none shrink-0 object-contain" />
                   <button aria-label="Close navigation" onClick={() => setNavMenuOpen(false)} className="w-8 h-8 flex items-center justify-center border border-white/20 rounded cursor-none">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                   </button>
-                  <img src="/favicon.png" width="500" height="500" alt="Arnav Rai" className="h-8 w-auto max-w-none shrink-0 object-contain" />
-                  <PageLink href="/#section-contact" navigate={navigateWithTransition} aria-label="Contact" className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center cursor-none">
-                    <div aria-hidden="true" className="nav-record-dot w-2.5 h-2.5 rounded-full bg-[var(--red)]" />
-                  </PageLink>
                 </div>
 
                 {/* Menu body */}
@@ -2504,9 +2418,10 @@ export default function App() {
                     <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase mb-8">NAVIGATION</span>
                     <div className="flex flex-col gap-4">
                       {[
-                        { num: '01', label: 'My Realm', href: '/realm' },
-                        { num: '02', label: 'Contact', href: '#section-contact' },
-                        { num: '03', label: 'About', href: '#section-intro' },
+                        { num: '01', label: 'Works', href: '/works' },
+                        { num: '02', label: 'My Realm', href: '/realm' },
+                        { num: '03', label: 'Contact', href: '#section-contact' },
+                        { num: '04', label: 'About', href: '#section-intro' },
                       ].map(item => (
                         <PageLink
                           key={item.num}
@@ -2553,7 +2468,8 @@ export default function App() {
 
         {isRealmPage ? (
           <RealmPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} entered={hasEntered && !navigation.active} />
-
+        ) : isWorksPage ? (
+          <WorksPage projects={EVIDENCE_DATA} onOpenProject={setCaseStudyItem} navigate={navigateWithTransition} onContact={openContactForm} />
         ) : (
           <>
         {/* DYNAMIC SCROLL FX: motion blur, reveals, portrait face effect */}
@@ -2659,20 +2575,20 @@ export default function App() {
                     </div>
 
                     {/* Alert Box */}
-                    <div className="border border-[var(--red)] p-4 flex flex-col gap-2 relative overflow-hidden group cursor-none">
-                      <div className="absolute inset-0 bg-[var(--red)]/5 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                      <div className="flex items-center gap-2 font-clash text-[8px] text-[var(--red)] tracking-widest">
-                        <div className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
+                    <button type="button" onClick={openContactForm} aria-label="Open to Work — contact Arnav" className="w-full text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--red)] border border-[var(--red)] p-4 flex flex-col gap-2 relative overflow-hidden group cursor-none">
+                      <span className="absolute inset-0 bg-[var(--red)]/5 transform -translate-x-full group-hover:translate-x-0 group-focus-visible:translate-x-0 transition-transform duration-500 motion-reduce:transition-none" />
+                      <span className="flex items-center gap-2 font-clash text-[8px] text-[var(--red)] tracking-widest">
+                        <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
                         BOOKING AVAILABILITY
-                      </div>
-                      <div className="font-clash font-bold text-lg text-[var(--black)] leading-none mt-1 relative z-10">
+                      </span>
+                      <span className="font-clash font-bold text-lg text-[var(--black)] leading-none mt-1 relative z-10">
                         OPEN TO WORK
-                      </div>
-                      <div className="flex justify-between items-center font-clash text-[7px] text-[var(--muted)] mt-2 relative z-10">
+                      </span>
+                      <span className="flex justify-between items-center font-clash text-[7px] text-[var(--muted)] mt-2 relative z-10">
                         <span>// PROJECT BOOKINGS OPEN</span>
                         <span>[REMOTE EDITING]</span>
-                      </div>
-                    </div>
+                      </span>
+                    </button>
                   </ParticleFlyer>
                 </div>
 
@@ -3188,6 +3104,7 @@ export default function App() {
                   <span className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase mb-2">SITEMAP</span>
                   <a href="#section-hero" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Home</a>
                   <a href="#section-intro" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">About</a>
+                  <PageLink href="/works" navigate={navigateWithTransition} className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Works</PageLink>
                   <PageLink href="/realm" navigate={navigateWithTransition} className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">My Realm</PageLink>
                   <a href="#section-contact" className="font-clash text-xs text-white hover:text-[var(--red)] transition-colors cursor-none">Contact</a>
                 </div>

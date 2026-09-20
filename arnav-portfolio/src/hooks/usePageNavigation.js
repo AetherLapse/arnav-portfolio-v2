@@ -74,7 +74,7 @@ export function usePageNavigation(ready) {
 
   useLayoutEffect(() => {
     if (!ready) return;
-    document.title = ['/realm', '/works'].includes(location.pathname) ? 'My Realm | Arnav Rai' : 'Arnav Rai | Creative Portfolio';
+    document.title = location.pathname === '/realm' ? 'My Realm | Arnav Rai' : location.pathname === '/works' ? 'Works | Arnav Rai' : 'Arnav Rai | Creative Portfolio';
     const target = location.hash ? document.getElementById(location.hash.slice(1)) : null;
     if (target) target.scrollIntoView({ behavior: 'instant' });
     else window.scrollTo({ top: 0, behavior: 'instant' });

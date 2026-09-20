@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from 'framer-motion';
 import { ArrowDown, ArrowLeft, ArrowUpRight, LayoutGrid, Orbit } from 'lucide-react';
+import InteractiveDotGrid from '../components/InteractiveDotGrid';
 import PageLink from '../components/PageLink';
 import './RealmPage.css';
 
@@ -80,6 +81,9 @@ export default function RealmPage({ projects, onOpenProject, navigate, entered }
 
   return <main ref={root} className={`realm-page ${showIndex ? 'realm-page-index' : ''}`} aria-labelledby="realm-heading" aria-busy={!ready}>
     <div className="realm-viewport">
+      <div className="realm-background" aria-hidden="true">
+        <InteractiveDotGrid active={entered} />
+      </div>
       <header className="realm-header">
         <h1 id="realm-heading" tabIndex={-1} className="font-dragon">MY REALM<span>.</span></h1>
         <p>A world made of moving images.</p>

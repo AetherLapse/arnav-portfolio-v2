@@ -52,3 +52,11 @@
   .realm-index { padding: 240px 24px 70px; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 24px 16px; }
 }
 @media(prefers-reduced-motion: reduce) { .realm-entrance-orbit i { animation: none; } }
+
+.realm-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 0% 65%, rgba(255,0,0,.15), transparent 65%), radial-gradient(ellipse at 100% 15%, rgba(139,0,0,.09), transparent 55%);
+}

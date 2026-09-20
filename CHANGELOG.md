@@ -395,3 +395,14 @@ All source paths above are relative to `arnav-portfolio/` unless otherwise state
 ## Toolkit hover — September 19
 
 - Removed cursor-following hover videos, their state/mouse handlers, and video references from Toolkit. Tile borders now transition to red on hover while keeping the existing dashed strokes.
+
+## Open to Work contact action — September 20
+
+- Converted the availability card into a keyboard-accessible button wired to the existing contact-form transition, matching Get in Touch. Preserved its layout and hover wash, with a visible keyboard focus outline.
+
+## Works restored and Realm background — September 20
+
+- Restored the retained WorksPage at /works as a separate view alongside /realm. Both appear in navbar, expanded menu, and footer, with distinct active states/document titles and the existing transitions.
+- Extracted the shared interactive dot grid for reuse in Hero, Digital Tools, and My Realm. Realm now has the same subtle red glow and 35% red dots behind its content.
+- Removed FOR PROJECTS and the small dot beneath the hero STATUS / AVAILABLE label.
+- Targeted lint and production build passed.
