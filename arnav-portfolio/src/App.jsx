@@ -400,7 +400,6 @@ const SFX = (() => {
   }
 
   return {
-    hover: () => play('/assets/sounds/expand.mp3', 0.15),
     click: () => play('/assets/sounds/Click.mp3', 0.25),
     scroll: () => play('/assets/sounds/scroll.mp3', 0.08),
     navOpen: () => play('/assets/sounds/Navigation Bar OPEN.wav', 0.3),
@@ -2134,13 +2133,10 @@ const CursorOverlay = () => {
   const [cursorOnLink, setCursorOnLink] = useState(false);
 
   useEffect(() => {
-    let lastHoverTime = 0;
     const handleOver = (e) => {
       const el = e.target.closest('a, button, [role="button"], .group, [onClick]');
       if (el) {
         setCursorOnLink(true);
-        const now = Date.now();
-        if (now - lastHoverTime > 150) { lastHoverTime = now; SFX.hover(); }
       }
     };
     const handleOut = (e) => {
@@ -2180,6 +2176,18 @@ const CursorOverlay = () => {
 };
 
 export default function App() {
+  useEffect(() => {
+    // Only actionable controls: decorative groups and empty space stay silent.
+    const playClick = event => {
+      if (!(event.target instanceof Element)) return;
+      const control = event.target.closest('a[href], button, [role="button"], [data-click-sound], input[type="checkbox"], input[type="radio"], input[type="submit"]');
+      if (!control || control.closest('[inert], [aria-disabled="true"]') || control.matches(':disabled')) return;
+      SFX.click();
+    };
+    document.addEventListener('click', playClick, true);
+    return () => document.removeEventListener('click', playClick, true);
+  }, []);
+
   const [isMounted, setIsMounted] = useState(false);
   const navigation = usePageNavigation(isMounted);
   const isRealmPage = navigation.location.pathname === '/realm';
@@ -2342,7 +2350,7 @@ export default function App() {
               {/* Contracted pill content */}
               <div inert={!navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
                 <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex items-center justify-center shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-7 w-7 object-contain" /></PageLink>
-                <button aria-label="Open navigation" onClick={() => { setNavMenuOpen(true); SFX.navOpen(); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
+                <button aria-label="Open navigation" onClick={() => { setNavMenuOpen(true); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
                   <div className="w-4 h-px bg-white" />
                   <div className="w-4 h-px bg-white" />
                 </button>
@@ -2790,8 +2798,7 @@ export default function App() {
                   {EVIDENCE_SECTORS.map((sector) => (
                     <button
                       key={sector.id}
-                      onClick={() => { SFX.click(); setActiveSector(sector.id); }}
-                      onMouseEnter={() => SFX.hover()}
+                      onClick={() => { setActiveSector(sector.id); }}
                       className={`font-clash text-[9px] md:text-[10px] tracking-widest whitespace-nowrap transition-colors duration-300 flex items-center gap-2 cursor-none ${
                         activeSector === sector.id ? "text-[var(--red)] font-bold" : "text-[var(--muted)] hover:text-[var(--black)]"
                       }`}
@@ -2821,7 +2828,7 @@ export default function App() {
                         transition={{ duration: 0.4, delay: i * 0.05 }}
                         className="shrink-0"
                      >
-                       <div className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none" onClick={() => { SFX.click(); setCaseStudyItem(work); }}>
+                       <div data-click-sound="" className="flex flex-col gap-4 w-[280px] md:w-[320px] lg:w-[360px] snap-center group cursor-none" onClick={() => { setCaseStudyItem(work); }}>
 
                          {/* Glass Card */}
                          <div className="relative aspect-[3/4] border border-[var(--border)] bg-[#050505] overflow-hidden transition-all duration-500 hover:border-[var(--red)]/50">
@@ -2907,6 +2914,7 @@ export default function App() {
                   return (
                     <motion.div
                       key={post.id}
+                      data-click-sound=""
                       className="absolute cursor-none"
                       animate={{
                         x: translateX,
@@ -3159,7 +3167,7 @@ export default function App() {
 
               {/* Right: Form */}
               <div className="w-full md:w-[55%] flex flex-col justify-center px-8 md:px-16 py-12 overflow-y-auto">
-                <form className="flex flex-col gap-6 max-w-[500px]" onSubmit={(e) => { e.preventDefault(); SFX.formSubmit(); closeContactForm(); }}>
+                <form className="flex flex-col gap-6 max-w-[500px]" onSubmit={(e) => { e.preventDefault(); closeContactForm(); }}>
                   <div className="flex flex-col gap-1">
                     <label className="font-clash text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">FULL NAME <span className="text-[var(--red)]">*</span></label>
                     <input type="text" required placeholder="Your name" className="bg-transparent border-b border-white/20 py-3 font-clash text-sm text-white placeholder:text-white/30 focus:border-[var(--red)] focus:outline-none transition-colors cursor-none" />
