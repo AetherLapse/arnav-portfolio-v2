@@ -1,5 +1,13 @@
 # Portfolio change log
 
+## Social media grids
+
+- Added Social media grids directly after Posts Showcase, using the supplied Kansa, Napkin, and Firstplay back/front pairs.
+- Preserved each transparent image canvas and composed phone previews over the artwork with separate scroll speeds and a subtle foreground scale change.
+- Matched the existing Dirtyline heading, dark palette, and open layout; added responsive compositions and a static reduced-motion fallback.
+- Generated 1200px and 2400px WebP copies (about 1.6 MB combined) from roughly 66 MB of source PNGs. Original files remain intact; browser images load lazily with reserved dimensions.
+- Included the new section in the continuous sine-line layers.
+
 ## September 23, 2026 — Hero, typography, and quote cleanup
 
 - Capitalized the A glyphs in the Dirtyline hero name; removed the A. Portfolio label and REC/LUT/HORNET CUT chips.

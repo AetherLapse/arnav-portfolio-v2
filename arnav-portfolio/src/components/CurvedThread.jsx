@@ -24,7 +24,7 @@ export default function CurvedThread({ enabled }) {
     if (!enabled) return;
     const root = ref.current.parentElement;
     let frame = 0;
-    const sectionSelector = '#section-digital-tools, #section-intro, #section-services, #section-career, #section-worked-with, #section-works, #section-posts, #section-toolkit, #section-mentors, #section-play, #section-contact';
+    const sectionSelector = '#section-digital-tools, #section-intro, #section-services, #section-career, #section-worked-with, #section-works, #section-posts, #section-social-grids, #section-toolkit, #section-mentors, #section-play, #section-contact';
     const measure = () => {
       frame = 0;
       const bounds = ref.current.getBoundingClientRect();
@@ -96,16 +96,19 @@ export default function CurvedThread({ enabled }) {
   }, [enabled, rootTop, start, end, viewport, revealAt]);
 
   const drawing = (top, left = 0, key = 'root') => (
-    <motion.svg width={geometry.width} height={geometry.end + 14} className="absolute left-0 overflow-visible" style={{ top, left, opacity: lineOpacity }}>
+    // Keep layout on a native SVG; animate only the inner group and reveal.
+    <svg width={geometry.width} height={geometry.end + 14} className="absolute left-0 overflow-visible" style={{ top, left }}>
       <defs>
         <clipPath id={`${clipId}-${key}`} clipPathUnits="userSpaceOnUse">
           <motion.rect x="-2" y="0" width={geometry.width + 4} height={drawHeight} />
         </clipPath>
       </defs>
-      <path d={geometry.path} stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.1" />
-      <path d={geometry.path} stroke="var(--red)" strokeWidth="1.5" fill="none" opacity="0.5" clipPath={`url(#${clipId}-${key})`} />
-      <circle cx={geometry.endX} cy={geometry.end} r="5" fill="var(--red)" opacity="0.65" />
-    </motion.svg>
+      <motion.g style={{ opacity: lineOpacity }}>
+        <path d={geometry.path} stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.1" />
+        <path d={geometry.path} stroke="var(--red)" strokeWidth="1.5" fill="none" opacity="0.5" clipPath={`url(#${clipId}-${key})`} />
+        <circle cx={geometry.endX} cy={geometry.end} r="5" fill="var(--red)" opacity="0.65" />
+      </motion.g>
+    </svg>
   );
   return (
     <>
@@ -113,7 +116,7 @@ export default function CurvedThread({ enabled }) {
         {geometry.width > 0 && drawing(0)}
       </div>
       {geometry.sections.map(({ element, top, left }) => createPortal(
-        <div data-sine-local="" data-audio-decoration="" aria-hidden="true" className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div data-sine-local="" data-sine-offset={top} data-audio-decoration="" aria-hidden="true" className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           {drawing(-top, -left, element.id)}
         </div>, element, element.id
       ))}

@@ -5,6 +5,7 @@ import ContactFlow from './components/ContactFlow';
 import CurvedThread from './components/CurvedThread';
 import ServicesSection from './components/ServicesSection';
 import MentorSection from './components/MentorSection';
+import SocialGridsSection from './components/SocialGridsSection';
 import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
@@ -1426,12 +1427,18 @@ const QuoteReveal = () => {
     return fullText.split('\n').map((line, lineIndex) => {
       const offset = lineIndex === 0 ? 0 : fullText.indexOf('\n') + 1;
       let position = offset;
+      const cursorOnLine = isTyping && (lineIndex === 0
+        ? visibleChars <= line.length
+        : visibleChars > offset - 1);
       return <span key={lineIndex} className="block whitespace-nowrap">
+        <span className="relative inline-block">
         {line.split(/(digital|not)/).map((part, index) => {
           const start = position;
           position += part.length;
           return <span key={index} className={part === 'digital' || part === 'not' ? 'font-normal italic text-[var(--red)]' : 'text-white'}>{part.slice(0, Math.max(0, visibleChars - start))}</span>;
         })}
+        {cursorOnLine && <span aria-hidden="true" className="absolute left-full top-0 text-[var(--red)] animate-pulse">|</span>}
+        </span>
       </span>;
     });
   };
@@ -1472,7 +1479,6 @@ const QuoteReveal = () => {
             {/* The text */}
             <h2 className="font-clash font-light uppercase text-[clamp(15px,3.5vw,44px)] leading-snug py-4 px-2 min-h-[3em]">
               {renderText()}
-              {isTyping && <span className="text-[var(--red)] animate-pulse">|</span>}
             </h2>
           </div>
         </div>
@@ -2983,6 +2989,8 @@ export default function App() {
             </div>
           </section>
 
+
+          <SocialGridsSection />
 
           {/* ================= TOOLKIT (CARD) ================= */}
           <div className="w-full bg-[#050505] overflow-hidden">

@@ -1,0 +1,52 @@
+.social-grids-section {
+  position: relative;
+  background: var(--bg);
+  color: var(--black);
+  padding: clamp(80px, 8vw, 128px) 0;
+  overflow: clip;
+}
+.social-grids-header {
+  position: relative;
+  z-index: 1;
+  max-width: 90rem;
+  margin: 0 auto 48px;
+  padding: 0 clamp(24px, 5vw, 80px);
+}
+.social-grids-header h2 { padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+.social-grids-gallery { position: relative; z-index: 1; max-width: 90rem; margin: auto; }
+.social-grid-scene {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 16 / 10;
+  margin: 0 0 clamp(64px, 8vw, 128px);
+}
+.social-grid-scene:last-child { margin-bottom: 0; }
+.social-grid-atmosphere {
+  position: absolute;
+  inset: 0;
+  opacity: .6;
+  background:
+    linear-gradient(168deg, transparent 21%, rgba(var(--grid-tone), .14) 21.1% 21.35%, transparent 21.45%),
+    linear-gradient(64deg, transparent 65%, rgba(var(--grid-tone), .12) 65.1% 65.35%, transparent 65.45%),
+    radial-gradient(ellipse at center, rgba(var(--grid-tone), .1), transparent 70%);
+  mask-image: linear-gradient(transparent, #000 15% 80%, transparent);
+  pointer-events: none;
+}
+.social-grid-plane { position: absolute; inset: 0; pointer-events: none; }
+.social-grid-plane img { position: absolute; top: 6%; width: 100%; height: auto; max-width: none; user-select: none; }
+.social-grid-back img { transform: translateX(var(--back-x)) scale(var(--back-scale)); }
+.social-grid-front { z-index: 1; }
+.social-grid-front img {
+  transform: translateX(var(--front-x)) scale(var(--front-scale));
+  mask-image: linear-gradient(#000 83%, transparent 100%);
+}
+.social-grid-fallback { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center; font-size: 20px; font-weight: 300; }
+.social-grid-fallback span { color: var(--muted); font-size: 12px; font-weight: 200; }
+@media (prefers-reduced-motion: reduce) {
+  .social-grid-plane { transform: none !important; }
+}
+@media (max-width: 767px) {
+  .social-grids-header { margin-bottom: 24px; }
+  .social-grid-scene { aspect-ratio: 16 / 11; margin-bottom: 48px; }
+  .social-grid-plane img { top: 10%; }
+}

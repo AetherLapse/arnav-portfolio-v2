@@ -145,6 +145,7 @@ export default function Preloader({ onComplete }) {
       >
         {/* Multilingual greeting — Windows OOBE style */}
         <GreetingCycle isWelcome={isWelcome} />
+        <div aria-hidden="true" className="mt-3 h-px w-24 md:w-32 bg-white/25" />
 
         {/* Bottom: percentage + progress bar */}
         <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
