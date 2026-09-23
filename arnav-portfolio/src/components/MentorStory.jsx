@@ -29,7 +29,7 @@ export default function MentorStory({ mentor, index, onClose, children }) {
       <div className="mentor-story-content">
         <header>
           <p className="mentor-story-eyebrow">WITH {name}</p>
-          <h2 id="mentor-story-title" className="font-dragon">A SHARED<br />JOURNEY<span>.</span></h2>
+          <h2 id="mentor-story-title" className="font-dirtyline">A SHARED<br />JOURNEY<span>.</span></h2>
           <p className="mentor-story-discipline">{mentor.discipline || 'Mentorship & creative growth'}</p>
           {mentor.reflection && <blockquote>{mentor.reflection}</blockquote>}
           {mentor.bio && <p className="mentor-story-bio">{mentor.bio}</p>}

@@ -14,7 +14,7 @@
 .mentor-caption { min-height: 114px; padding: 24px 5px 0; display: flex; justify-content: space-between; align-items: start; gap: 24px; }
 .mentor-caption > div { max-width: 660px; }
 .mentor-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px 20px; }
-.mentor-name h3 { margin: 0; font-size: 15px; font-weight: 500; color: var(--black); }
+.mentor-name h3 { margin: 0; font-size: 15px; font-weight: 300; color: var(--black); }
 .mentor-name > span { font-size: 9px; color: var(--muted); }
 .mentor-caption p { margin: 12px 0 0; font-size: 11px; line-height: 1.9; color: var(--muted); }
 .mentor-count { font-size: 9px; color: var(--red); white-space: nowrap; padding-top: 4px; }

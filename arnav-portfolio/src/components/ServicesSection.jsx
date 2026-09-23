@@ -18,7 +18,7 @@ export default function ServicesSection({ onContact }) {
       <div className="services-layout">
         <header className="services-intro">
           <p className="services-kicker font-clash">From raw footage to the final cut</p>
-          <h2 id="services-heading" className="font-dragon">WHAT I CAN<br />DO FOR YOU<span>.</span></h2>
+          <h2 id="services-heading" className="font-dirtyline">WHAT I CAN<br />DO FOR YOU<span>.</span></h2>
           <p className="services-description font-clash">An edit, a campaign, or a whole new look. Let’s make your next story feel like you.</p>
           <button type="button" className="services-contact font-clash" onClick={onContact}>Tell me about your project <ArrowUpRight size={18} aria-hidden="true" /></button>
         </header>

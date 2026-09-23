@@ -44,7 +44,7 @@ export default function WorksPage({ projects, onOpenProject, navigate, onContact
       <div className="works-container">
         <header className="works-header">
           <PageLink href="/" navigate={navigate} className="works-back"><ArrowLeft size={16} aria-hidden="true" /> Back to portfolio</PageLink>
-          <h1 id="works-heading" tabIndex={-1} className="font-dragon">WORKS<span aria-hidden="true">.</span></h1>
+          <h1 id="works-heading" tabIndex={-1} className="font-dirtyline">WORKS<span aria-hidden="true">.</span></h1>
           <p>Video, motion, and design. A closer look at the work.</p>
         </header>
 

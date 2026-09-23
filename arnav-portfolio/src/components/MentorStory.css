@@ -17,7 +17,7 @@
 .mentor-journey { list-style: none; margin: 40px 0 0; padding: 0; }
 .mentor-journey li { display: grid; grid-template-columns: 28px 1fr; gap: 16px; margin-bottom: 30px; }
 .mentor-chapter-number { font-size: 9px; color: var(--red); padding-top: 5px; }
-.mentor-journey h3 { font-size: 14px; font-weight: 500; margin: 0 0 10px; }
+.mentor-journey h3 { font-size: 14px; font-weight: 300; margin: 0 0 10px; }
 .mentor-journey p { font-size: 11px; line-height: 1.9; color: #aaa; margin: 0; }
 .mentor-journey time { display: block; margin-bottom: 8px; font-size: 9px; color: #888; }
 @keyframes mentor-story-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }

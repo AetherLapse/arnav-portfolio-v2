@@ -10,7 +10,7 @@
 .service-item { border-bottom: 1px solid var(--border); }
 .service-item:first-child { border-top: 1px solid var(--border); }
 .service-item h3 { margin: 0; }
-.service-toggle { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 26px 0; width: 100%; text-align: left; font-size: clamp(16px, 1.8vw, 25px); font-weight: 500; color: var(--black); }
+.service-toggle { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 26px 0; width: 100%; text-align: left; font-size: clamp(16px, 1.8vw, 25px); font-weight: 300; color: var(--black); }
 .service-item[data-open='true'] .service-toggle { color: var(--red); }
 .service-toggle svg { flex-shrink: 0; }
 .service-panel-motion { overflow: hidden; }

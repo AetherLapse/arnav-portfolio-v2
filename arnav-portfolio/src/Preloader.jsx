@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
 import './Preloader.css';
-import LoadingOrbit from './components/LoadingOrbit';
 
 const LOAD_DURATION = 7500;
 const COMPLETION_HOLD = 400;
@@ -145,7 +144,6 @@ export default function Preloader({ onComplete }) {
         className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center"
       >
         {/* Multilingual greeting — Windows OOBE style */}
-        <LoadingOrbit className="mb-6" />
         <GreetingCycle isWelcome={isWelcome} />
 
         {/* Bottom: percentage + progress bar */}

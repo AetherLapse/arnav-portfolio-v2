@@ -15,7 +15,7 @@
   color: #6a1010;
 }
 .stay-creative-slot { position: relative; display: inline-block; }
-.stay-creative-measure { visibility: hidden; font-weight: 500; }
+.stay-creative-measure { visibility: hidden; font-weight: 400; }
 .stay-creative-glyph {
   position: absolute;
   inset: 0;

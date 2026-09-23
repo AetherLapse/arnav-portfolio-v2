@@ -95,6 +95,7 @@ export default function AudioWaveScatter({ enabled }) {
         const creative = root.querySelector('[data-audio-region="creative"]');
         if (creative) clipBottom = Math.max(0, bounds.bottom - creative.getBoundingClientRect().top);
         if (root.querySelector('#section-hero')) clipTop = regions['section-showreel']?.top || 0;
+        if (root.querySelector('#section-digital-tools')) clipTop = regions['section-intro']?.top || 0;
         next = createAudioCardLayout(bounds.width, bounds.height, obstacles, window.innerHeight, regions);
       } finally {
         root.classList.remove('audio-measuring');

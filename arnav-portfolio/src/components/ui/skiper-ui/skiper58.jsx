@@ -49,7 +49,7 @@ export const Skiper58 = () => {
           <div className="relative flex items-start">
             <TextRoll
               center
-              className="text-4xl font-extrabold uppercase leading-[0.8] tracking-[-0.03em] transition-colors lg:text-5xl"
+              className="text-4xl font-normal uppercase leading-[0.8] tracking-[-0.03em] transition-colors lg:text-5xl"
             >
               {item.name}
             </TextRoll>

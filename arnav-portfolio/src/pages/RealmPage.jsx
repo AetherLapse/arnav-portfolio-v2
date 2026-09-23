@@ -86,7 +86,7 @@ export default function RealmPage({ projects, onOpenProject, navigate, entered }
         <InteractiveDotGrid active={entered} />
       </div>
       <header className="realm-header">
-        <h1 id="realm-heading" tabIndex={-1} className="font-dragon">MY REALM<span>.</span></h1>
+        <h1 id="realm-heading" tabIndex={-1} className="font-dirtyline">MY REALM<span>.</span></h1>
         <p>A world made of moving images.</p>
       </header>
       <div className="realm-view-controls">

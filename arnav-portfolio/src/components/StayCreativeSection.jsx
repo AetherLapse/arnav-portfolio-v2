@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import './StayCreativeSection.css';
 
 const TEXT = '#stAycReative';
-const WEIGHTS = [200, 500];
+const WEIGHTS = [200, 400];
 
 export default function StayCreativeSection() {
   const textRef = useRef(null);
@@ -39,7 +39,7 @@ export default function StayCreativeSection() {
         return;
       }
       lastUpdate = now;
-      // Read all geometry before writing; glyph slots reserve the Medium weight’s width.
+      // Read all geometry before writing; glyph slots reserve the Regular weight’s width.
       const bounds = element.getBoundingClientRect();
       if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) { reset(); return; }
       const boxes = letters.map(letter => letter.getBoundingClientRect());
@@ -54,7 +54,7 @@ export default function StayCreativeSection() {
         // Match BreathingText’s smooth weight falloff, centered on the pointer.
         const t = Math.max(0, 1 - distance / 3);
         const influence = t * t * (3 - 2 * t);
-        setWeight(index, 200 + Math.round(influence * 300));
+        setWeight(index, 200 + Math.round(influence * 200));
       });
     };
     const move = event => {

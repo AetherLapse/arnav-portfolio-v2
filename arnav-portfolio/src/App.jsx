@@ -22,7 +22,6 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVe
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
 import AudioWaveScatter from './components/AudioWaveScatter';
-import QuoteAudioAccents from './components/QuoteAudioAccents';
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Poppins:wght@600&display=swap');
@@ -127,6 +126,7 @@ const GLOBAL_STYLES = `
     background-color: var(--bg);
     color: var(--black);
     font-family: 'Unbounded', sans-serif;
+    font-weight: 200;
     overflow-x: hidden;
     overflow-y: auto;
     margin: 0;
@@ -158,9 +158,14 @@ const GLOBAL_STYLES = `
   .font-caveat { font-family: 'Caveat', cursive; }
   .font-dancing { font-family: 'Dancing Script', cursive; }
   .font-clash { font-family: 'Unbounded', sans-serif; }
+  h1, h2 { font-weight: 400; }
+  h3, h4, h5, h6, .service-toggle { font-weight: 300 !important; }
+  p, [data-description] { font-weight: 200 !important; }
+  strong, b { font-weight: 400; }
   
   /* Shared display headings */
-  .font-dragon { font-family: 'Dirtyline', sans-serif; font-weight: 400; font-synthesis: none; text-transform: lowercase; }
+  .font-dragon { font-family: 'Dragon', sans-serif; font-weight: 400; font-synthesis: none; }
+  .font-dirtyline { font-family: 'Dirtyline', sans-serif; font-weight: 400; font-synthesis: none; text-transform: lowercase; }
 
   /* Pure White Text */
   .cinematic-text {
@@ -564,7 +569,7 @@ const ScrambleText = ({ children, delay = 0 }) => {
     }, delay * 1000);
     return () => { clearTimeout(startTimeout); clearInterval(interval); };
   }, [children, delay]);
-  return <span className="text-[var(--black)] font-bold">{text}</span>;
+  return <span className="text-[var(--black)] font-normal">{text}</span>;
 };
 
 // --- RUNNING TIMECODE ---
@@ -729,7 +734,7 @@ const GalaxyIcon = ({ label, children }) => {
     <div className="relative group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-none bg-[#1A1A1A] border-2 border-[var(--border)] text-[var(--red)] transition-all duration-300 cursor-none hover:border-[var(--red)]/50 hover:scale-110">
       {children}
       {/* Sleek Tooltip that slides up on hover */}
-      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 font-clash text-[10px] md:text-[11px] font-bold tracking-widest text-[var(--black)] bg-[#111] border border-[var(--border)] px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-2xl translate-y-2 group-hover:translate-y-0">
+      <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 font-clash text-[10px] md:text-[11px] font-normal tracking-widest text-[var(--black)] bg-[#111] border border-[var(--border)] px-4 py-2 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-2xl translate-y-2 group-hover:translate-y-0">
         {label}
       </div>
     </div>
@@ -920,22 +925,22 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
           <div className="flex flex-col gap-6 mb-8">
             <div className="flex justify-between items-center font-clash text-sm">
               <span className="text-[var(--muted)] tracking-wider">YEAR</span>
-              <span className="text-[var(--black)] font-bold">{item.year}</span>
+              <span className="text-[var(--black)] font-normal">{item.year}</span>
             </div>
             <div className="w-full h-px bg-[var(--border)]" />
             <div className="flex justify-between items-center font-clash text-sm">
               <span className="text-[var(--muted)] tracking-wider">CONTEXT</span>
-              <span className="text-[var(--black)] font-bold">{item.context}</span>
+              <span className="text-[var(--black)] font-normal">{item.context}</span>
             </div>
             <div className="w-full h-px bg-[var(--border)]" />
             <div className="flex justify-between items-center font-clash text-sm">
               <span className="text-[var(--muted)] tracking-wider">CLIENT</span>
-              <span className="text-[var(--black)] font-bold">{item.client}</span>
+              <span className="text-[var(--black)] font-normal">{item.client}</span>
             </div>
             <div className="w-full h-px bg-[var(--border)]" />
             <div className="flex justify-between items-center font-clash text-sm">
               <span className="text-[var(--muted)] tracking-wider">TIME</span>
-              <span className="text-[var(--black)] font-bold">{item.time}</span>
+              <span className="text-[var(--black)] font-normal">{item.time}</span>
             </div>
           </div>
 
@@ -981,7 +986,7 @@ const CaseStudyModal = ({ item, onClose, onNext, onPrev }) => {
           {/* Technical analysis */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-[var(--red)] font-bold">&gt;&gt;</span>
+              <span className="text-[var(--red)] font-normal">&gt;&gt;</span>
               <span className="font-clash text-[var(--red)] text-sm tracking-widest uppercase">TECHNICAL_ANALYSIS</span>
             </div>
             <p className="font-clash text-sm md:text-base leading-relaxed text-[var(--black)]">
@@ -1131,7 +1136,7 @@ const CareerCard = ({ item, index }) => {
           <div className="font-clash text-[9px] tracking-widest uppercase mb-2 text-[var(--red)]">
             {item.year}
           </div>
-          <h3 className="font-clash font-bold text-lg md:text-xl text-[var(--black)] leading-tight mb-2">
+          <h3 className="font-clash font-normal text-lg md:text-xl text-[var(--black)] leading-tight mb-2">
             {item.role}
           </h3>
 
@@ -1203,7 +1208,7 @@ const ExperienceStrip = () => {
             transition={{ duration: 0.6, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
             style={{ perspective: '800px' }}
           >
-            <span className="font-clash font-bold text-[clamp(36px,6vw,72px)] leading-none text-[var(--bg)]">
+            <span className="font-clash font-normal text-[clamp(36px,6vw,72px)] leading-none text-[var(--bg)]">
               <CountUp target={stat.number} suffix={stat.suffix} duration={2} delay={i * 0.15 + 0.4} />
             </span>
             <span className="font-clash text-[8px] md:text-[10px] tracking-[0.2em] text-[var(--bg)] opacity-70 mt-3">
@@ -1248,7 +1253,7 @@ const CareerTimeline = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">CAREER</span>            </motion.h2>
+            <motion.h2 className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">CAREER</span>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>TIMELINE: <span className="text-[var(--red)]">ACTIVE</span></span>
               <span>PRODUCTIONS: <span className="text-[var(--red)]">03</span></span>
@@ -1300,7 +1305,7 @@ const ToolkitSection = () => {
         {/* Header */}
         <ParticleFlyer delay={0.1} className="mb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
-            <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">MY TOOLKIT</span>            </motion.h2>
+            <motion.h2 className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] block m-0"><span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">MY TOOLKIT</span>            </motion.h2>
             <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
               <span>ARSENAL: <span className="text-[var(--red)]">LOADED</span></span>
               <span>SOFTWARE_COUNT: <span className="text-[var(--red)]">{toolkitData.length}</span></span>
@@ -1326,11 +1331,11 @@ const ToolkitSection = () => {
                 {tool.logo ? (
                   <img src={tool.logo} alt={tool.name} className="w-9 h-9 object-contain group-hover:scale-110 transition-transform duration-300" />
                 ) : (
-                  <span className="font-clash font-bold text-2xl" style={{ color: tool.color }}>{tool.icon}</span>
+                  <span className="font-clash font-normal text-2xl" style={{ color: tool.color }}>{tool.icon}</span>
                 )}
               </div>
               {/* Name */}
-              <span className="relative z-10 font-clash font-bold text-sm md:text-base text-[var(--black)] transition-colors duration-300">
+              <span className="relative z-10 font-clash font-normal text-sm md:text-base text-[var(--black)] transition-colors duration-300">
                 {tool.name}
               </span>
               {/* Category */}
@@ -1388,8 +1393,7 @@ const DinoRunner = () => {
 
 const QuoteReveal = () => {
   const sectionRef = useRef(null);
-  const fullText = 'MY TOOLS ARE DIGITAL MY LIMITS ARE NOT';
-  const accentWords = ['DIGITAL', 'NOT'];
+  const fullText = '“My Tools are digital,\nmy limits are not.”';
 
   const [visibleChars, setVisibleChars] = useState(0);
   const [chrome, setChrome] = useState(0);
@@ -1399,6 +1403,7 @@ const QuoteReveal = () => {
     target: sectionRef,
     offset: ["start start", "end end"]
   });
+  const dotOpacity = useTransform(scrollYProgress, progress => progress >= 1 ? 1 : 0);
 
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     const tiltProgress = Math.min(p / 0.2, 1);
@@ -1418,21 +1423,16 @@ const QuoteReveal = () => {
 
   const renderText = () => {
     if (visibleChars === 0) return null;
-    const words = fullText.split(' ');
-    let charCount = 0;
-    return words.map((word, i) => {
-      const wordStart = charCount;
-      charCount += word.length + 1;
-      if (wordStart >= visibleChars) return null;
-      const visibleWord = word.slice(0, Math.max(0, visibleChars - wordStart));
-      if (!visibleWord) return null;
-      const isAccent = accentWords.includes(word);
-      return (
-        <span key={i}>
-          <span className={isAccent ? 'italic text-[var(--red)]' : 'text-white'}>{visibleWord}</span>
-          {charCount - 1 <= visibleChars && i < words.length - 1 && ' '}
-        </span>
-      );
+    return fullText.split('\n').map((line, lineIndex) => {
+      const offset = lineIndex === 0 ? 0 : fullText.indexOf('\n') + 1;
+      let position = offset;
+      return <span key={lineIndex} className="block whitespace-nowrap">
+        {line.split(/(digital|not)/).map((part, index) => {
+          const start = position;
+          position += part.length;
+          return <span key={index} className={part === 'digital' || part === 'not' ? 'font-normal italic text-[var(--red)]' : 'text-white'}>{part.slice(0, Math.max(0, visibleChars - start))}</span>;
+        })}
+      </span>;
     });
   };
 
@@ -1444,7 +1444,6 @@ const QuoteReveal = () => {
         <div data-digital-dot-grid="" data-audio-decoration="" aria-hidden="true" className="absolute inset-0 pointer-events-none">
           <InteractiveDotGrid active={true} />
         </div>
-        <QuoteAudioAccents progress={scrollYProgress} />
         <div
           className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
           style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
@@ -1471,12 +1470,13 @@ const QuoteReveal = () => {
             </div>
 
             {/* The text */}
-            <h2 className="font-clash font-light text-[clamp(24px,4.5vw,56px)] leading-snug py-4 px-2 min-h-[3em]">
+            <h2 className="font-clash font-light uppercase text-[clamp(15px,3.5vw,44px)] leading-snug py-4 px-2 min-h-[3em]">
               {renderText()}
               {isTyping && <span className="text-[var(--red)] animate-pulse">|</span>}
             </h2>
           </div>
         </div>
+        <motion.span id="sine-start-marker" aria-hidden="true" style={{ opacity: dotOpacity }} className="absolute left-1/2 top-[calc(50%+140px)] -translate-x-1/2 w-8 h-8 rounded-full bg-white z-20" />
         <span data-scroll-cue="" className="absolute bottom-12 left-1/2 -translate-x-1/2 font-clash text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Scroll down ↓</span>
       </div>
     </div>
@@ -1600,7 +1600,7 @@ const QuoteReveal_REPLACED = () => {
               <div className="absolute inset-0 border border-[var(--red)]/60 pointer-events-none" />
               {/* Element label */}
               <div className="absolute -top-7 left-0 bg-[var(--red)] px-2 py-0.5 rounded-sm">
-                <span className="text-[9px] font-clash font-bold text-black tracking-wider">T / Title Sequence 01</span>
+                <span className="text-[9px] font-clash font-normal text-black tracking-wider">T / Title Sequence 01</span>
               </div>
               {/* Tooltip below */}
               <div className="absolute -bottom-8 left-0 flex items-center gap-1">
@@ -1614,7 +1614,7 @@ const QuoteReveal_REPLACED = () => {
           {/* The actual heading text */}
           <h2
             ref={textRef}
-            className="font-dragon text-[clamp(28px,6vw,80px)] leading-tight"
+            className="font-dirtyline text-[clamp(28px,6vw,80px)] leading-tight"
           >
             {triggered ? renderText() : <span className="opacity-0">{fullText}</span>}
             {showChrome && <span className="animate-pulse text-[var(--red)]">|</span>}
@@ -1627,7 +1627,7 @@ const QuoteReveal_REPLACED = () => {
             <svg width="12" height="16" viewBox="0 0 12 16" fill="white" className="drop-shadow-md">
               <path d="M0 0L12 9L5 9L7 16L4 16L2 9L0 12Z"/>
             </svg>
-            <span className="bg-[var(--red)] text-black text-[9px] font-clash font-bold px-1.5 py-0.5 rounded-sm mt-2 shadow-md">You</span>
+            <span className="bg-[var(--red)] text-black text-[9px] font-clash font-normal px-1.5 py-0.5 rounded-sm mt-2 shadow-md">You</span>
           </div>
         </div>
       </div>
@@ -1685,7 +1685,7 @@ const HeroBackground = ({ hasLoaded, active }) => {
           transition={{ delay: 0.1, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
           style={{
             fontFamily: "'Dirtyline', sans-serif",
-            textTransform: 'lowercase',
+            textTransform: 'none',
             fontWeight: 400,
             fontSynthesis: 'none',
             fontSize: 'clamp(60px, 12vw, 160px)',
@@ -1699,8 +1699,8 @@ const HeroBackground = ({ hasLoaded, active }) => {
           }}
         >
           <span>
-            <span className="block">ARNAV</span>
-            <span className="block mt-2 md:mt-4">RAI</span>
+            <span className="block">Arnav</span>
+            <span className="block mt-2 md:mt-4">rai</span>
           </span>
         </motion.div>
         <motion.p
@@ -1746,11 +1746,11 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
           className="w-3 h-3 rounded-full bg-white shadow-[0_0_12px_white]"
         />
         <div className="border border-[var(--red)]/50 text-[var(--red)] text-[9px] md:text-[10px] px-4 py-1.5 tracking-[0.2em] bg-[var(--bg)]/50 backdrop-blur-sm font-clash">
-          PORTFOLIO # 2026
+          PORTFOLIO #2026
         </div>
       </ParticleFlyer>
 
-      <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute top-24 right-6 md:top-24 md:right-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-end gap-1 transition-opacity duration-300 ${hudClass}`}>
+      <ParticleFlyer delay={hasLoaded ? 0.2 : 0} className={`absolute bottom-12 left-4 md:bottom-16 md:left-8 font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col items-start gap-1 transition-opacity duration-300 ${hudClass}`}>
         <div className="flex flex-col border border-[var(--border)] bg-[var(--bg)]/50 backdrop-blur-sm">
           <span className="inline-flex items-center gap-2 px-2 py-1 border-b border-[var(--border)] text-[var(--muted)] transition-colors">
             IN
@@ -1765,36 +1765,27 @@ const HeroForeground = ({ isBase, hasLoaded, active }) => {
               <circle cx="18" cy="12" r="0.5" fill="#000080" />
             </svg>
           </span>
-          <span className="px-2 py-1 text-[var(--red)] font-bold"><PortfolioClock /></span>
+          <span className="px-2 py-1 text-[var(--red)] font-normal"><PortfolioClock /></span>
         </div>
       </ParticleFlyer>
 
-      <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute top-[20%] left-4 md:left-8 -translate-y-1/2 -rotate-90 origin-center flex items-center gap-4 font-clash text-[10px] tracking-[0.2em] transition-opacity duration-300 ${hudClass}`}>
-        <span className="font-bebas text-2xl text-white rotate-90">A.</span>
-        <span className="text-white font-bold">Portfolio</span>
-      </ParticleFlyer>
-
-
-      <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-24 right-6 md:bottom-16 md:right-12 border border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-sm p-4 flex items-center gap-4 transition-opacity duration-300 ${hudClass}`}>
-        <div className="w-10 h-10 flex items-center justify-center">
-          <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-        </div>
+      <ParticleFlyer delay={hasLoaded ? 0.4 : 0} className={`absolute bottom-12 right-6 md:bottom-16 md:right-12 flex items-center gap-2.5 transition-opacity duration-300 ${hudClass}`}>
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
         <div className="flex flex-col font-clash">
-          <span className="text-[8px] text-[var(--muted)] tracking-widest">STATUS</span>
-          <span className="text-[12px] text-green-400 font-bold tracking-widest">AVAILABLE</span>
-          <span className="mt-1 text-[8px] text-[var(--muted)] tracking-widest">FOR PROJECTS</span>
+          <span className="text-[7px] text-[var(--muted)] tracking-widest">STATUS</span>
+          <span className="text-[9px] text-green-400 font-normal tracking-wider">AVAILABLE</span>
         </div>
       </ParticleFlyer>
 
 
       {/* Subtitle text */}
-      <div className="absolute top-[64%] md:top-[66%] left-4 md:left-8 text-left text-[10px] md:text-[12px] font-clash tracking-[0.15em] flex flex-col items-start opacity-100">
+      <div data-description="" className="absolute top-[64%] md:top-[66%] left-4 md:left-8 text-left text-[10px] md:text-[12px] font-clash tracking-[0.03em] flex flex-col items-start opacity-100">
         <ParticleFlyer delay={hasLoaded ? 0.6 : 0}>
           <div className="text-[var(--muted)] mb-1.5 flex items-center gap-[6px]">
-            <span className="text-[var(--red)] font-bold flex items-center h-full">
+            <span className="text-[var(--red)] font-normal flex items-center h-full">
               <ParticleTextSwap text={titles[titleIndex].left} />
             </span>
-            <span className="text-[var(--black)] font-bold flex items-center h-full">
+            <span className="text-[var(--black)] font-normal flex items-center h-full">
               <ParticleTextSwap text={titles[titleIndex].right} />
               <span className="ml-[1px]">.</span>
             </span>
@@ -1828,7 +1819,7 @@ const ScrollFX = () => {
 
   useEffect(() => {
     // Big section titles only — exclude the scrolling marquee (bg-colored class)
-    const titles = Array.from(document.querySelectorAll('h2.font-dragon'))
+    const titles = Array.from(document.querySelectorAll('h2.font-dirtyline'))
       .filter((t) => !t.className.includes('text-[var(--bg)]'))
       .slice(0, 12);
     titlesRef.current = titles;
@@ -1955,7 +1946,7 @@ const EditFX = () => (
 
 // --- BOLD ICONS ---
 const AdobeIcon = ({ text }) => (
-  <span className="font-clash font-bold text-2xl md:text-3xl tracking-tighter drop-shadow-md text-[var(--red)]">
+  <span className="font-clash font-normal text-2xl md:text-3xl tracking-tighter drop-shadow-md text-[var(--red)]">
     {text}
   </span>
 );
@@ -2116,12 +2107,6 @@ const HeroSection = React.memo(function HeroSection({ hasLoaded, hasEntered }) {
         <HeroForeground isBase={false} hasLoaded={hasLoaded} active={active} />
       </div>
 
-      {/* EDITING HUD CHIPS (z-110) — the editor's touch */}
-      <div className="absolute bottom-6 left-6 z-[110] pointer-events-none flex flex-col items-start gap-2">
-        <div className="edit-chip"><span className="rec-dot" /> REC <span className="opacity-60">00:01:23:07</span></div>
-        <div className="edit-chip"><span className="wave"><i style={{ height: '8px' }} /><i style={{ height: '13px' }} /><i style={{ height: '6px' }} /><i style={{ height: '11px' }} /><i style={{ height: '9px' }} /><i style={{ height: '13px' }} /><i style={{ height: '7px' }} /></span> <span className="opacity-60">LUT_04</span></div>
-        <div className="edit-chip"><span className="scrubber" /> <span className="opacity-60">✂ HORNET_CUT</span></div>
-      </div>
     </section>
   );
 });
@@ -2385,7 +2370,7 @@ export default function App() {
                           className="flex items-center gap-6 group cursor-none text-left"
                         >
                           <span className="font-clash text-xs text-[var(--muted)]">{item.num}</span>
-                          <span className="font-clash font-semibold text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
+                          <span className="font-clash font-normal text-4xl md:text-5xl text-white group-hover:text-[var(--red)] transition-colors">{item.label}</span>
                         </PageLink>
                       ))}
                     </div>
@@ -2411,7 +2396,7 @@ export default function App() {
                     </div>
                     <div>
                       <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--muted)] uppercase block mb-2">BASED IN</span>
-                      <span className="font-clash text-sm text-white font-bold">India</span>
+                      <span className="font-clash text-sm text-white font-normal">India</span>
                       <span className="font-clash text-xs text-[var(--muted)] block">Available Worldwide</span>
                     </div>
                   </div>
@@ -2438,7 +2423,6 @@ export default function App() {
             Hardcoding 56.25vw was wrong — the showreel is 1920x892 (21:9), so its
             height is ~46.5vw; a fixed taller value left phantom space after the card. */}
         <div className="relative z-10">
-        <AudioWaveScatter enabled={hasEntered} />
 
         {/* ================= HERO SECTION ================= */}
         <HeroSection hasLoaded={hasLoaded} hasEntered={hasEntered} />
@@ -2474,10 +2458,10 @@ export default function App() {
 
               <ParticleFlyer delay={0.1} className="mb-6 md:mb-8">
                 <motion.h2 
-                  className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
+                  className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"
                   style={{ marginBottom: '-0.15em' }}
                 >
-                  <span className="block font-dragon text-[clamp(40px,8vw,80px)]">ABOUT</span>
+                  <span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">ABOUT</span>
                 </motion.h2>
               </ParticleFlyer>
 
@@ -2486,7 +2470,7 @@ export default function App() {
                 {/* COLUMN 1: Profile & Meta */}
                 <div data-audio-surface="" className="panel-glass w-full lg:w-[22%] shrink-0 flex flex-col border border-[var(--border)] p-6 transition-all duration-500 hover:border-[var(--red)]/40">
                   <ParticleFlyer delay={0.2}>
-                    <h3 className="font-clash font-bold text-sm md:text-base tracking-widest mb-6 uppercase text-center">ARNAV RAI</h3>
+                    <h3 className="font-clash font-normal text-sm md:text-base tracking-widest mb-6 uppercase text-center">ARNAV RAI</h3>
                     
                     {/* Image Box with Scanline & Crosshairs */}
                     <div className="relative w-full aspect-square border border-[var(--border)] bg-[#111] overflow-hidden mb-6 group cursor-none">
@@ -2505,27 +2489,27 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-y-4 gap-x-2 font-clash text-[9px] md:text-[10px] uppercase mb-6">
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">AGE:</span>
-                        <span className="font-bold">20</span>
+                        <span className="font-normal">20</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">LOCATION:</span>
-                        <span className="font-bold">Noida, India</span>
+                        <span className="font-normal">Noida, India</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">CRAFT:</span>
-                        <span className="font-bold">MOTION DESIGN</span>
+                        <span className="font-normal">MOTION DESIGN</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">XP_LEVEL:</span>
-                        <span className="font-bold">SENIOR EDITOR</span>
+                        <span className="font-normal">SENIOR EDITOR</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">ENGLISH:</span>
-                        <span className="font-bold">EN (Fluent)</span>
+                        <span className="font-normal">EN (Fluent)</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[var(--muted)]">HINDI:</span>
-                        <span className="font-bold">HI (Native)</span>
+                        <span className="font-normal">HI (Native)</span>
                       </div>
                     </div>
 
@@ -2536,7 +2520,7 @@ export default function App() {
                         <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />
                         BOOKING AVAILABILITY
                       </span>
-                      <span className="font-clash font-bold text-lg text-[var(--black)] leading-none mt-1 relative z-10">
+                      <span className="font-clash font-normal text-lg text-[var(--black)] leading-none mt-1 relative z-10">
                         OPEN TO WORK
                       </span>
                       <span className="flex justify-between items-center font-clash text-[7px] text-[var(--muted)] mt-2 relative z-10">
@@ -2568,7 +2552,7 @@ export default function App() {
                       <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[UNIVERSITY OF MEDIA]</span>
+                            <span className="text-[var(--red)] font-normal text-xs md:text-sm tracking-wider">[UNIVERSITY OF MEDIA]</span>
                             <span className="text-[8px] md:text-[9px] text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 bg-[#111]">2018-2021</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">BACHELOR - Digital Media & Video Production</span>
@@ -2585,7 +2569,7 @@ export default function App() {
                       <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[3+ YEARS IN THE EDIT]</span>
+                            <span className="text-[var(--red)] font-normal text-xs md:text-sm tracking-wider">[3+ YEARS IN THE EDIT]</span>
                             <span className="text-[8px] md:text-[9px] text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 bg-[#111]">2021-PRESENT</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">VARIOUS - Freelance Motion Designer & Premium Editor</span>
@@ -2593,7 +2577,7 @@ export default function App() {
                         
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[AGENCY PRODUCTIONS]</span>
+                            <span className="text-[var(--red)] font-normal text-xs md:text-sm tracking-wider">[AGENCY PRODUCTIONS]</span>
                             <span className="text-[8px] md:text-[9px] text-[var(--muted)] border border-[var(--border)] px-2 py-0.5 bg-[#111]">2022-2024</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">MULTIPLE - High-Retention Social Media Campaigns</span>
@@ -2601,7 +2585,7 @@ export default function App() {
 
                         <div className="flex flex-col gap-2 mt-4">
                           <div className="flex items-center gap-3 font-clash">
-                            <span className="text-[var(--red)] font-bold text-xs md:text-sm tracking-wider">[TOTAL_RUNTIME]</span>
+                            <span className="text-[var(--red)] font-normal text-xs md:text-sm tracking-wider">[TOTAL_RUNTIME]</span>
                           </div>
                           <span className="font-clash text-xs md:text-sm text-[var(--black)]">Exploring new techniques in editing and motion</span>
                         </div>
@@ -2664,7 +2648,7 @@ export default function App() {
               
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6 mb-16">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">WORKED WITH</span>                  </motion.h2>
+                  <motion.h2 className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">WORKED WITH</span>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -2774,7 +2758,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-6">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">SELECTED EDITS</span>                  </motion.h2>
+                  <motion.h2 className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">SELECTED EDITS</span>                  </motion.h2>
                 </ParticleFlyer>
 
                 <ParticleFlyer delay={0.2} className="flex items-end gap-8">
@@ -2800,7 +2784,7 @@ export default function App() {
                       key={sector.id}
                       onClick={() => { setActiveSector(sector.id); }}
                       className={`font-clash text-[9px] md:text-[10px] tracking-widest whitespace-nowrap transition-colors duration-300 flex items-center gap-2 cursor-none ${
-                        activeSector === sector.id ? "text-[var(--red)] font-bold" : "text-[var(--muted)] hover:text-[var(--black)]"
+                        activeSector === sector.id ? "text-[var(--red)] font-normal" : "text-[var(--muted)] hover:text-[var(--black)]"
                       }`}
                     >
                       {activeSector === sector.id && <span className="w-1.5 h-1.5 bg-[var(--red)] rounded-full animate-pulse" />}
@@ -2869,7 +2853,7 @@ export default function App() {
             <div className="w-full max-w-[90rem] mx-auto relative z-10 pl-4 sm:pl-8 md:pl-12 lg:pl-[5%] pr-4 md:pr-12 mb-12">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[var(--border)] pb-6 gap-6">
                 <ParticleFlyer delay={0.1}>
-                  <motion.h2 className="font-dragon text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dragon text-[clamp(40px,8vw,80px)]">POSTS SHOWCASE</span>                  </motion.h2>
+                  <motion.h2 className="font-dirtyline text-[clamp(40px,8vw,80px)] leading-none text-[var(--black)] pointer-events-auto block m-0"><span className="block font-dirtyline text-[clamp(40px,8vw,80px)]">POSTS SHOWCASE</span>                  </motion.h2>
                 </ParticleFlyer>
                 <ParticleFlyer delay={0.2}>
                   <div className="text-right font-clash text-[9px] md:text-[10px] tracking-widest text-[var(--muted)] flex flex-col gap-1">
@@ -3036,7 +3020,7 @@ export default function App() {
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
                   <div className="relative z-10 flex flex-col items-start gap-1">
-                    <span className="font-clash font-bold text-xl md:text-2xl text-[var(--black)]">GET IN TOUCH</span>
+                    <span className="font-clash font-normal text-xl md:text-2xl text-[var(--black)]">GET IN TOUCH</span>
                     <span className="font-clash text-[10px] tracking-widest text-[var(--muted)]">// LET’S TALK ABOUT YOUR EDIT</span>
                   </div>
                </button>
@@ -3049,7 +3033,7 @@ export default function App() {
                 <div className="flex flex-col gap-3 max-w-[300px]">
                   <div className="flex items-center gap-3">
                     <img src="/favicon.png" width="500" height="500" alt="" className="h-7 w-auto max-w-none shrink-0 object-contain" />
-                    <span className="font-clash font-bold text-sm text-white">Arnav Rai</span>
+                    <span className="font-clash font-normal text-sm text-white">Arnav Rai</span>
                   </div>
                   <p className="font-clash text-xs text-[var(--muted)] leading-relaxed">Video editing and motion design that turn raw footage into stories worth watching.</p>
                 </div>
@@ -3157,7 +3141,7 @@ export default function App() {
                   <span className="text-[var(--red)] font-clash text-[10px] tracking-widest">✦</span>
                   <span className="font-clash text-[10px] tracking-[0.3em] text-[var(--red)] uppercase">START A PROJECT</span>
                 </div>
-                <h2 className="font-dragon text-[clamp(48px,8vw,100px)] leading-[0.9] text-white mb-2">
+                <h2 className="font-dirtyline text-[clamp(48px,8vw,100px)] leading-[0.9] text-white mb-2">
                   START<br/><span className="text-[var(--red)]">HERE.</span>
                 </h2>
                 <p className="font-clash text-sm text-[var(--muted)] mt-6 max-w-[280px] leading-relaxed">
@@ -3193,7 +3177,7 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                  <button type="submit" className="btn-fill mt-6 w-full py-4 border border-[var(--red)] font-clash font-bold text-xs tracking-[0.3em] text-white hover:text-[var(--bg)] transition-colors cursor-none flex items-center justify-center gap-3">
+                  <button type="submit" className="btn-fill mt-6 w-full py-4 border border-[var(--red)] font-clash font-normal text-xs tracking-[0.3em] text-white hover:text-[var(--bg)] transition-colors cursor-none flex items-center justify-center gap-3">
                     SEND INQUIRY <span>→</span>
                   </button>
                 </form>

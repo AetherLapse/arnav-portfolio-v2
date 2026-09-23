@@ -1,5 +1,16 @@
 # Portfolio change log
 
+## September 23, 2026 — Hero, typography, and quote cleanup
+
+- Capitalized the A glyphs in the Dirtyline hero name; removed the A. Portfolio label and REC/LUT/HORNET CUT chips.
+- Moved the clock and India badge to the hero’s bottom-left; reduced the availability indicator and removed FOR PROJECTS.
+- Removed the main preloader rings, retaining the Realm entrance rings.
+- Capped text weights at Regular 400, with Light subheadings and ExtraLight descriptions; capped the Stay Creative hover weight at 400.
+- Removed floating clips from the showreel and Digital Tools quote, including clips drifting in from the following section.
+- Set the quote to “My Tools are digital, / my limits are not.” on two lines, with digital and not at weight 400.
+- Added a white dot below the quote and anchored the sine guide and animated line to it, tracking its sticky position.
+- Tightened hero description tracking and changed the label to PORTFOLIO #2026.
+
 Recorded September 9, 2026. Covers the work in this conversation, including the September 7 changes and the subsequent parallax refinement. Earlier agents' work is preserved in `.remember/` and is not attributed to this session.
 
 ## Preloader performance
