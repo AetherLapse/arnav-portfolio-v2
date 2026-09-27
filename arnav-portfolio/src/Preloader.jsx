@@ -52,6 +52,7 @@ export default function Preloader({ onComplete }) {
   const percentageRef = useRef(null);
   const progress = useMotionValue(0);
   const progressX = useTransform(progress, value => `${value}%`);
+  const greetingLineScale = useTransform(progress, [0, 100], [0, 1]);
   const [isWelcome, setIsWelcome] = useState(false);
 
   useEffect(() => {
@@ -145,7 +146,10 @@ export default function Preloader({ onComplete }) {
       >
         {/* Multilingual greeting — Windows OOBE style */}
         <GreetingCycle isWelcome={isWelcome} />
-        <div aria-hidden="true" className="mt-3 h-px w-24 md:w-32 bg-white/25" />
+        <div aria-hidden="true" className="relative mt-3 h-px w-24 md:w-32 bg-white/10">
+          <motion.div className="absolute inset-0 bg-white/60"
+            style={{ scaleX: greetingLineScale, transformOrigin: 'center' }} />
+        </div>
 
         {/* Bottom: percentage + progress bar */}
         <div className="absolute bottom-8 left-8 right-8 md:bottom-12 md:left-16 md:right-16 flex flex-col items-end gap-4">
@@ -153,6 +157,10 @@ export default function Preloader({ onComplete }) {
             <span ref={percentageRef}>0</span><span className="text-[var(--red)] text-[0.4em]">%</span>
           </div>
           <div className="w-full h-[1px] bg-[var(--border)] relative">
+            <motion.div
+              className="absolute inset-0 bg-[var(--red)]"
+              style={{ scaleX: greetingLineScale, transformOrigin: 'left' }}
+            />
             <motion.div
               className="absolute inset-0"
               style={{ x: progressX, willChange: 'transform' }}

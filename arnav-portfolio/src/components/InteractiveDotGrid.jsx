@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-const InteractiveDotGrid = ({ active }) => {
+const InteractiveDotGrid = ({ active, opacity = 0.35 }) => {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: -1000, y: -1000 });
 
@@ -38,7 +38,7 @@ const InteractiveDotGrid = ({ active }) => {
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
 
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
+      ctx.fillStyle = `rgba(255, 0, 0, ${opacity})`;
       ctx.beginPath();
       for (let x = gap; x < w; x += gap) {
         for (let y = gap; y < h; y += gap) {
@@ -91,7 +91,7 @@ const InteractiveDotGrid = ({ active }) => {
       window.removeEventListener('mousemove', onMove);
       observer.disconnect();
     };
-  }, [active]);
+  }, [active, opacity]);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 };

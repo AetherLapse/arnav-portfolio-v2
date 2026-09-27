@@ -17,8 +17,9 @@ import PageLink from './components/PageLink';
 import { EVIDENCE_DATA, EVIDENCE_SECTORS } from './data/projects';
 import { usePageNavigation } from './hooks/usePageNavigation';
 import { useHeroActivity } from './hooks/useHeroActivity';
+import useProgressivePortrait from './hooks/useProgressivePortrait';
 import { usePointerSpotlight } from './hooks/usePointerSpotlight';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 
 const TubesBackground = lazy(() => import('./TubesBackground'));
 const LightRays = lazy(() => import('./LightRays'));
@@ -160,9 +161,19 @@ const GLOBAL_STYLES = `
   .font-dancing { font-family: 'Dancing Script', cursive; }
   .font-clash { font-family: 'Unbounded', sans-serif; }
   h1, h2 { font-weight: 400; }
-  h3, h4, h5, h6, .service-toggle { font-weight: 300 !important; }
+  h3, h4, h5, h6 { font-weight: 300 !important; }
   p, [data-description] { font-weight: 200 !important; }
   strong, b { font-weight: 400; }
+  /* Keep actions and key UI labels readable without thickening body copy. */
+  button, a[href], [role="button"], [role="tab"], summary,
+  label, input, select, textarea, .service-toggle, .service-tag,
+  .mentor-story-cue, #channel-open-marker {
+    font-weight: 400 !important;
+  }
+  :is(button, a[href], [role="button"], [role="tab"], summary)
+  :is(span, h2, h3, h4, h5, h6):not([data-description]) {
+    font-weight: 400 !important;
+  }
   
   /* Shared display headings */
   .font-dragon { font-family: 'Dragon', sans-serif; font-weight: 400; font-synthesis: none; }
@@ -1394,40 +1405,54 @@ const DinoRunner = () => {
 
 const QuoteReveal = () => {
   const sectionRef = useRef(null);
+  const boxRef = useRef(null);
+  const markerRef = useRef(null);
   const fullText = '“My Tools are digital,\nmy limits are not.”';
 
   const [visibleChars, setVisibleChars] = useState(0);
-  const [chrome, setChrome] = useState(0);
+  const [chrome, setChrome] = useState(1);
+  const [dotVisible, setDotVisible] = useState(false);
+  const [collapse, setCollapse] = useState({ progress: 0, left: 0, top: 0, width: '100%', height: '100%' });
+  const reducedMotion = useReducedMotion();
   const [tilt, setTilt] = useState({ x: 4, y: -3 });
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end end"]
   });
-  const dotOpacity = useTransform(scrollYProgress, progress => progress >= 1 ? 1 : 0);
 
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     const tiltProgress = Math.min(p / 0.2, 1);
     setTilt({ x: 4 * (1 - tiltProgress), y: -3 * (1 - tiltProgress) });
-    let c = 0;
-    if (p < 0.1) c = 0;
-    else if (p < 0.25) c = (p - 0.1) / 0.15;
-    else if (p < 0.75) c = 1;
-    else if (p < 0.9) c = 1 - (p - 0.75) / 0.15;
-    else c = 0;
-    setChrome(c);
-    const charP = Math.max(0, Math.min((p - 0.15) / 0.65, 1));
+    setChrome(1 - Math.max(0, Math.min((p - 0.8) / 0.15, 1)));
+    setDotVisible(p >= 1);
+    const travel = Math.max(0, Math.min((p - 0.8) / 0.2, 1));
+    const eased = travel * travel * (3 - 2 * travel);
+    const box = boxRef.current?.getBoundingClientRect();
+    const dot = markerRef.current?.getBoundingClientRect();
+    if (travel === 0) {
+      setCollapse({ progress: 0, left: 0, top: 0, width: '100%', height: '100%' });
+    } else if (box && dot) {
+      setCollapse({
+        progress: eased,
+        left: (dot.left - box.left) * eased,
+        top: (dot.top - box.top) * eased,
+        width: box.width + (dot.width - box.width) * eased,
+        height: box.height + (dot.height - box.height) * eased,
+      });
+    }
+    const charP = Math.max(0, Math.min(p / 0.8, 1));
     setVisibleChars(Math.floor(charP * fullText.length));
   });
 
   const isTyping = visibleChars > 0 && visibleChars < fullText.length;
 
-  const renderText = () => {
-    if (visibleChars === 0) return null;
+  const renderText = (count = visibleChars, showCursor = true) => {
+    if (count === 0) return null;
     return fullText.split('\n').map((line, lineIndex) => {
       const offset = lineIndex === 0 ? 0 : fullText.indexOf('\n') + 1;
       let position = offset;
-      const cursorOnLine = isTyping && (lineIndex === 0
+      const cursorOnLine = showCursor && isTyping && (lineIndex === 0
         ? visibleChars <= line.length
         : visibleChars > offset - 1);
       return <span key={lineIndex} className="block whitespace-nowrap">
@@ -1435,7 +1460,8 @@ const QuoteReveal = () => {
         {line.split(/(digital|not)/).map((part, index) => {
           const start = position;
           position += part.length;
-          return <span key={index} className={part === 'digital' || part === 'not' ? 'font-normal italic text-[var(--red)]' : 'text-white'}>{part.slice(0, Math.max(0, visibleChars - start))}</span>;
+          const accented = part === 'digital' || part === 'not';
+          return <span key={index} style={{ fontWeight: accented ? 400 : 200 }} className={accented ? 'italic text-[var(--red)]' : 'text-white'}>{part.slice(0, Math.max(0, count - start))}</span>;
         })}
         {cursorOnLine && <span aria-hidden="true" className="absolute left-full top-0 text-[var(--red)] animate-pulse">|</span>}
         </span>
@@ -1452,7 +1478,7 @@ const QuoteReveal = () => {
           <InteractiveDotGrid active={true} />
         </div>
         <div
-          className="relative z-10 w-full max-w-[70rem] mx-auto px-6 md:px-16 text-center"
+          className="relative z-10 w-full max-w-[80rem] mx-auto px-6 md:px-16 text-center"
           style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
         >
           {/* Counter */}
@@ -1461,28 +1487,44 @@ const QuoteReveal = () => {
           </div>
 
           {/* Selection box wrapper */}
-          <div className="relative inline-block">
+          <div ref={boxRef} className="relative inline-block">
             {/* Chrome */}
-            <div style={{ opacity: chrome }} className="pointer-events-none">
-              <div className="absolute inset-0 border border-[var(--red)]/60" />
-              <div className="absolute -top-2 -left-2 w-2 h-2 bg-[var(--red)]" />
-              <div className="absolute -top-2 -right-2 w-2 h-2 bg-[var(--red)]" />
-              <div className="absolute -bottom-2 -left-2 w-2 h-2 bg-[var(--red)]" />
-              <div className="absolute -bottom-2 -right-2 w-2 h-2 bg-[var(--red)]" />
-              <div className="absolute -bottom-8 right-0 flex items-center gap-1">
+            <div aria-hidden="true" className="absolute pointer-events-none"
+              style={reducedMotion ? { inset: 0, opacity: chrome } : {
+                left: collapse.left, top: collapse.top, width: collapse.width, height: collapse.height,
+                visibility: dotVisible ? 'hidden' : 'visible',
+              }}>
+              <div className="absolute inset-0 border border-[var(--red)]/60" style={{
+                borderRadius: `${collapse.progress * 50}%`,
+                backgroundColor: `rgba(255, 0, 0, ${Math.max(0, (collapse.progress - 0.85) / 0.15)})`,
+              }} />
+              {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(corner => <span key={corner}
+                className="absolute w-2 h-2 bg-[var(--red)]" style={{
+                  [corner.startsWith('top') ? 'top' : 'bottom']: -8 * (1 - collapse.progress),
+                  [corner.endsWith('left') ? 'left' : 'right']: -8 * (1 - collapse.progress),
+                  borderRadius: `${collapse.progress * 50}%`,
+                  opacity: 1 - Math.max(0, (collapse.progress - 0.9) / 0.1),
+                }} />)}
+            </div>
+              <div style={{ opacity: chrome }} className="pointer-events-none absolute -bottom-8 right-0 flex items-center gap-1">
                 <span className="bg-[#1a1a1a] border border-white/10 px-2 py-0.5 rounded text-[9px] font-clash text-[var(--muted)]">
                   sequence → <span className="text-[var(--red)]">editing{isTyping && <span className="animate-pulse">...</span>}</span>
                 </span>
               </div>
-            </div>
 
             {/* The text */}
-            <h2 className="font-clash font-light uppercase text-[clamp(15px,3.5vw,44px)] leading-snug py-4 px-2 min-h-[3em]">
-              {renderText()}
+            <h2 aria-label={fullText} className="grid font-clash font-extralight uppercase text-[clamp(15px,4vw,56px)] leading-snug py-4 px-2 min-h-[3em]">
+              <span aria-hidden="true" className="invisible pointer-events-none [grid-area:1/1]">{renderText(fullText.length, false)}</span>
+              <span aria-hidden="true" className="[grid-area:1/1]">{renderText()}</span>
             </h2>
           </div>
         </div>
-        <motion.span id="sine-start-marker" aria-hidden="true" style={{ opacity: dotOpacity }} className="absolute left-1/2 top-[calc(50%+140px)] -translate-x-1/2 w-8 h-8 rounded-full bg-white z-20" />
+        <span ref={markerRef} id="sine-start-marker" aria-hidden="true" className="absolute left-1/2 top-[calc(50%+140px)] -translate-x-1/2 w-3 h-3 z-20">
+          <motion.span className="block w-full h-full rounded-full bg-[var(--red)]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: dotVisible ? 1 : 0 }}
+            transition={{ duration: 0 }} />
+        </span>
         <span data-scroll-cue="" className="absolute bottom-12 left-1/2 -translate-x-1/2 font-clash text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Scroll down ↓</span>
       </div>
     </div>
@@ -1663,7 +1705,7 @@ const ShowreelVideo = () => {
   return (
     <video
       ref={videoRef}
-      src="/assets/output-compressed.mp4"
+      src="/assets/videos/CC_Total%20Command%20Type%20001.mp4"
       autoPlay
       loop
       muted
@@ -1681,7 +1723,7 @@ const HeroBackground = ({ hasLoaded, active }) => {
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <InteractiveDotGrid active={active} />
+      <InteractiveDotGrid active={active} opacity={0.55} />
       <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
         <motion.div
           ref={textContainerRef}
@@ -1694,7 +1736,12 @@ const HeroBackground = ({ hasLoaded, active }) => {
             textTransform: 'none',
             fontWeight: 400,
             fontSynthesis: 'none',
-            fontSize: 'clamp(60px, 12vw, 160px)',
+            fontSize: 'clamp(72px, 14vw, 192px)',
+            lineHeight: 0.85,
+            // Dirtyline's glyphs extend beyond the tight line box. Give the
+            // clipped gradient extra paint area without widening the line gap.
+            padding: '0.18em 0.1em',
+            margin: '-0.18em -0.1em',
             '--mx': '0px',
             '--my': '0px',
             color: 'transparent',
@@ -1706,7 +1753,7 @@ const HeroBackground = ({ hasLoaded, active }) => {
         >
           <span>
             <span className="block">Arnav</span>
-            <span className="block mt-2 md:mt-4">rai</span>
+            <span className="block">rai</span>
           </span>
         </motion.div>
         <motion.p
@@ -2048,6 +2095,7 @@ const POSTS_DATA = [
 const HeroSection = React.memo(function HeroSection({ hasLoaded, hasEntered }) {
   const heroRef = useRef(null);
   const active = useHeroActivity(heroRef, hasEntered);
+  const portrait = useProgressivePortrait(hasLoaded && active);
   return (
     <section ref={heroRef} id="section-hero" className={`sticky top-0 w-full h-screen flex items-center justify-center z-10 overflow-hidden ${active ? '' : 'hero-paused'}`}>
 
@@ -2094,12 +2142,14 @@ const HeroSection = React.memo(function HeroSection({ hasLoaded, hasEntered }) {
         initial={{ x: "-50%", y: 100, opacity: 0 }}
         animate={{ x: "-50%", y: hasLoaded ? 0 : 100, opacity: hasLoaded ? 1 : 0, filter: hasLoaded ? "blur(0px)" : "blur(20px)", scale: hasLoaded ? 1 : 0.9 }}
         transition={{ delay: hasLoaded ? 0.8 : 0, duration: 1, ease: "easeOut" }}
-        className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[130vw] sm:w-[110vw] md:w-[95vw] lg:w-[85vw] xl:w-[75vw] 2xl:w-[70vw] origin-bottom"
+        className="absolute bottom-0 left-1/2 z-[90] pointer-events-none w-[145vw] sm:w-[125vw] md:w-[108vw] lg:w-[97vw] xl:w-[86vw] 2xl:w-[80vw] origin-bottom"
         style={{ minHeight: '60vh' }}
       >
         <div id="fx-portrait" className="relative w-full">
           <motion.img
-            src="/assets/photos/DSC00747-01.webp"
+            src={portrait.src}
+            onLoad={portrait.onLoad}
+            decoding="async"
             alt="Arnav Rai"
             className="relative w-full h-auto min-h-[60vh] object-bottom"
             style={{ objectFit: 'cover', filter: 'drop-shadow(0 0 20px rgba(255,0,0,0.1)) drop-shadow(0 0 40px rgba(255,0,0,0.05))' }}
@@ -3012,7 +3062,7 @@ export default function App() {
             <ParticleFlyer delay={0.1} willChange="transform" className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
                
                {/* Marker for Red Thread to latch onto */}
-               <div id="channel-open-marker" className="text-[var(--red)] font-clash text-[10px] tracking-[0.2em] flex items-center gap-2 mb-16">
+               <div id="channel-open-marker" className="text-[var(--red)] font-clash text-[10px] tracking-[0.2em] flex flex-col items-center gap-3 mb-16">
                  <motion.div animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-1.5 h-1.5 bg-[var(--red)] rounded-full" /> 
                  CHANNEL OPEN
                </div>
@@ -3076,20 +3126,8 @@ export default function App() {
           </section>
 
           {/* Giant #stAycReative at very bottom */}
-          <div data-audio-region="creative" className="w-full bg-[var(--bg)] py-16 md:py-24">
+          <div data-audio-region="creative" className="w-full bg-[var(--bg)] pt-16 pb-8 md:pt-24 md:pb-10">
             <StayCreativeSection />
-            <div className="flex justify-end px-6 md:px-16 mt-8 pointer-events-none select-none" aria-hidden="true">
-              <img
-                src="/assets/photos/hornet.png"
-                alt=""
-                width="4096"
-                height="2304"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                className="w-40 md:w-56 h-auto object-contain opacity-20"
-              />
-            </div>
           </div>
 
 

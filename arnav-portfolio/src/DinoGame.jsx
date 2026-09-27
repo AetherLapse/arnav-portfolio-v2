@@ -564,7 +564,7 @@ const DinoGame = () => {
     this.loadSounds();
     this.activated = true;
     }
-    if (!this.tRex.jumping) {
+    if (!this.tRex.jumping && !this.tRex.ducking) {
     this.playSound(this.soundFx.BUTTON_PRESS);
     this.tRex.startJump();
     }
@@ -574,10 +574,11 @@ const DinoGame = () => {
     this.restart();
     }
     }
-    // Speed drop, activated only when jump key is not pressed.
-    if (Runner.keycodes.DUCK[e.keyCode] && this.tRex.jumping) {
+    // Hold Down to crouch on the ground, or fast-fall into a crouch.
+    if (Runner.keycodes.DUCK[e.keyCode] && !this.crashed) {
     e.preventDefault();
-    this.tRex.setSpeedDrop();
+    this.tRex.ducking = true;
+    if (this.tRex.jumping && !e.repeat) this.tRex.setSpeedDrop();
     }
     },
     /**
@@ -593,6 +594,7 @@ const DinoGame = () => {
     this.tRex.endJump();
     } else if (Runner.keycodes.DUCK[keyCode]) {
     this.tRex.speedDrop = false;
+    this.tRex.ducking = false;
     } else if (this.crashed) {
     // Check that enough time has elapsed before allowing jump key to restart.
     var deltaTime = getTimeStamp() - this.time;
@@ -693,6 +695,8 @@ const DinoGame = () => {
     if (this.suspended === value) return;
     this.suspended = value;
     if (value) {
+      this.tRex.ducking = false;
+      this.tRex.speedDrop = false;
       cancelAnimationFrame(this.raqId);
       this.raqId = 0;
       this.drawPending = false;
@@ -894,13 +898,16 @@ const DinoGame = () => {
     */
     function checkForCollision(obstacle, tRex, opt_canvasCtx) {
     if (!obstacle) return false;
+    var crouched = tRex.ducking && !tRex.jumping;
+    var scaleX = crouched ? tRex.config.DUCK_WIDTH / tRex.config.WIDTH : 1;
+    var scaleY = crouched ? tRex.config.DUCK_HEIGHT / tRex.config.HEIGHT : 1;
     // Adjustments are made to the bounding box as there is a 1 pixel white
     // border around the t-rex and obstacles.
     var tRexBox = new CollisionBox(
     tRex.xPos + 1,
-    tRex.yPos + 1,
-    tRex.config.WIDTH - 2,
-    tRex.config.HEIGHT - 2);
+    tRex.yPos + tRex.config.HEIGHT * (1 - scaleY) + 1,
+    tRex.config.WIDTH * scaleX - 2,
+    tRex.config.HEIGHT * scaleY - 2);
     var obstacleBox = new CollisionBox(
     obstacle.xPos + 1,
     obstacle.yPos + 1,
@@ -914,6 +921,7 @@ const DinoGame = () => {
     if (boxCompare(tRexBox, obstacleBox)) {
     var collisionBoxes = obstacle.collisionBoxes;
     var tRexCollisionBoxes = Trex.collisionBoxes;
+    if (crouched) tRexCollisionBoxes = Trex.duckCollisionBoxes;
     // Detailed axis aligned box check.
     for (var t = 0; t < tRexCollisionBoxes.length; t++) {
     for (var i = 0; i < collisionBoxes.length; i++) {
@@ -1187,6 +1195,7 @@ const DinoGame = () => {
     this.status = Trex.status.WAITING;
     this.jumping = false;
     this.jumpVelocity = 0;
+    this.ducking = false;
     this.reachedMinHeight = false;
     this.speedDrop = false;
     this.jumpCount = 0;
@@ -1201,6 +1210,8 @@ const DinoGame = () => {
     DROP_VELOCITY: -5,
     GRAVITY: 0.6,
     HEIGHT: 47,
+    DUCK_HEIGHT: 26,
+    DUCK_WIDTH: 55,
     INIITAL_JUMP_VELOCITY: -10,
     INTRO_DURATION: 1500,
     MAX_JUMP_HEIGHT: 30,
@@ -1222,6 +1233,13 @@ const DinoGame = () => {
     new CollisionBox(5, 30, 21, 4),
     new CollisionBox(9, 34, 15, 4)
     ];
+    // Match the rendered crouch silhouette, including the lowered head.
+    Trex.duckCollisionBoxes = Trex.collisionBoxes.map(function(box) {
+      return new CollisionBox(box.x * Trex.config.DUCK_WIDTH / Trex.config.WIDTH,
+        box.y * Trex.config.DUCK_HEIGHT / Trex.config.HEIGHT,
+        box.width * Trex.config.DUCK_WIDTH / Trex.config.WIDTH,
+        box.height * Trex.config.DUCK_HEIGHT / Trex.config.HEIGHT);
+    });
     /**
     * Animation states.
     * @enum {string}
@@ -1305,6 +1323,7 @@ const DinoGame = () => {
     this.config.INTRO_DURATION) * deltaTime);
     }
     if (this.status == Trex.status.WAITING) {
+    this.draw(this.currentAnimFrames[this.currentFrame], 0);
     this.blink(getTimeStamp());
     } else {
     this.draw(this.currentAnimFrames[this.currentFrame], 0);
@@ -1322,6 +1341,9 @@ const DinoGame = () => {
     * @param {number} y
     */
     draw: function(x, y) {
+    var crouched = this.ducking && !this.jumping;
+    var targetWidth = crouched ? this.config.DUCK_WIDTH : this.config.WIDTH;
+    var targetHeight = crouched ? this.config.DUCK_HEIGHT : this.config.HEIGHT;
     var sourceX = x;
     var sourceY = y;
     var sourceWidth = this.config.WIDTH;
@@ -1334,8 +1356,8 @@ const DinoGame = () => {
     }
     this.canvasCtx.drawImage(this.image, sourceX, sourceY,
     sourceWidth, sourceHeight,
-    this.xPos, this.yPos,
-    this.config.WIDTH, this.config.HEIGHT);
+    this.xPos, this.yPos + this.config.HEIGHT - targetHeight,
+    targetWidth, targetHeight);
     },
     /**
     * Sets a random time for the blink to happen.
@@ -1362,7 +1384,7 @@ const DinoGame = () => {
     * Initialise a jump.
     */
     startJump: function() {
-    if (!this.jumping) {
+    if (!this.jumping && !this.ducking) {
     this.update(0, Trex.status.JUMPING);
     this.jumpVelocity = this.config.INIITAL_JUMP_VELOCITY;
     this.jumping = true;
@@ -1404,7 +1426,7 @@ const DinoGame = () => {
     }
     // Back down at ground level. Jump completed.
     if (this.yPos > this.groundYPos) {
-    this.reset();
+    this.reset(true);
     this.jumpCount++;
     }
     this.update(deltaTime);
@@ -1419,7 +1441,8 @@ const DinoGame = () => {
     /**
     * Reset the t-rex to running at start of game.
     */
-    reset: function() {
+    reset: function(keepDuck) {
+    if (!keepDuck) this.ducking = false;
     this.yPos = this.groundYPos;
     this.jumpVelocity = 0;
     this.jumping = false;
