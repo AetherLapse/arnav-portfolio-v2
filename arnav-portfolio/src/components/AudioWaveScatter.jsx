@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import AudioWaveCard from '../AudioWaveCard';
 import { createAudioCardLayout, CARD_DEPTHS } from '../data/audioCardLayout';
 import { useSharedCardPointer } from '../hooks/useSharedCardPointer';
 
-function DepthLayer({ depth, layout, pointer, scrollY, rootTop, reducedMotion }) {
+function DepthLayer({ depth, layout, pointer, scrollY, rootTop, reducedMotion, contactBackground = false }) {
   const { scrollSpeed, pointerScale } = CARD_DEPTHS[depth];
   // One transform per depth plane; all cards within it move in unison.
   const x = useTransform(pointer.x, value => value * pointerScale);
   const y = useTransform(() => (scrollY.get() - rootTop.get()) * (1 - scrollSpeed) + pointer.y.get() * pointerScale);
   return <motion.div data-card-parallax-layer={depth} className="absolute inset-0"
     style={{ x: reducedMotion ? 0 : x, y: reducedMotion ? 0 : y, zIndex: depth === 'blurred' ? 3 : depth === 'regular' ? 2 : 1 }}>
-    {layout.cards.filter(card => card.depth === depth).map(card => (
+    {layout.cards.filter(card => card.depth === depth &&
+      (card.region === 'section-contact' && card.depth === 'distant') === contactBackground).map(card => (
       <AudioWaveCard key={card.name} {...card}
         top={reducedMotion ? card.top : scrollSpeed * card.top + (1 - scrollSpeed) * layout.viewportHeight / 2}
         className="absolute" />
@@ -56,6 +58,7 @@ export default function AudioWaveScatter({ enabled }) {
       let next;
       let clipTop = 0;
       let clipBottom = 0;
+      let contactTop;
       try {
         root.querySelectorAll('section').forEach(section => {
           if (!intrinsicSizes.has(section)) intrinsicSizes.set(section, section.style.containIntrinsicBlockSize);
@@ -97,10 +100,12 @@ export default function AudioWaveScatter({ enabled }) {
         if (root.querySelector('#section-hero')) clipTop = regions['section-showreel']?.top || 0;
         if (root.querySelector('#section-digital-tools')) clipTop = regions['section-intro']?.top || 0;
         next = createAudioCardLayout(bounds.width, bounds.height, obstacles, window.innerHeight, regions);
+        contactTop = regions['section-contact']?.top || 0;
       } finally {
         root.classList.remove('audio-measuring');
       }
-      setLayout({ cards: next, viewportHeight: window.innerHeight, clipTop, clipBottom });
+      setLayout({ cards: next, viewportHeight: window.innerHeight, clipTop, clipBottom,
+        contactTop, contactTarget: root.querySelector('#section-contact') });
     };
     const schedule = () => {
       clearTimeout(resizeTimer);
@@ -127,6 +132,7 @@ export default function AudioWaveScatter({ enabled }) {
   }, [enabled, rootTop]);
 
   return (
+    <>
     <div ref={layerRef} data-audio-scatter="" aria-hidden="true"
       className="absolute inset-0 z-30 hidden md:block overflow-hidden pointer-events-none"
       style={{ clipPath: layout.clipTop || layout.clipBottom ? `inset(${layout.clipTop || 0}px 0 ${layout.clipBottom || 0}px)` : undefined }}>
@@ -134,5 +140,13 @@ export default function AudioWaveScatter({ enabled }) {
         <DepthLayer key={depth} depth={depth} layout={layout} pointer={pointer} scrollY={scrollY} rootTop={rootTop} reducedMotion={reducedMotion} />
       ))}
     </div>
+    {layout.contactTarget && createPortal(
+      <div data-audio-scatter="" data-contact-clips-background="" aria-hidden="true"
+        className="absolute left-0 right-0 bottom-0 hidden md:block pointer-events-none"
+        style={{ top: -layout.contactTop, zIndex: 0 }}>
+        <DepthLayer depth="distant" layout={layout} pointer={pointer} scrollY={scrollY}
+          rootTop={rootTop} reducedMotion={reducedMotion} contactBackground />
+      </div>, layout.contactTarget)}
+    </>
   );
 }

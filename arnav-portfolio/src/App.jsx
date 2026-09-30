@@ -2942,7 +2942,7 @@ export default function App() {
 
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" data-audio-obstacle="" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
-            <ContactFlow />
+            <ContactFlow posts={POSTS_DATA} />
 
             <ParticleFlyer delay={0.1} willChange="transform" className="w-full max-w-5xl mx-auto flex flex-col items-center mt-24">
                
