@@ -9,6 +9,8 @@ import SocialGridsSection from './components/SocialGridsSection';
 import { PortfolioClock, ScrollPercentage } from './components/PortfolioHud';
 import StayCreativeSection from './components/StayCreativeSection';
 import Preloader from './Preloader';
+import PageTransition from './components/PageTransition';
+import ContactRibbons from './components/ContactRibbons';
 import RealmPage from './pages/RealmPage';
 import WorksPage from './pages/WorksPage';
 import InteractiveDotGrid from './components/InteractiveDotGrid';
@@ -18,6 +20,7 @@ import { EVIDENCE_DATA, EVIDENCE_SECTORS } from './data/projects';
 import { usePageNavigation } from './hooks/usePageNavigation';
 import { useHeroActivity } from './hooks/useHeroActivity';
 import useProgressivePortrait from './hooks/useProgressivePortrait';
+import './mobile.css';
 import { usePointerSpotlight } from './hooks/usePointerSpotlight';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useVelocity, useScroll, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 
@@ -253,138 +256,6 @@ const GLOBAL_STYLES = `
 
 // Global contexts
 const CursorContext = React.createContext({ cursorX: null, cursorY: null });
-
-// --- PAGE TRANSITION (Brick Shutter) ---
-const SHUTTER_COLS = 10;
-const SHUTTER_ROWS = 7;
-const SHUTTER_DURATION = 500;
-const SHUTTER_STAGGER = 35;
-const SHUTTER_HOLD = 90;
-const SHUTTER_EASE = 'cubic-bezier(0.83, 0, 0.17, 1)';
-
-const PageTransition = ({ active, onMidpoint, onComplete }) => {
-  const shutterRef = useRef(null);
-  const bricksRef = useRef([]);
-  const builtRef = useRef(false);
-
-  useEffect(() => {
-    if (!shutterRef.current || builtRef.current) return;
-    builtRef.current = true;
-
-    const container = shutterRef.current;
-    const colWidth = 100 / SHUTTER_COLS;
-    const brickHeight = 100 / SHUTTER_ROWS;
-    const bricks = [];
-
-    for (let c = 0; c < SHUTTER_COLS; c++) {
-      const colEl = document.createElement('div');
-      colEl.style.cssText = `position:absolute;top:0;bottom:0;left:${c * colWidth}vw;width:${colWidth}vw;display:flex;flex-direction:column;`;
-
-      const offset = c % 2 === 1;
-
-      if (offset) {
-        const half = document.createElement('div');
-        half.className = 'shutter-brick';
-        half.style.cssText = `background:var(--red);flex:0 0 ${brickHeight / 2}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
-        colEl.appendChild(half);
-        bricks.push({ el: half, row: -0.5, col: c });
-      }
-
-      for (let r = 0; r < SHUTTER_ROWS; r++) {
-        const brick = document.createElement('div');
-        brick.className = 'shutter-brick';
-        brick.style.cssText = `background:var(--red);flex:0 0 ${brickHeight}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
-        colEl.appendChild(brick);
-        bricks.push({ el: brick, row: r, col: c });
-      }
-
-      if (offset) {
-        const half = document.createElement('div');
-        half.className = 'shutter-brick';
-        half.style.cssText = `background:var(--red);flex:0 0 ${brickHeight / 2}vh;transform:scaleY(0);transform-origin:center;will-change:transform;`;
-        colEl.appendChild(half);
-        bricks.push({ el: half, row: SHUTTER_ROWS, col: c });
-      }
-
-      container.appendChild(colEl);
-    }
-
-    const maxDist = SHUTTER_ROWS + SHUTTER_COLS;
-    bricks.forEach(b => {
-      b.delay = ((b.row + b.col) / maxDist) * (SHUTTER_STAGGER * maxDist * 0.35);
-    });
-
-    bricksRef.current = bricks;
-  }, []);
-
-  const onMidpointRef = useRef(onMidpoint);
-  const onCompleteRef = useRef(onComplete);
-  useEffect(() => {
-    onMidpointRef.current = onMidpoint;
-    onCompleteRef.current = onComplete;
-  }, [onMidpoint, onComplete]);
-
-  useEffect(() => {
-    if (!active || !bricksRef.current.length) return;
-    const bricks = bricksRef.current;
-    bricks.forEach(brick => { brick.el.style.transition = 'none'; });
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const maxDelay = Math.max(...bricks.map(brick => brick.delay));
-    let cancelled = false;
-    let animations = [];
-    let holdTimer;
-
-    const play = async covering => {
-      const from = covering ? 'scaleY(0)' : 'scaleY(1)';
-      const to = covering ? 'scaleY(1)' : 'scaleY(0)';
-      if (!reduceMotion) {
-        animations = bricks.map(brick => brick.el.animate(
-          [{ transform: from }, { transform: to }],
-          { duration: SHUTTER_DURATION, delay: Math.max(0, covering ? brick.delay : maxDelay - brick.delay), easing: SHUTTER_EASE, fill: 'forwards' }
-        ));
-        await Promise.all(animations.map(animation => animation.finished));
-      }
-      if (cancelled) return;
-      bricks.forEach(brick => { brick.el.style.transform = to; });
-      animations.forEach(animation => animation.cancel());
-      animations = [];
-    };
-
-    const transition = async () => {
-      try {
-        await play(true);
-        if (cancelled) return;
-        onMidpointRef.current?.();
-        await new Promise(resolve => { holdTimer = setTimeout(resolve, reduceMotion ? 0 : SHUTTER_HOLD); });
-        if (cancelled) return;
-        await play(false);
-        if (!cancelled) onCompleteRef.current?.();
-      } catch (error) {
-        if (!cancelled) {
-          bricks.forEach(brick => { brick.el.style.transform = 'scaleY(0)'; });
-          console.error('Page transition failed:', error);
-          onCompleteRef.current?.();
-        }
-      }
-    };
-    transition();
-    return () => {
-      cancelled = true;
-      clearTimeout(holdTimer);
-      animations.forEach(animation => animation.cancel());
-    };
-  }, [active]);
-
-  return (
-    <div
-      ref={shutterRef}
-      aria-hidden="true"
-      data-page-transition={active ? 'active' : 'idle'}
-      className="fixed inset-0 z-[250] overflow-hidden"
-      style={{ pointerEvents: active ? 'auto' : 'none' }}
-    />
-  );
-};
 
 // --- SOUND ENGINE (File-based) ---
 const SFX = (() => {
@@ -1410,7 +1281,8 @@ const QuoteReveal = () => {
   const fullText = '“My Tools are digital,\nmy limits are not.”';
 
   const [visibleChars, setVisibleChars] = useState(0);
-  const [chrome, setChrome] = useState(1);
+  const [chrome, setChrome] = useState(0);
+  const [frameOpacity, setFrameOpacity] = useState(0);
   const [dotVisible, setDotVisible] = useState(false);
   const [collapse, setCollapse] = useState({ progress: 0, left: 0, top: 0, width: '100%', height: '100%' });
   const reducedMotion = useReducedMotion();
@@ -1424,7 +1296,9 @@ const QuoteReveal = () => {
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     const tiltProgress = Math.min(p / 0.2, 1);
     setTilt({ x: 4 * (1 - tiltProgress), y: -3 * (1 - tiltProgress) });
-    setChrome(1 - Math.max(0, Math.min((p - 0.8) / 0.15, 1)));
+    const reveal = Math.max(0, Math.min(p / 0.12, 1));
+    setFrameOpacity(reveal);
+    setChrome(reveal * (1 - Math.max(0, Math.min((p - 0.8) / 0.15, 1))));
     setDotVisible(p >= 1);
     const travel = Math.max(0, Math.min((p - 0.8) / 0.2, 1));
     const eased = travel * travel * (3 - 2 * travel);
@@ -1451,6 +1325,7 @@ const QuoteReveal = () => {
     if (count === 0) return null;
     return fullText.split('\n').map((line, lineIndex) => {
       const offset = lineIndex === 0 ? 0 : fullText.indexOf('\n') + 1;
+      if (count <= offset) return null;
       let position = offset;
       const cursorOnLine = showCursor && isTyping && (lineIndex === 0
         ? visibleChars <= line.length
@@ -1492,6 +1367,7 @@ const QuoteReveal = () => {
             <div aria-hidden="true" className="absolute pointer-events-none"
               style={reducedMotion ? { inset: 0, opacity: chrome } : {
                 left: collapse.left, top: collapse.top, width: collapse.width, height: collapse.height,
+                opacity: frameOpacity,
                 visibility: dotVisible ? 'hidden' : 'visible',
               }}>
               <div className="absolute inset-0 border border-[var(--red)]/60" style={{
@@ -1513,9 +1389,8 @@ const QuoteReveal = () => {
               </div>
 
             {/* The text */}
-            <h2 aria-label={fullText} className="grid font-clash font-extralight uppercase text-[clamp(15px,4vw,56px)] leading-snug py-4 px-2 min-h-[3em]">
-              <span aria-hidden="true" className="invisible pointer-events-none [grid-area:1/1]">{renderText(fullText.length, false)}</span>
-              <span aria-hidden="true" className="[grid-area:1/1]">{renderText()}</span>
+            <h2 aria-label={fullText} className="font-clash font-extralight uppercase text-[clamp(15px,4vw,56px)] leading-snug py-4 px-2 min-h-[1.6em]">
+              <span aria-hidden="true">{renderText()}</span>
             </h2>
           </div>
         </div>
@@ -1724,7 +1599,7 @@ const HeroBackground = ({ hasLoaded, active }) => {
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
       <InteractiveDotGrid active={active} opacity={0.55} />
-      <div className="absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
+      <div className="hero-name-group absolute top-[42%] left-4 md:left-8 -translate-y-1/2">
         <motion.div
           ref={textContainerRef}
           className="flex flex-col items-start leading-none text-left"
@@ -2112,7 +1987,7 @@ const HeroSection = React.memo(function HeroSection({ hasLoaded, hasEntered }) {
       </div>
 
       {/* GALAXY LAYER (z-95) - rendered once for performance */}
-      <div className="absolute top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
+      <div className="hero-orbits absolute top-1/2 right-0 translate-x-[40%] -translate-y-1/2 w-[600px] h-[600px] pointer-events-none scale-50 md:scale-75 xl:scale-100 z-[95]">
         <OrbitalRing
           radius={320}
           duration={35}
@@ -2320,6 +2195,14 @@ export default function App() {
   const navProgress = useTransform(scrollY, [0, window.innerHeight * 0.7], [0, 1]);
   const navProgressClamped = useTransform(navProgress, v => Math.min(Math.max(v, 0), 1));
   const [navIsContracted, setNavIsContracted] = useState(false);
+  const [mobileNav, setMobileNav] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setMobileNav(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  const compactNav = mobileNav || navIsContracted;
   useMotionValueEvent(scrollY, "change", (latest) => {
     setNavIsContracted(latest > window.innerHeight * 0.7);
   });
@@ -2362,11 +2245,11 @@ export default function App() {
             className="fixed top-0 left-0 right-0 z-[150] flex justify-center pt-3"
           >
             <div
-              data-state={navMenuOpen ? 'menu' : navIsContracted ? 'collapsed' : 'expanded'}
+              data-state={navMenuOpen ? 'menu' : compactNav ? 'collapsed' : 'expanded'}
               className={`nav-glass relative overflow-hidden ${
                 navMenuOpen
                   ? 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none'
-                  : navIsContracted
+                  : compactNav
                     ? 'w-[240px] md:w-[260px] rounded-none'
                     : 'w-[calc(100%-32px)] md:w-[calc(100%-64px)] rounded-none'
               }`}
@@ -2378,7 +2261,7 @@ export default function App() {
               }}
             >
               {/* Expanded bar content (on hero) */}
-              <div inert={navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-3 md:px-8 transition-opacity duration-300 ${navIsContracted || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div inert={compactNav || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-3 md:px-8 transition-opacity duration-300 ${compactNav || navMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-5 md:h-7 w-auto max-w-none shrink-0 object-contain" /></PageLink>
                 <div className="flex items-center gap-2 md:gap-8">
                   <button onClick={() => navigateWithTransition('#section-intro')} className="font-clash text-[9px] sm:text-[11px] whitespace-nowrap tracking-widest text-[var(--muted)] hover:text-white transition-colors cursor-none">CAREER</button>
@@ -2389,7 +2272,7 @@ export default function App() {
               </div>
 
               {/* Contracted pill content */}
-              <div inert={!navIsContracted || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${navIsContracted && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
+              <div inert={!compactNav || navMenuOpen} className={`absolute inset-0 flex items-center justify-between px-4 transition-opacity duration-300 ${compactNav && !navMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ height: '3.5rem' }}>
                 <PageLink href="/" navigate={navigateWithTransition} aria-label="Arnav Rai home" className="inline-flex items-center justify-center shrink-0"><img src="/favicon.png" width="500" height="500" alt="" className="h-7 w-7 object-contain" /></PageLink>
                 <button aria-label="Open navigation" onClick={() => { setNavMenuOpen(true); }} className="w-8 h-8 flex flex-col items-center justify-center gap-1 cursor-none">
                   <div className="w-4 h-px bg-white" />
@@ -3055,6 +2938,8 @@ export default function App() {
             <DinoRunner />
           </div>
 
+          <ContactRibbons />
+
           {/* ================= CONTACT FOOTER SECTION ================= */}
           <section id="section-contact" data-audio-obstacle="" className="relative w-full min-h-screen flex flex-col items-center justify-center px-4 md:px-12 bg-[var(--bg)] pb-12 overflow-hidden">
             <ContactFlow />
@@ -3085,7 +2970,7 @@ export default function App() {
             </ParticleFlyer>
 
             {/* Footer */}
-            <div data-audio-layout="" className="absolute bottom-0 left-0 right-0 border-t border-[var(--border)] px-6 md:px-12 py-10">
+            <div data-audio-layout="" className="contact-footer relative mt-20 w-full md:mt-0 md:absolute bottom-0 left-0 right-0 border-t border-[var(--border)] px-6 md:px-12 py-10">
               <div className="max-w-[90rem] mx-auto flex flex-col md:flex-row gap-10 md:gap-0 justify-between">
                 {/* Left: Brand */}
                 <div className="flex flex-col gap-3 max-w-[300px]">
@@ -3168,7 +3053,7 @@ export default function App() {
             <div className="absolute inset-0 bg-[#0D0D0D]" />
 
             {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-10 h-14 z-20 border-b border-white/[0.06]">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 md:px-10 h-14 z-20 bg-[#0D0D0D] border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <span className="text-[var(--red)] font-clash text-[10px] tracking-widest">✦</span>
                 <span className="font-clash text-[11px] tracking-widest text-[var(--red)] uppercase">ARNAV RAI</span>
@@ -3180,7 +3065,7 @@ export default function App() {
             </div>
 
             {/* Content: two columns */}
-            <div className="relative z-10 w-full h-full flex flex-col md:flex-row pt-14">
+            <div className="contact-form-content relative z-10 w-full h-full flex flex-col md:flex-row pt-14">
               {/* Left: CTA text */}
               <div className="w-full md:w-[45%] flex flex-col justify-center px-8 md:px-16 py-12 bg-[#111]/50">
                 <div className="flex items-center gap-2 mb-6">

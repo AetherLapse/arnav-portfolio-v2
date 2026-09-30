@@ -1,0 +1,18 @@
+.contact-ribbons { position: relative; height: clamp(220px, 22vw, 360px); overflow: hidden; isolation: isolate; --ribbon-play: paused; }
+.contact-ribbon { position: absolute; left: -8%; width: 116%; top: 50%; height: clamp(44px, 4vw, 62px); display: flex; align-items: center; overflow: hidden; }
+.contact-ribbon-0 { background: #dedad2; color: #111; transform: translateY(-50%) rotate(7deg); }
+.contact-ribbon-1 { background: #191919; color: #eae5dd; border-block: 1px solid #484848; transform: translateY(-50%); }
+.contact-ribbon-2 { background: #f00; color: #080808; transform: translateY(-50%) rotate(-7deg); }
+.contact-ribbon-track { display: flex; width: max-content; animation: contact-ribbon-travel 42s linear infinite; animation-play-state: var(--ribbon-play); }
+.contact-ribbon-1 .contact-ribbon-track { animation-direction: reverse; animation-duration: 48s; }
+.contact-ribbon-2 .contact-ribbon-track { animation-duration: 36s; }
+.contact-ribbon-repeat { display: flex; flex-shrink: 0; }
+.contact-ribbon-item { display: flex; align-items: center; gap: 24px; padding-inline: 24px; white-space: nowrap; font-size: clamp(11px, 1vw, 14px); font-weight: 400; }
+.contact-ribbon-detail { font-size: 9px; letter-spacing: .08em; opacity: .7; }
+@keyframes contact-ribbon-travel { to { transform: translateX(-50%); } }
+@media(max-width: 767px) {
+  .contact-ribbon-0 { transform: translateY(-50%) rotate(13deg); }
+  .contact-ribbon-2 { transform: translateY(-50%) rotate(-13deg); }
+  .contact-ribbon-item { gap: 16px; padding-inline: 16px; }
+}
+@media(prefers-reduced-motion: reduce) { .contact-ribbon-track { animation: none; } }

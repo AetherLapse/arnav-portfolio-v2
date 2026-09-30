@@ -146,8 +146,8 @@ export default function Preloader({ onComplete }) {
       >
         {/* Multilingual greeting — Windows OOBE style */}
         <GreetingCycle isWelcome={isWelcome} />
-        <div aria-hidden="true" className="relative mt-3 h-px w-24 md:w-32 bg-white/10">
-          <motion.div className="absolute inset-0 bg-white/60"
+        <div aria-hidden="true" className="relative mt-3 h-px w-24 md:w-32 bg-[var(--red)]/15">
+          <motion.div className="absolute inset-0 bg-[var(--red)]"
             style={{ scaleX: greetingLineScale, transformOrigin: 'center' }} />
         </div>
 
