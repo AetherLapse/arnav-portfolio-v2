@@ -29,7 +29,7 @@ export default function PageTransition({ active, onMidpoint, onComplete }) {
     let started;
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = '#ff0000';
       for (const cell of cells) {
         const scale = sweepScale(cell.diagonal, progress, covering);
         if (scale <= .001) continue;
@@ -55,7 +55,7 @@ export default function PageTransition({ active, onMidpoint, onComplete }) {
     };
     const tick = now => {
       started ??= now;
-      progress = Math.min(1, (now - started) / (covering ? 180 : 500));
+      progress = Math.min(1, (now - started) / (covering ? 500 : 1800));
       draw();
       if (progress < 1) { frame = requestAnimationFrame(tick); return; }
       if (covering) {
